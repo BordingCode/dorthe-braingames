@@ -1,0 +1,111 @@
+/* ===== N-Back ===== */
+
+#nback-display {
+  width: min(200px, 50vw);
+  height: min(200px, 50vw);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  font-size: 72px;
+  margin-bottom: 24px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#nback-display.show {
+  animation: nbackShow 0.3s ease-out;
+}
+
+@keyframes nbackShow {
+  from { transform: scale(0.8); opacity: 0.3; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+#nback-display.flash-correct {
+  background: #d4edda;
+  transform: scale(1.03);
+}
+
+#nback-display.flash-wrong {
+  background: #f8d7da;
+  transform: scale(0.97);
+}
+
+#nback-display.empty {
+  background: var(--surface-alt);
+}
+
+/* Progress bar */
+.nback-progress-bar {
+  width: min(280px, 70vw);
+  height: 8px;
+  background: var(--surface-alt);
+  border-radius: 4px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.nback-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.nback-match-btn {
+  width: min(220px, 60vw);
+  padding: 20px 32px;
+  font-size: 22px;
+  font-weight: 700;
+  display: none;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.nback-match-btn.visible {
+  display: inline-flex;
+}
+
+.nback-match-btn:active {
+  transform: scale(0.93);
+}
+
+.nback-match-btn.pressed {
+  background: var(--primary-dark);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: scale(0.97);
+}
+
+#nback-start-btn {
+  width: min(220px, 60vw);
+  font-size: 20px;
+  padding: 18px 32px;
+}
+
+#nback-start-btn.hidden {
+  display: none;
+}
+
+/* Level description */
+.nback-level-desc {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-bottom: 16px;
+  max-width: 280px;
+}
+
+@media (min-width: 768px) {
+  #nback-display {
+    width: 240px;
+    height: 240px;
+    font-size: 88px;
+  }
+
+  .nback-match-btn {
+    width: 260px;
+    font-size: 24px;
+    padding: 22px 40px;
+  }
+}

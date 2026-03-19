@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#4A7C59">
+  <title>Dorthe's Brain Games</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/lightsout.css">
+  <link rel="stylesheet" href="css/memory.css">
+  <link rel="stylesheet" href="css/minesweeper.css">
+  <link rel="stylesheet" href="css/wordsearch.css">
+  <link rel="stylesheet" href="css/nback.css">
+  <link rel="stylesheet" href="css/solitaire.css">
+</head>
+<body>
+
+  <!-- ===== Home Screen ===== -->
+  <div id="screen-home" class="screen active">
+    <div class="home-header">
+      <h1>Dorthe's Brain Games</h1>
+      <p class="subtitle">Vælg et spil og hav det sjovt!</p>
+    </div>
+    <div class="game-grid">
+      <button class="game-card" onclick="goScreen('lightsout'); initLightsOut();">
+        <span class="game-icon">💡</span>
+        <span class="game-name">Lights Out</span>
+        <span class="game-desc">Sluk alle lysene</span>
+      </button>
+      <button class="game-card" onclick="goScreen('memory'); initMemory();">
+        <span class="game-icon">🃏</span>
+        <span class="game-name">Vendespil</span>
+        <span class="game-desc">Find alle par</span>
+      </button>
+      <button class="game-card" onclick="goScreen('minesweeper'); initMinesweeper();">
+        <span class="game-icon">💣</span>
+        <span class="game-name">Minerydder</span>
+        <span class="game-desc">Undgå minerne</span>
+      </button>
+      <button class="game-card" onclick="goScreen('wordsearch'); initWordSearch();">
+        <span class="game-icon">🔤</span>
+        <span class="game-name">Ordsjagt</span>
+        <span class="game-desc">Find de skjulte ord</span>
+      </button>
+      <button class="game-card" onclick="goScreen('nback'); initNBack();">
+        <span class="game-icon">🧠</span>
+        <span class="game-name">N-Back</span>
+        <span class="game-desc">Træn din hukommelse</span>
+      </button>
+      <button class="game-card" onclick="goScreen('solitaire'); initSolitaire();">
+        <span class="game-icon">♠️</span>
+        <span class="game-name">Kabale</span>
+        <span class="game-desc">Klassisk kortspil</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Lights Out ===== -->
+  <div id="screen-lightsout" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Lights Out</span>
+      <button class="difficulty-btn" id="lightsout-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Træk: <b id="lightsout-moves">0</b></span>
+      <span>Tid: <b id="lightsout-timer">0:00</b></span>
+    </div>
+    <div class="game-area">
+      <div id="lightsout-board"></div>
+    </div>
+  </div>
+
+  <!-- ===== Memory ===== -->
+  <div id="screen-memory" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Vendespil</span>
+      <button class="difficulty-btn" id="memory-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Træk: <b id="memory-moves">0</b></span>
+      <span>Par: <b id="memory-pairs">0/0</b></span>
+      <span>Tid: <b id="memory-timer">0:00</b></span>
+    </div>
+    <div class="game-area">
+      <div id="memory-board"></div>
+    </div>
+  </div>
+
+  <!-- ===== Minesweeper ===== -->
+  <div id="screen-minesweeper" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Minerydder</span>
+      <button class="difficulty-btn" id="minesweeper-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Miner: <b id="minesweeper-mines">0</b></span>
+      <span>Tid: <b id="minesweeper-timer">0:00</b></span>
+      <span id="minesweeper-flag-toggle">
+        <button id="minesweeper-flag-btn" class="flag-mode-btn">🚩 Flag</button>
+      </span>
+    </div>
+    <div class="game-area">
+      <div id="minesweeper-board"></div>
+    </div>
+  </div>
+
+  <!-- ===== Word Search ===== -->
+  <div id="screen-wordsearch" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Ordsjagt</span>
+      <button class="difficulty-btn" id="wordsearch-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Fundet: <b id="wordsearch-found">0/0</b></span>
+      <span>Tid: <b id="wordsearch-timer">0:00</b></span>
+    </div>
+    <div class="game-area">
+      <div id="wordsearch-container">
+        <div id="wordsearch-board"></div>
+        <div id="wordsearch-wordlist"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== N-Back ===== -->
+  <div id="screen-nback" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">N-Back</span>
+      <button class="difficulty-btn" id="nback-diff-btn">1-back</button>
+    </div>
+    <div class="game-info">
+      <span>Runde: <b id="nback-progress">0/0</b></span>
+      <span>Score: <b id="nback-score">0</b></span>
+    </div>
+    <div class="game-area">
+      <div id="nback-display"></div>
+      <button id="nback-match-btn" class="btn btn-primary nback-match-btn">Match!</button>
+      <button id="nback-start-btn" class="btn btn-primary">Start</button>
+    </div>
+  </div>
+
+  <!-- ===== Solitaire ===== -->
+  <div id="screen-solitaire" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Kabale</span>
+      <button class="difficulty-btn" id="solitaire-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Træk: <b id="solitaire-moves">0</b></span>
+      <span>Tid: <b id="solitaire-timer">0:00</b></span>
+    </div>
+    <div class="game-area">
+      <div id="solitaire-board"></div>
+    </div>
+  </div>
+
+  <!-- ===== Difficulty Modal ===== -->
+  <div id="difficulty-modal" class="difficulty-modal">
+    <div class="modal-content">
+      <h3>Vælg sværhedsgrad</h3>
+      <div class="modal-options"></div>
+    </div>
+  </div>
+
+  <!-- ===== Result Overlay ===== -->
+  <div id="result-overlay" class="result-overlay">
+    <div class="result-card">
+      <div class="result-emoji"></div>
+      <div class="result-title"></div>
+      <div class="result-stats"></div>
+      <div class="result-quote"></div>
+      <div class="result-quote-author"></div>
+      <div class="result-buttons"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/shared.js"></script>
+  <script src="js/lightsout.js"></script>
+  <script src="js/memory.js"></script>
+  <script src="js/minesweeper.js"></script>
+  <script src="js/wordsearch.js"></script>
+  <script src="js/nback.js"></script>
+  <script src="js/solitaire.js"></script>
+</body>
+</html>

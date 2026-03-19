@@ -1,0 +1,246 @@
+/* ===== Solitaire / Kabale ===== */
+
+#solitaire-board {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px;
+  position: relative;
+}
+
+/* Top row: stock, waste, gap, 4 foundations */
+.sol-top-row {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.sol-pile {
+  position: relative;
+  flex: 1;
+  max-width: 72px;
+  aspect-ratio: 5/7;
+}
+
+.sol-spacer {
+  flex: 1;
+  max-width: 72px;
+}
+
+/* Tableau columns */
+.sol-tableau {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.sol-column {
+  flex: 1;
+  max-width: 72px;
+  position: relative;
+  min-height: 100px;
+}
+
+/* Card */
+.sol-card {
+  position: absolute;
+  width: 100%;
+  aspect-ratio: 5/7;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  z-index: 1;
+}
+
+.sol-card.face-up {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.05);
+}
+
+.sol-card.face-up:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sol-card.face-down {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: default;
+}
+
+.sol-card.face-down::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.03) 3px,
+    rgba(255, 255, 255, 0.03) 6px
+  );
+}
+
+.sol-card .sol-rank {
+  font-size: clamp(11px, 2.5vw, 16px);
+  line-height: 1;
+}
+
+.sol-card .sol-suit {
+  font-size: clamp(14px, 3.5vw, 22px);
+  line-height: 1;
+}
+
+.sol-card.red { color: #D32F2F; }
+.sol-card.black { color: #212121; }
+
+/* Card moved animation */
+.sol-card.just-moved {
+  animation: solCardMove 0.25s ease-out;
+}
+
+@keyframes solCardMove {
+  from { transform: translateY(-8px); opacity: 0.7; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Foundation card placed */
+.sol-card.to-foundation {
+  animation: solToFoundation 0.3s ease-out;
+}
+
+@keyframes solToFoundation {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Empty pile placeholder */
+.sol-empty {
+  width: 100%;
+  aspect-ratio: 5/7;
+  border: 2px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: clamp(16px, 4vw, 24px);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.sol-empty.foundation::after {
+  content: '♠';
+  opacity: 0.15;
+  font-size: clamp(18px, 4vw, 28px);
+}
+
+/* Stock pile indicator */
+.sol-stock-refresh {
+  width: 100%;
+  aspect-ratio: 5/7;
+  border: 2px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 28px;
+  color: var(--primary);
+  background: rgba(0, 0, 0, 0.02);
+  transition: background 0.15s;
+}
+
+.sol-stock-refresh:active {
+  background: var(--surface-alt);
+}
+
+/* Undo button */
+.sol-undo-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--surface-alt);
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  z-index: 50;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.sol-undo-btn:active {
+  transform: scale(0.92);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Auto-complete progress */
+.sol-auto-complete {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 16px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  z-index: 60;
+  animation: popIn 0.3s ease-out;
+}
+
+@media (min-width: 480px) {
+  .sol-pile, .sol-spacer {
+    max-width: 80px;
+  }
+
+  .sol-column {
+    max-width: 80px;
+  }
+
+  .sol-card .sol-rank {
+    font-size: 16px;
+  }
+
+  .sol-card .sol-suit {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 768px) {
+  #solitaire-board {
+    max-width: 680px;
+    gap: 16px;
+    padding: 12px;
+  }
+
+  .sol-pile, .sol-spacer {
+    max-width: 90px;
+  }
+
+  .sol-column {
+    max-width: 90px;
+    min-height: 140px;
+  }
+
+  .sol-top-row, .sol-tableau {
+    gap: 10px;
+  }
+}

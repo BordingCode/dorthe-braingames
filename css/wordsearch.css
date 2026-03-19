@@ -1,0 +1,124 @@
+/* ===== Word Search / Ordsjagt ===== */
+
+#wordsearch-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 500px;
+}
+
+#wordsearch-board {
+  display: grid;
+  gap: 2px;
+  --board-size: min(calc(100vw - 32px), calc(100dvh - 320px), 400px);
+  width: var(--board-size);
+  touch-action: none;
+}
+
+#wordsearch-board.cols-8  { grid-template-columns: repeat(8, 1fr); }
+#wordsearch-board.cols-10 { grid-template-columns: repeat(10, 1fr); }
+#wordsearch-board.cols-12 { grid-template-columns: repeat(12, 1fr); }
+
+.ws-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 3.5vw, 20px);
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border-radius: 4px;
+  text-transform: uppercase;
+  user-select: none;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.ws-cell.selecting {
+  background: var(--primary-light);
+  color: var(--text-on-primary);
+  transform: scale(1.05);
+}
+
+.ws-cell.found {
+  color: var(--text-on-primary);
+  animation: wsFound 0.3s ease-out;
+}
+
+@keyframes wsFound {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Found word highlight colors */
+.ws-cell.found-0 { background: #4A7C59; }
+.ws-cell.found-1 { background: #5B8C6A; }
+.ws-cell.found-2 { background: #7B68AE; }
+.ws-cell.found-3 { background: #C4A35A; }
+.ws-cell.found-4 { background: #D9534F; }
+.ws-cell.found-5 { background: #5BC0DE; }
+.ws-cell.found-6 { background: #E8844F; }
+.ws-cell.found-7 { background: #8E6BB5; }
+.ws-cell.found-8 { background: #3A8F8F; }
+.ws-cell.found-9 { background: #C75B7A; }
+
+/* Word list */
+#wordsearch-wordlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 0 8px;
+  max-width: 100%;
+}
+
+.ws-word {
+  background: var(--surface);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.ws-word.found {
+  opacity: 0.4;
+  text-decoration: line-through;
+  transform: scale(0.95);
+}
+
+.ws-word.just-found {
+  animation: wsWordFound 0.5s ease-out;
+}
+
+@keyframes wsWordFound {
+  0% { transform: scale(1); background: var(--surface); }
+  30% { transform: scale(1.1); background: var(--success); color: white; }
+  100% { transform: scale(0.95); }
+}
+
+@media (min-width: 768px) {
+  #wordsearch-container {
+    max-width: 600px;
+  }
+
+  #wordsearch-board {
+    --board-size: min(calc(100vw - 64px), calc(100dvh - 340px), 480px);
+    gap: 3px;
+  }
+
+  .ws-cell {
+    font-size: clamp(16px, 3vw, 22px);
+  }
+
+  .ws-word {
+    font-size: 17px;
+    padding: 10px 18px;
+  }
+}
