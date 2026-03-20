@@ -791,34 +791,42 @@
 
     if (isDoubleTap) {
       clearSelection();
+
+      // Try foundation (top cards only, not from foundation)
       var isTopCard = source === 'waste' ||
         source === 'foundation' ||
         (source === 'tableau' && idx === tableau[col].length - 1);
 
-      if (isTopCard) {
-        // Try foundation first (not from foundation)
-        if (source !== 'foundation') {
-          for (var f = 0; f < 4; f++) {
-            if (canMoveToFoundation(card, f)) {
-              moveToFoundation(card, source, col, idx, f);
-              return;
-            }
+      if (isTopCard && source !== 'foundation') {
+        for (var f = 0; f < 4; f++) {
+          if (canMoveToFoundation(card, f)) {
+            moveToFoundation(card, source, col, idx, f);
+            return;
           }
         }
-        // Try tableau
-        if (source === 'waste') {
-          for (var t = 0; t < 7; t++) {
-            if (canMoveToTableau(card, t)) {
-              moveWasteToTableau(t);
-              return;
-            }
+      }
+
+      // Try tableau
+      if (source === 'waste') {
+        for (var t = 0; t < 7; t++) {
+          if (canMoveToTableau(card, t)) {
+            moveWasteToTableau(t);
+            return;
           }
-        } else if (source === 'foundation') {
-          for (var t2 = 0; t2 < 7; t2++) {
-            if (canMoveToTableau(card, t2)) {
-              moveFoundationToTableau(col, t2);
-              return;
-            }
+        }
+      } else if (source === 'foundation') {
+        for (var t2 = 0; t2 < 7; t2++) {
+          if (canMoveToTableau(card, t2)) {
+            moveFoundationToTableau(col, t2);
+            return;
+          }
+        }
+      } else if (source === 'tableau') {
+        for (var t3 = 0; t3 < 7; t3++) {
+          if (t3 === col) continue;
+          if (canMoveToTableau(card, t3)) {
+            moveTableauStack(col, idx, t3);
+            return;
           }
         }
       }
