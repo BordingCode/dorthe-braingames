@@ -840,7 +840,44 @@
       if (moved) return;
     }
 
-    // Select for manual move (tap destination next)
+    // Single tap auto-move: try foundation then tableau
+    var isTop = source === 'waste' ||
+      source === 'foundation' ||
+      (source === 'tableau' && idx === tableau[col].length - 1);
+
+    if (isTop && source !== 'foundation') {
+      for (var af = 0; af < 4; af++) {
+        if (canMoveToFoundation(card, af)) {
+          moveToFoundation(card, source, col, idx, af);
+          return;
+        }
+      }
+    }
+    if (source === 'waste') {
+      for (var at = 0; at < 7; at++) {
+        if (canMoveToTableau(card, at)) {
+          moveWasteToTableau(at);
+          return;
+        }
+      }
+    } else if (source === 'foundation') {
+      for (var at2 = 0; at2 < 7; at2++) {
+        if (canMoveToTableau(card, at2)) {
+          moveFoundationToTableau(col, at2);
+          return;
+        }
+      }
+    } else if (source === 'tableau') {
+      for (var at3 = 0; at3 < 7; at3++) {
+        if (at3 === col) continue;
+        if (canMoveToTableau(card, at3)) {
+          moveTableauStack(col, idx, at3);
+          return;
+        }
+      }
+    }
+
+    // No auto-move found: select for manual move
     clearSelection();
     selected = { source: source, col: col, idx: idx, card: card };
     highlightSelected(source, col, idx);
