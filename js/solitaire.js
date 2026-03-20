@@ -787,7 +787,40 @@
       // If move failed, fall through to select the tapped card instead
     }
 
-    // Select this card
+    // Auto-move: if tapping the top card of a column, waste, or foundation, try to move just that one card
+    var isTopCard = source === 'waste' ||
+      source === 'foundation' ||
+      (source === 'tableau' && idx === tableau[col].length - 1);
+
+    if (isTopCard) {
+      // Try foundation first (not from foundation)
+      if (source !== 'foundation') {
+        for (var f = 0; f < 4; f++) {
+          if (canMoveToFoundation(card, f)) {
+            moveToFoundation(card, source, col, idx, f);
+            return;
+          }
+        }
+      }
+      // Try tableau
+      if (source === 'waste') {
+        for (var t = 0; t < 7; t++) {
+          if (canMoveToTableau(card, t)) {
+            moveWasteToTableau(t);
+            return;
+          }
+        }
+      } else if (source === 'foundation') {
+        for (var t2 = 0; t2 < 7; t2++) {
+          if (canMoveToTableau(card, t2)) {
+            moveFoundationToTableau(col, t2);
+            return;
+          }
+        }
+      }
+    }
+
+    // No auto-move found (or not a top card): select for manual move
     clearSelection();
     selected = { source: source, col: col, idx: idx, card: card };
     highlightSelected(source, col, idx);
