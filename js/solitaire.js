@@ -842,8 +842,9 @@
   function tryMoveSelected(targetSource, targetCol, targetIdx) {
     var s = selected;
 
-    // Move to foundation
+    // Move to foundation (not from foundation — that makes no sense)
     if (targetSource === 'foundation') {
+      if (s.source === 'foundation') return false;
       if (canMoveToFoundation(s.card, targetCol)) {
         moveToFoundation(s.card, s.source, s.col, s.idx, targetCol);
         return true;
