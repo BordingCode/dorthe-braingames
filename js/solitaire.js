@@ -786,52 +786,45 @@
       var moved = tryMoveSelected(source, col, idx);
       clearSelection();
       if (moved) return;
-      // If move failed, fall through to select the tapped card instead
+      // If move failed, just select the tapped card instead (no auto-move)
     }
 
-    // Auto-move: if tapping the top card of a column, waste, or foundation, try to move just that one card
-    var isTopCard = source === 'waste' ||
-      source === 'foundation' ||
-      (source === 'tableau' && idx === tableau[col].length - 1);
+    // Auto-move ONLY when nothing was previously selected, and ONLY for the single top card
+    if (!selected) {
+      var isTopCard = source === 'waste' ||
+        source === 'foundation' ||
+        (source === 'tableau' && idx === tableau[col].length - 1);
 
-    if (isTopCard) {
-      // Try foundation first (not from foundation)
-      if (source !== 'foundation') {
-        for (var f = 0; f < 4; f++) {
-          if (canMoveToFoundation(card, f)) {
-            moveToFoundation(card, source, col, idx, f);
-            return;
+      if (isTopCard) {
+        // Try foundation first (not from foundation)
+        if (source !== 'foundation') {
+          for (var f = 0; f < 4; f++) {
+            if (canMoveToFoundation(card, f)) {
+              moveToFoundation(card, source, col, idx, f);
+              return;
+            }
           }
         }
-      }
-      // Try tableau
-      if (source === 'waste') {
-        for (var t = 0; t < 7; t++) {
-          if (canMoveToTableau(card, t)) {
-            moveWasteToTableau(t);
-            return;
+        // Try tableau (single card only — not from tableau to avoid moving stacks)
+        if (source === 'waste') {
+          for (var t = 0; t < 7; t++) {
+            if (canMoveToTableau(card, t)) {
+              moveWasteToTableau(t);
+              return;
+            }
           }
-        }
-      } else if (source === 'foundation') {
-        for (var t2 = 0; t2 < 7; t2++) {
-          if (canMoveToTableau(card, t2)) {
-            moveFoundationToTableau(col, t2);
-            return;
-          }
-        }
-      } else if (source === 'tableau') {
-        // Only auto-move single top card to another tableau column
-        for (var t3 = 0; t3 < 7; t3++) {
-          if (t3 === col) continue;
-          if (canMoveToTableau(card, t3)) {
-            moveTableauStack(col, idx, t3);
-            return;
+        } else if (source === 'foundation') {
+          for (var t2 = 0; t2 < 7; t2++) {
+            if (canMoveToTableau(card, t2)) {
+              moveFoundationToTableau(col, t2);
+              return;
+            }
           }
         }
       }
     }
 
-    // No auto-move found (or not a top card): select for manual move
+    // Select for manual move (tap destination next)
     clearSelection();
     selected = { source: source, col: col, idx: idx, card: card };
     highlightSelected(source, col, idx);
