@@ -10,14 +10,14 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-  <link rel="stylesheet" href="css/shared.css">
-  <link rel="stylesheet" href="css/home.css">
-  <link rel="stylesheet" href="css/lightsout.css">
-  <link rel="stylesheet" href="css/memory.css">
-  <link rel="stylesheet" href="css/minesweeper.css">
-  <link rel="stylesheet" href="css/wordsearch.css">
-  <link rel="stylesheet" href="css/nback.css">
-  <link rel="stylesheet" href="css/solitaire.css">
+  <link rel="stylesheet" href="css/shared.css?v=20260319b">
+  <link rel="stylesheet" href="css/home.css?v=20260319b">
+  <link rel="stylesheet" href="css/lightsout.css?v=20260319b">
+  <link rel="stylesheet" href="css/memory.css?v=20260319b">
+  <link rel="stylesheet" href="css/minesweeper.css?v=20260319b">
+  <link rel="stylesheet" href="css/wordsearch.css?v=20260319b">
+  <link rel="stylesheet" href="css/nback.css?v=20260319b">
+  <link rel="stylesheet" href="css/solitaire.css?v=20260319b">
 </head>
 <body>
 
@@ -160,9 +160,18 @@
     <div class="game-info">
       <span>Træk: <b id="solitaire-moves">0</b></span>
       <span>Tid: <b id="solitaire-timer">0:00</b></span>
+      <button id="sol-cardback-btn" class="sol-cardback-btn" title="Vælg kortbagside">🎨</button>
     </div>
     <div class="game-area">
       <div id="solitaire-board"></div>
+    </div>
+  </div>
+
+  <!-- ===== Card Back Picker Modal ===== -->
+  <div id="cardback-modal" class="difficulty-modal">
+    <div class="modal-content">
+      <h3>Vælg kortbagside</h3>
+      <div class="cardback-grid" id="cardback-options"></div>
     </div>
   </div>
 
@@ -187,12 +196,12 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/shared.js"></script>
-  <script src="js/lightsout.js"></script>
-  <script src="js/memory.js"></script>
-  <script src="js/minesweeper.js"></script>
-  <script src="js/wordsearch.js"></script>
-  <script src="js/nback.js"></script>
-  <script src="js/solitaire.js"></script>
+  <script src="js/shared.js?v=20260319b"></script>
+  <script src="js/lightsout.js?v=20260319b"></script>
+  <script src="js/memory.js?v=20260319b"></script>
+  <script src="js/minesweeper.js?v=20260319b"></script>
+  <script src="js/wordsearch.js?v=20260319b"></script>
+  <script src="js/nback.js?v=20260319b"></script>
+  <script src="js/solitaire.js?v=20260319b"></script>
 </body>
 </html>

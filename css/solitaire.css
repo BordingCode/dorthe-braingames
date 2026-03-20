@@ -4,17 +4,17 @@
   background: #2d5a3a;
   background-image:
     radial-gradient(ellipse at 50% 0%, rgba(107, 159, 120, 0.3) 0%, transparent 70%);
-  padding: 8px;
+  padding: 4px;
   overflow: hidden;
 }
 
 #solitaire-board {
   width: 100%;
-  max-width: 560px;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 4px;
+  gap: 8px;
+  padding: 2px;
   position: relative;
 }
 
@@ -28,13 +28,11 @@
 .sol-pile {
   position: relative;
   flex: 1;
-  max-width: 72px;
   aspect-ratio: 5/7;
 }
 
 .sol-spacer {
   flex: 1;
-  max-width: 72px;
 }
 
 /* Tableau columns */
@@ -46,7 +44,6 @@
 
 .sol-column {
   flex: 1;
-  max-width: 72px;
   position: relative;
   min-height: 100px;
 }
@@ -109,12 +106,12 @@
 }
 
 .sol-card .sol-corner .sol-rank {
-  font-size: clamp(9px, 2.2vw, 13px);
+  font-size: clamp(10px, 2.5vw, 15px);
   line-height: 1;
 }
 
 .sol-card .sol-corner .sol-suit-sm {
-  font-size: clamp(8px, 1.8vw, 11px);
+  font-size: clamp(9px, 2.2vw, 13px);
   line-height: 1;
 }
 
@@ -124,7 +121,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: clamp(20px, 5vw, 32px);
+  font-size: clamp(22px, 5.5vw, 36px);
   pointer-events: none;
   opacity: 0.9;
 }
@@ -163,14 +160,14 @@
   pointer-events: none;
 }
 
-/* ===== Face-down card back ===== */
+/* ===== Face-down card back (shared base) ===== */
 .sol-card.face-down {
-  background: #1a5c2e;
   border: 1px solid rgba(0, 0, 0, 0.2);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.15),
     inset 0 0 0 2px rgba(255, 255, 255, 0.08);
   cursor: pointer;
+  overflow: hidden;
 }
 
 .sol-card.face-down::before {
@@ -178,23 +175,254 @@
   position: absolute;
   inset: 4px;
   border-radius: 4px;
-  border: 1.5px solid rgba(255, 215, 0, 0.25);
-  background:
-    repeating-conic-gradient(
-      rgba(255, 255, 255, 0.03) 0% 25%,
-      transparent 0% 50%
-    ) 0 0 / 8px 8px,
-    radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.06) 0%, transparent 70%);
 }
 
 .sol-card.face-down::after {
-  content: '\2660';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* --- 1. Klassisk (green/gold, the original) --- */
+.cardback-classic .sol-card.face-down,
+.sol-card.face-down { /* default fallback */
+  background: #1a5c2e;
+}
+.cardback-classic .sol-card.face-down::before,
+.sol-card.face-down::before {
+  border: 1.5px solid rgba(255, 215, 0, 0.25);
+  background:
+    repeating-conic-gradient(rgba(255, 255, 255, 0.03) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
+    radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.06) 0%, transparent 70%);
+}
+.cardback-classic .sol-card.face-down::after,
+.sol-card.face-down::after {
+  content: '\2660';
   font-size: clamp(14px, 3.5vw, 20px);
   color: rgba(255, 215, 0, 0.2);
+}
+
+/* --- 2. Kongeblå (royal blue with diamond pattern) --- */
+.cardback-royal .sol-card.face-down {
+  background: #1a3a6b;
+}
+.cardback-royal .sol-card.face-down::before {
+  border: 1.5px solid rgba(200, 180, 255, 0.2);
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.04) 0px, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 7px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 0px, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 7px),
+    radial-gradient(circle at 50% 50%, rgba(100, 150, 255, 0.08) 0%, transparent 70%);
+}
+.cardback-royal .sol-card.face-down::after {
+  content: '\2666';
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: rgba(200, 180, 255, 0.25);
+}
+
+/* --- 3. Solnedgang (warm sunset gradient) --- */
+.cardback-sunset .sol-card.face-down {
+  background: linear-gradient(135deg, #8b2252 0%, #c44e2b 50%, #d4872a 100%);
+}
+.cardback-sunset .sol-card.face-down::before {
+  border: 1.5px solid rgba(255, 220, 150, 0.25);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 200, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(255, 150, 100, 0.06) 0%, transparent 50%);
+}
+.cardback-sunset .sol-card.face-down::after {
+  content: '\2665';
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: rgba(255, 220, 150, 0.25);
+}
+
+/* --- 4. Blomster (floral purple with petal pattern) --- */
+.cardback-floral .sol-card.face-down {
+  background: #4a2060;
+}
+.cardback-floral .sol-card.face-down::before {
+  border: 1.5px solid rgba(220, 170, 255, 0.2);
+  background:
+    radial-gradient(circle at 25% 25%, rgba(220, 170, 255, 0.1) 0%, transparent 30%),
+    radial-gradient(circle at 75% 25%, rgba(255, 180, 200, 0.08) 0%, transparent 30%),
+    radial-gradient(circle at 50% 60%, rgba(180, 220, 255, 0.08) 0%, transparent 30%),
+    radial-gradient(circle at 25% 75%, rgba(255, 200, 150, 0.06) 0%, transparent 30%),
+    radial-gradient(circle at 75% 75%, rgba(170, 255, 200, 0.06) 0%, transparent 30%);
+}
+.cardback-floral .sol-card.face-down::after {
+  content: '\2698';
+  font-size: clamp(16px, 4vw, 24px);
+  color: rgba(220, 170, 255, 0.25);
+}
+
+/* --- 5. Midnat (dark elegant with stars) --- */
+.cardback-midnight .sol-card.face-down {
+  background: linear-gradient(160deg, #0d1b2a 0%, #1b2d45 60%, #1a1a3e 100%);
+}
+.cardback-midnight .sol-card.face-down::before {
+  border: 1.5px solid rgba(200, 220, 255, 0.15);
+  background:
+    radial-gradient(1px 1px at 20% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 15%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 40%, rgba(255, 255, 255, 0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 55%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 70%, rgba(255, 255, 255, 0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 35%, rgba(255, 255, 200, 0.5) 0%, transparent 100%),
+    radial-gradient(circle at 50% 50%, rgba(80, 100, 200, 0.06) 0%, transparent 70%);
+}
+.cardback-midnight .sol-card.face-down::after {
+  content: '\2605';
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: rgba(200, 220, 255, 0.2);
+}
+
+/* --- 6. Tartan (red plaid / scottish) --- */
+.cardback-tartan .sol-card.face-down {
+  background: #7a1a1a;
+}
+.cardback-tartan .sol-card.face-down::before {
+  border: 1.5px solid rgba(255, 200, 150, 0.2);
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.08) 0px, rgba(0, 0, 0, 0.08) 2px, transparent 2px, transparent 10px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0px, rgba(0, 0, 0, 0.08) 2px, transparent 2px, transparent 10px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0px, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0px, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 5px);
+}
+.cardback-tartan .sol-card.face-down::after {
+  content: '\2663';
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: rgba(255, 200, 150, 0.2);
+}
+
+/* ===== Card back picker button ===== */
+.sol-cardback-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #fff;
+  transition: background 0.15s;
+  min-height: 36px;
+  min-width: 36px;
+  margin-left: auto;
+  line-height: 1;
+}
+
+.sol-cardback-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Card back picker grid ===== */
+.cardback-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.cardback-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+  background: none;
+}
+
+.cardback-option:active {
+  background: var(--surface-alt, rgba(0,0,0,0.05));
+}
+
+.cardback-option.selected {
+  border-color: var(--primary, #2d5a3a);
+  background: rgba(45, 90, 58, 0.08);
+}
+
+.cardback-preview {
+  width: 48px;
+  aspect-ratio: 5/7;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.cardback-preview::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 3px;
+}
+
+.cardback-preview::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Preview thumbnails for each style */
+.cardback-preview.preview-classic { background: #1a5c2e; }
+.cardback-preview.preview-classic::before {
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 0 0 / 6px 6px;
+}
+.cardback-preview.preview-classic::after { content: '\2660'; font-size: 12px; color: rgba(255,215,0,0.3); }
+
+.cardback-preview.preview-royal { background: #1a3a6b; }
+.cardback-preview.preview-royal::before {
+  border: 1px solid rgba(200, 180, 255, 0.2);
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 5px);
+}
+.cardback-preview.preview-royal::after { content: '\2666'; font-size: 12px; color: rgba(200,180,255,0.3); }
+
+.cardback-preview.preview-sunset { background: linear-gradient(135deg, #8b2252, #c44e2b, #d4872a); }
+.cardback-preview.preview-sunset::before {
+  border: 1px solid rgba(255, 220, 150, 0.25);
+}
+.cardback-preview.preview-sunset::after { content: '\2665'; font-size: 12px; color: rgba(255,220,150,0.3); }
+
+.cardback-preview.preview-floral { background: #4a2060; }
+.cardback-preview.preview-floral::before {
+  border: 1px solid rgba(220, 170, 255, 0.2);
+  background:
+    radial-gradient(circle at 25% 30%, rgba(220, 170, 255, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 75% 70%, rgba(255, 180, 200, 0.1) 0%, transparent 40%);
+}
+.cardback-preview.preview-floral::after { content: '\2698'; font-size: 14px; color: rgba(220,170,255,0.3); }
+
+.cardback-preview.preview-midnight { background: linear-gradient(160deg, #0d1b2a, #1b2d45, #1a1a3e); }
+.cardback-preview.preview-midnight::before {
+  border: 1px solid rgba(200, 220, 255, 0.15);
+  background:
+    radial-gradient(1px 1px at 30% 25%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 70% 50%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 45% 75%, rgba(255,255,255,0.4), transparent);
+}
+.cardback-preview.preview-midnight::after { content: '\2605'; font-size: 12px; color: rgba(200,220,255,0.25); }
+
+.cardback-preview.preview-tartan { background: #7a1a1a; }
+.cardback-preview.preview-tartan::before {
+  border: 1px solid rgba(255, 200, 150, 0.2);
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 6px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 6px);
+}
+.cardback-preview.preview-tartan::after { content: '\2663'; font-size: 12px; color: rgba(255,200,150,0.3); }
+
+.cardback-label {
+  font-size: 12px;
+  color: var(--text-muted, #666);
+  font-weight: 600;
 }
 
 /* ===== Empty pile ===== */
@@ -253,7 +481,7 @@
   content: '';
   position: absolute;
   border-radius: 7px;
-  background: #1a5c2e;
+  background: var(--stock-color, #1a5c2e);
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
@@ -307,41 +535,32 @@
 
 /* ===== Responsive ===== */
 @media (min-width: 480px) {
-  .sol-pile, .sol-spacer {
-    max-width: 80px;
-  }
-
-  .sol-column {
-    max-width: 80px;
-  }
-
   .sol-card .sol-corner .sol-rank {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .sol-card .sol-corner .sol-suit-sm {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .sol-card .sol-center {
-    font-size: 32px;
+    font-size: 34px;
+  }
+
+  #screen-solitaire .game-area {
+    padding: 6px;
   }
 }
 
 @media (min-width: 768px) {
   #solitaire-board {
-    max-width: 680px;
-    gap: 14px;
-    padding: 8px;
-  }
-
-  .sol-pile, .sol-spacer {
-    max-width: 90px;
+    max-width: 720px;
+    gap: 12px;
+    padding: 6px;
   }
 
   .sol-column {
-    max-width: 90px;
-    min-height: 140px;
+    min-height: 160px;
   }
 
   .sol-top-row, .sol-tableau {

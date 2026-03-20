@@ -28,6 +28,72 @@
   // Drag state
   let drag = null;
 
+  // Card back designs
+  const CARD_BACKS = [
+    { id: 'classic', label: 'Klassisk', stockColor: '#1a5c2e' },
+    { id: 'royal', label: 'Kongeblå', stockColor: '#1a3a6b' },
+    { id: 'sunset', label: 'Solnedgang', stockColor: '#c44e2b' },
+    { id: 'floral', label: 'Blomster', stockColor: '#4a2060' },
+    { id: 'midnight', label: 'Midnat', stockColor: '#0d1b2a' },
+    { id: 'tartan', label: 'Tartan', stockColor: '#7a1a1a' },
+  ];
+
+  function getCardBack() {
+    return localStorage.getItem('bg_sol_cardback') || 'classic';
+  }
+
+  function setCardBack(id) {
+    localStorage.setItem('bg_sol_cardback', id);
+    applyCardBack(id);
+  }
+
+  function applyCardBack(id) {
+    var screen = document.getElementById('screen-solitaire');
+    CARD_BACKS.forEach(function (cb) {
+      screen.classList.remove('cardback-' + cb.id);
+    });
+    screen.classList.add('cardback-' + id);
+    var back = CARD_BACKS.find(function (cb) { return cb.id === id; });
+    if (back) {
+      screen.style.setProperty('--stock-color', back.stockColor);
+    }
+  }
+
+  function showCardBackPicker() {
+    var modal = document.getElementById('cardback-modal');
+    var container = document.getElementById('cardback-options');
+    var current = getCardBack();
+
+    container.innerHTML = '';
+    CARD_BACKS.forEach(function (cb) {
+      var opt = document.createElement('button');
+      opt.className = 'cardback-option' + (cb.id === current ? ' selected' : '');
+
+      var preview = document.createElement('div');
+      preview.className = 'cardback-preview preview-' + cb.id;
+
+      var label = document.createElement('span');
+      label.className = 'cardback-label';
+      label.textContent = cb.label;
+
+      opt.appendChild(preview);
+      opt.appendChild(label);
+
+      opt.onclick = function () {
+        setCardBack(cb.id);
+        modal.classList.remove('active');
+        render();
+      };
+
+      container.appendChild(opt);
+    });
+
+    modal.classList.add('active');
+    modal.onclick = function (e) {
+      if (e.target === modal) modal.classList.remove('active');
+    };
+  }
+
   const boardEl = document.getElementById('solitaire-board');
   const movesEl = document.getElementById('solitaire-moves');
   const timerEl = document.getElementById('solitaire-timer');
@@ -57,6 +123,8 @@
   function initSolitaire() {
     const diff = getDifficulty('solitaire');
     diffBtn.textContent = LABEL_MAP[diff] || 'Let';
+    applyCardBack(getCardBack());
+    document.getElementById('sol-cardback-btn').onclick = showCardBackPicker;
     startGame();
   }
 
