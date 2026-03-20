@@ -123,6 +123,124 @@
     };
   }
 
+  // ===== Hint system =====
+  var hintTimeout = null;
+
+  function findHint() {
+    // Priority 1: Tableau or waste card to foundation
+    if (waste.length > 0) {
+      var wCard = waste[waste.length - 1];
+      for (var f = 0; f < 4; f++) {
+        if (canMoveToFoundation(wCard, f)) {
+          return { from: { type: 'waste' }, to: { type: 'foundation', index: f } };
+        }
+      }
+    }
+    for (var c = 0; c < 7; c++) {
+      if (tableau[c].length === 0) continue;
+      var topCard = tableau[c][tableau[c].length - 1];
+      if (!topCard.faceUp) continue;
+      for (var f2 = 0; f2 < 4; f2++) {
+        if (canMoveToFoundation(topCard, f2)) {
+          return { from: { type: 'tableau', col: c, idx: tableau[c].length - 1 }, to: { type: 'foundation', index: f2 } };
+        }
+      }
+    }
+
+    // Priority 2: Tableau to tableau (prefer revealing face-down cards)
+    for (var c2 = 0; c2 < 7; c2++) {
+      if (tableau[c2].length === 0) continue;
+      // Find first face-up card in column
+      var startIdx = -1;
+      for (var i = 0; i < tableau[c2].length; i++) {
+        if (tableau[c2][i].faceUp) { startIdx = i; break; }
+      }
+      if (startIdx < 0) continue;
+      var card = tableau[c2][startIdx];
+      for (var t = 0; t < 7; t++) {
+        if (t === c2) continue;
+        if (canMoveToTableau(card, t)) {
+          // Skip moving a King from an empty-below position to another empty column (pointless)
+          if (card.value === 13 && startIdx === 0 && tableau[t].length === 0) continue;
+          return { from: { type: 'tableau', col: c2, idx: startIdx }, to: { type: 'tableau', col: t } };
+        }
+      }
+    }
+
+    // Priority 3: Waste to tableau
+    if (waste.length > 0) {
+      var wCard2 = waste[waste.length - 1];
+      for (var t2 = 0; t2 < 7; t2++) {
+        if (canMoveToTableau(wCard2, t2)) {
+          return { from: { type: 'waste' }, to: { type: 'tableau', col: t2 } };
+        }
+      }
+    }
+
+    // Priority 4: Draw from stock
+    if (stock.length > 0) {
+      return { from: { type: 'stock' }, to: { type: 'stock' } };
+    }
+
+    // Priority 5: Recycle stock
+    if (waste.length > 0 && stock.length === 0) {
+      return { from: { type: 'recycle' }, to: { type: 'recycle' } };
+    }
+
+    return null;
+  }
+
+  function showHint() {
+    if (gameOver || autoCompleting) return;
+
+    // Clear previous hint
+    clearHint();
+
+    var hint = findHint();
+    if (!hint) return;
+
+    // Highlight source
+    if (hint.from.type === 'waste') {
+      var wasteEl = boardEl.querySelector('.sol-pile[data-zone="waste"] .sol-card');
+      if (wasteEl) wasteEl.classList.add('sol-hint-glow');
+    } else if (hint.from.type === 'tableau') {
+      var cols = boardEl.querySelectorAll('.sol-column');
+      var col = cols[hint.from.col];
+      if (col) {
+        var cards = col.querySelectorAll('.sol-card');
+        for (var i = hint.from.idx; i < tableau[hint.from.col].length; i++) {
+          var ci = i - hint.from.idx;
+          // cards in DOM match face-down + face-up order
+          var cardIdx = i;
+          if (cards[cardIdx]) cards[cardIdx].classList.add('sol-hint-glow');
+        }
+      }
+    } else if (hint.from.type === 'stock' || hint.from.type === 'recycle') {
+      var stockEl = boardEl.querySelector('.sol-pile:first-child');
+      if (stockEl) stockEl.classList.add('sol-hint-glow');
+    }
+
+    // Highlight destination
+    if (hint.to.type === 'foundation') {
+      var fPiles = boardEl.querySelectorAll('.sol-pile[data-zone="foundation"]');
+      if (fPiles[hint.to.index]) fPiles[hint.to.index].classList.add('sol-hint-target');
+    } else if (hint.to.type === 'tableau') {
+      var tcols = boardEl.querySelectorAll('.sol-column');
+      if (tcols[hint.to.col]) tcols[hint.to.col].classList.add('sol-hint-target');
+    }
+
+    // Auto-clear after 3 seconds
+    hintTimeout = setTimeout(clearHint, 3000);
+  }
+
+  function clearHint() {
+    if (hintTimeout) { clearTimeout(hintTimeout); hintTimeout = null; }
+    var glows = boardEl.querySelectorAll('.sol-hint-glow, .sol-hint-target');
+    glows.forEach(function (el) {
+      el.classList.remove('sol-hint-glow', 'sol-hint-target');
+    });
+  }
+
   const boardEl = document.getElementById('solitaire-board');
   const movesEl = document.getElementById('solitaire-moves');
   const timerEl = document.getElementById('solitaire-timer');
@@ -155,6 +273,7 @@
     applyCardBack(getCardBack());
     applyDeckSide(getDeckSide());
     document.getElementById('sol-cardback-btn').onclick = showCardBackPicker;
+    document.getElementById('sol-hint-btn').onclick = showHint;
     startGame();
   }
 

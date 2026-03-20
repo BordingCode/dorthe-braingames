@@ -524,6 +524,26 @@
   z-index: 5;
 }
 
+/* ===== Hint highlights ===== */
+.sol-hint-glow {
+  animation: hintPulse 0.8s ease-in-out infinite alternate;
+  z-index: 10;
+}
+
+.sol-hint-target {
+  animation: hintTarget 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes hintPulse {
+  from { box-shadow: 0 0 6px 2px rgba(255, 220, 50, 0.6); }
+  to   { box-shadow: 0 0 14px 5px rgba(255, 220, 50, 0.9); }
+}
+
+@keyframes hintTarget {
+  from { box-shadow: inset 0 0 6px 2px rgba(100, 255, 100, 0.4); }
+  to   { box-shadow: inset 0 0 14px 5px rgba(100, 255, 100, 0.7); }
+}
+
 /* Stock depth effect */
 .sol-pile.has-stock {
   position: relative;
