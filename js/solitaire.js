@@ -917,6 +917,7 @@
   }
 
   function moveToFoundation(card, source, col, idx, f) {
+    if (!canMoveToFoundation(card, f)) return;
     var flipped = false;
 
     if (source === 'waste') {
@@ -949,7 +950,9 @@
   }
 
   function moveWasteToTableau(targetCol) {
-    var card = waste.pop();
+    var card = waste[waste.length - 1];
+    if (!canMoveToTableau(card, targetCol)) return;
+    waste.pop();
     tableau[targetCol].push(card);
     moveHistory.push({ type: 'wasteToTableau', targetCol: targetCol, card: card });
     moves++;
@@ -958,7 +961,9 @@
   }
 
   function moveFoundationToTableau(f, targetCol) {
-    var card = foundations[f].pop();
+    var card = foundations[f][foundations[f].length - 1];
+    if (!canMoveToTableau(card, targetCol)) return;
+    foundations[f].pop();
     tableau[targetCol].push(card);
     moveHistory.push({ type: 'foundationToTableau', f: f, targetCol: targetCol, card: card });
     moves++;
@@ -967,6 +972,8 @@
   }
 
   function moveTableauStack(fromCol, fromIdx, toCol) {
+    var card = tableau[fromCol][fromIdx];
+    if (!canMoveToTableau(card, toCol)) return;
     var cards = tableau[fromCol].splice(fromIdx);
     var flipped = false;
 
