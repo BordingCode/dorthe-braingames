@@ -727,6 +727,7 @@
 
   function drawFromStock() {
     if (gameOver || autoCompleting || stock.length === 0) return;
+    clearSelection();
 
     var drawn = [];
     for (var i = 0; i < drawCount && stock.length > 0; i++) {
@@ -744,6 +745,7 @@
 
   function recycleStock() {
     if (gameOver || autoCompleting || waste.length === 0) return;
+    clearSelection();
 
     moveHistory.push({ type: 'recycle', count: waste.length });
 
@@ -814,6 +816,15 @@
         for (var t2 = 0; t2 < 7; t2++) {
           if (canMoveToTableau(card, t2)) {
             moveFoundationToTableau(col, t2);
+            return;
+          }
+        }
+      } else if (source === 'tableau') {
+        // Only auto-move single top card to another tableau column
+        for (var t3 = 0; t3 < 7; t3++) {
+          if (t3 === col) continue;
+          if (canMoveToTableau(card, t3)) {
+            moveTableauStack(col, idx, t3);
             return;
           }
         }
@@ -910,6 +921,8 @@
 
     if (source === 'waste') {
       waste.pop();
+    } else if (source === 'foundation') {
+      foundations[col].pop();
     } else {
       tableau[col].splice(idx, 1);
       if (tableau[col].length > 0 && !tableau[col][tableau[col].length - 1].faceUp) {
