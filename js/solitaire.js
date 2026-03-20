@@ -769,6 +769,9 @@
     els.forEach(function (el) { el.classList.remove('sol-selected'); });
   }
 
+  // Double-tap detection
+  var lastTap = { source: null, col: null, idx: null, time: 0 };
+
   function handleCardClick(source, col, idx) {
     if (gameOver || autoCompleting) return;
 
@@ -781,16 +784,13 @@
       card = tableau[col][idx];
     }
 
-    // If something is already selected, try to move it here
-    if (selected) {
-      var moved = tryMoveSelected(source, col, idx);
-      clearSelection();
-      if (moved) return;
-      // If move failed, just select the tapped card instead (no auto-move)
-    }
+    // Double-tap detection: auto-move on double tap
+    var now = Date.now();
+    var isDoubleTap = (source === lastTap.source && col === lastTap.col && idx === lastTap.idx && now - lastTap.time < 400);
+    lastTap = { source: source, col: col, idx: idx, time: now };
 
-    // Auto-move ONLY when nothing was previously selected, and ONLY for the single top card
-    if (!selected) {
+    if (isDoubleTap) {
+      clearSelection();
       var isTopCard = source === 'waste' ||
         source === 'foundation' ||
         (source === 'tableau' && idx === tableau[col].length - 1);
@@ -805,7 +805,7 @@
             }
           }
         }
-        // Try tableau (single card only — not from tableau to avoid moving stacks)
+        // Try tableau
         if (source === 'waste') {
           for (var t = 0; t < 7; t++) {
             if (canMoveToTableau(card, t)) {
@@ -822,6 +822,14 @@
           }
         }
       }
+      return;
+    }
+
+    // Single tap: if something is already selected, try to move it here
+    if (selected) {
+      var moved = tryMoveSelected(source, col, idx);
+      clearSelection();
+      if (moved) return;
     }
 
     // Select for manual move (tap destination next)
