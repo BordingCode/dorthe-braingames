@@ -25,6 +25,12 @@
   justify-content: space-between;
 }
 
+/* Deck on right side */
+.deck-right .sol-top-row,
+.deck-right .sol-tableau {
+  flex-direction: row-reverse;
+}
+
 .sol-pile {
   position: relative;
   flex: 1;
@@ -301,13 +307,13 @@
   background: rgba(255, 255, 255, 0.15);
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 20px;
+  padding: 6px 12px;
+  font-size: 28px;
   cursor: pointer;
   color: #fff;
   transition: background 0.15s;
-  min-height: 36px;
-  min-width: 36px;
+  min-height: 44px;
+  min-width: 44px;
   margin-left: auto;
   line-height: 1;
 }
@@ -423,6 +429,34 @@
   font-size: 12px;
   color: var(--text-muted, #666);
   font-weight: 600;
+}
+
+/* ===== Deck side toggle ===== */
+.deck-side-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.deck-side-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 2px solid var(--border, #ccc);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.deck-side-btn:active {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.deck-side-btn.selected {
+  border-color: var(--primary, #2d5a3a);
+  background: rgba(45, 90, 58, 0.08);
+  color: var(--primary, #2d5a3a);
 }
 
 /* ===== Empty pile ===== */

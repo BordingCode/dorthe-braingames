@@ -59,6 +59,21 @@
     }
   }
 
+  function getDeckSide() {
+    return localStorage.getItem('bg_sol_deckside') || 'left';
+  }
+
+  function setDeckSide(side) {
+    localStorage.setItem('bg_sol_deckside', side);
+    applyDeckSide(side);
+  }
+
+  function applyDeckSide(side) {
+    var screen = document.getElementById('screen-solitaire');
+    screen.classList.remove('deck-left', 'deck-right');
+    screen.classList.add('deck-' + side);
+  }
+
   function showCardBackPicker() {
     var modal = document.getElementById('cardback-modal');
     var container = document.getElementById('cardback-options');
@@ -86,6 +101,20 @@
       };
 
       container.appendChild(opt);
+    });
+
+    // Deck side buttons
+    var currentSide = getDeckSide();
+    var sideButtons = document.querySelectorAll('#deck-side-toggle .deck-side-btn');
+    sideButtons.forEach(function (btn) {
+      var side = btn.getAttribute('data-side');
+      btn.className = 'deck-side-btn' + (side === currentSide ? ' selected' : '');
+      btn.onclick = function () {
+        setDeckSide(side);
+        sideButtons.forEach(function (b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        render();
+      };
     });
 
     modal.classList.add('active');
@@ -124,6 +153,7 @@
     const diff = getDifficulty('solitaire');
     diffBtn.textContent = LABEL_MAP[diff] || 'Let';
     applyCardBack(getCardBack());
+    applyDeckSide(getDeckSide());
     document.getElementById('sol-cardback-btn').onclick = showCardBackPicker;
     startGame();
   }
