@@ -524,6 +524,13 @@
   z-index: 5;
 }
 
+/* ===== Selected card highlight ===== */
+.sol-selected {
+  box-shadow: 0 0 8px 3px rgba(100, 180, 255, 0.8);
+  position: relative;
+  z-index: 10;
+}
+
 /* ===== Hint highlights ===== */
 .sol-hint-glow {
   animation: hintPulse 0.8s ease-in-out infinite alternate;

@@ -366,11 +366,17 @@
       fPile.setAttribute('data-f', String(f));
       if (foundations[f].length > 0) {
         const card = renderCard(foundations[f][foundations[f].length - 1], true);
+        (function (fIdx) {
+          card.addEventListener('click', function () { handleCardClick('foundation', fIdx, 0); });
+        })(f);
         fPile.appendChild(card);
       } else {
         const empty = createEmpty();
         empty.classList.add('foundation');
         empty.setAttribute('data-suit', foundationSuits[f]);
+        (function (fIdx) {
+          empty.addEventListener('click', function () { handleEmptyClick('foundation', fIdx); });
+        })(f);
         fPile.appendChild(empty);
       }
       topRow.appendChild(fPile);
@@ -389,7 +395,11 @@
       column.setAttribute('data-col', String(col));
 
       if (tableau[col].length === 0) {
-        column.appendChild(createEmpty());
+        var emptySlot = createEmpty();
+        (function (c) {
+          emptySlot.addEventListener('click', function () { handleEmptyClick('tableau', c); });
+        })(col);
+        column.appendChild(emptySlot);
       }
 
       for (let idx = 0; idx < tableau[col].length; idx++) {
@@ -748,41 +758,100 @@
     render();
   }
 
+  // ===== Tap-to-select system =====
+  var selected = null; // { source, col, idx, card }
+
+  function clearSelection() {
+    selected = null;
+    var els = boardEl.querySelectorAll('.sol-selected');
+    els.forEach(function (el) { el.classList.remove('sol-selected'); });
+  }
+
   function handleCardClick(source, col, idx) {
     if (gameOver || autoCompleting) return;
 
     var card;
     if (source === 'waste') {
       card = waste[waste.length - 1];
+    } else if (source === 'foundation') {
+      card = foundations[col][foundations[col].length - 1];
     } else {
       card = tableau[col][idx];
     }
 
-    // Foundation moves only for top card
-    var isTopCard = source === 'waste' || idx === tableau[col].length - 1;
-    if (isTopCard) {
-      for (var f = 0; f < 4; f++) {
-        if (canMoveToFoundation(card, f)) {
-          moveToFoundation(card, source, col, idx, f);
-          return;
+    // If something is already selected, try to move it here
+    if (selected) {
+      var moved = tryMoveSelected(source, col, idx);
+      clearSelection();
+      if (moved) return;
+      // If move failed, fall through to select the tapped card instead
+    }
+
+    // Select this card
+    clearSelection();
+    selected = { source: source, col: col, idx: idx, card: card };
+    highlightSelected(source, col, idx);
+  }
+
+  function handleEmptyClick(zone, col) {
+    if (gameOver || autoCompleting || !selected) return;
+
+    var moved = false;
+    if (zone === 'tableau') {
+      moved = tryMoveSelected('tableau', col, 0);
+    } else if (zone === 'foundation') {
+      moved = tryMoveSelected('foundation', col, 0);
+    }
+    clearSelection();
+    if (!moved) return;
+  }
+
+  function tryMoveSelected(targetSource, targetCol, targetIdx) {
+    var s = selected;
+
+    // Move to foundation
+    if (targetSource === 'foundation') {
+      if (canMoveToFoundation(s.card, targetCol)) {
+        moveToFoundation(s.card, s.source, s.col, s.idx, targetCol);
+        return true;
+      }
+      return false;
+    }
+
+    // Move to tableau
+    if (targetSource === 'tableau') {
+      if (canMoveToTableau(s.card, targetCol)) {
+        if (s.source === 'waste') {
+          moveWasteToTableau(targetCol);
+        } else if (s.source === 'foundation') {
+          moveFoundationToTableau(s.col, targetCol);
+        } else {
+          moveTableauStack(s.col, s.idx, targetCol);
         }
+        return true;
       }
     }
 
-    // Tableau moves
+    return false;
+  }
+
+  function highlightSelected(source, col, idx) {
     if (source === 'waste') {
-      for (var t = 0; t < 7; t++) {
-        if (canMoveToTableau(card, t)) {
-          moveWasteToTableau(t);
-          return;
-        }
+      var wasteCard = boardEl.querySelector('.sol-pile[data-zone="waste"] .sol-card');
+      if (wasteCard) wasteCard.classList.add('sol-selected');
+    } else if (source === 'foundation') {
+      var fPiles = boardEl.querySelectorAll('.sol-pile[data-zone="foundation"]');
+      if (fPiles[col]) {
+        var fCard = fPiles[col].querySelector('.sol-card');
+        if (fCard) fCard.classList.add('sol-selected');
       }
-    } else {
-      for (var t2 = 0; t2 < 7; t2++) {
-        if (t2 === col) continue;
-        if (canMoveToTableau(card, t2)) {
-          moveTableauStack(col, idx, t2);
-          return;
+    } else if (source === 'tableau') {
+      var cols = boardEl.querySelectorAll('.sol-column');
+      var colEl = cols[col];
+      if (colEl) {
+        var cards = colEl.querySelectorAll('.sol-card');
+        for (var i = idx; i < tableau[col].length; i++) {
+          if (cards[i]) cards[i].classList.add('sol-selected');
         }
       }
     }
@@ -836,6 +905,15 @@
     var card = waste.pop();
     tableau[targetCol].push(card);
     moveHistory.push({ type: 'wasteToTableau', targetCol: targetCol, card: card });
+    moves++;
+    movesEl.textContent = moves;
+    render();
+  }
+
+  function moveFoundationToTableau(f, targetCol) {
+    var card = foundations[f].pop();
+    tableau[targetCol].push(card);
+    moveHistory.push({ type: 'foundationToTableau', f: f, targetCol: targetCol, card: card });
     moves++;
     movesEl.textContent = moves;
     render();
@@ -905,6 +983,11 @@
         for (var k = 0; k < moved.length; k++) {
           tableau[move.fromCol].push(moved[k]);
         }
+        break;
+
+      case 'foundationToTableau':
+        var ftCard = tableau[move.targetCol].pop();
+        foundations[move.f].push(ftCard);
         break;
     }
 
