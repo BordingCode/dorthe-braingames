@@ -214,6 +214,10 @@
       refresh.addEventListener('click', recycleStock);
       stockPile.appendChild(refresh);
     }
+    var stockCount = document.createElement('div');
+    stockCount.className = 'sol-stock-count';
+    stockCount.textContent = stock.length;
+    stockPile.appendChild(stockCount);
     topRow.appendChild(stockPile);
 
     // Waste

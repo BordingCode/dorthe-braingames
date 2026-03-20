@@ -505,6 +505,25 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* Stock card count */
+.sol-stock-count {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  border-radius: 10px;
+  padding: 0 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
 /* Stock depth effect */
 .sol-pile.has-stock {
   position: relative;
