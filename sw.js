@@ -1,8 +1,9 @@
-const CACHE_NAME = 'brain-games-v14';
+const CACHE_NAME = 'brain-games-v15';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './Jans_fort.jpeg',
   './css/shared.css',
   './css/home.css',
   './css/lightsout.css',

@@ -342,6 +342,12 @@ function showResult(won, statsHtml, game) {
   overlay.querySelector('.result-emoji').textContent = won ? '🎉' : '💪';
   overlay.querySelector('.result-title').textContent = won ? 'Tillykke!' : 'Godt forsøg!';
   overlay.querySelector('.result-stats').innerHTML = statsHtml;
+  var quotePhoto = overlay.querySelector('.result-quote-photo');
+  if (quote.author === 'Jan') {
+    quotePhoto.classList.add('visible');
+  } else {
+    quotePhoto.classList.remove('visible');
+  }
   overlay.querySelector('.result-quote').textContent = '«' + quote.text + '»';
   overlay.querySelector('.result-quote-author').textContent = '— ' + quote.author;
 

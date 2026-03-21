@@ -24,6 +24,7 @@
   let timer = null;
   let gameOver = false;
   let autoCompleting = false;
+  let lastRecycleSnapshot = null;
 
   // Drag state
   let drag = null;
@@ -121,6 +122,19 @@
     modal.onclick = function (e) {
       if (e.target === modal) modal.classList.remove('active');
     };
+  }
+
+  // ===== Stuck detection =====
+
+  function getGameSnapshot() {
+    var snap = '';
+    for (var f = 0; f < 4; f++) {
+      snap += foundations[f].map(function (c) { return c.suit + c.rank; }).join(',') + '|';
+    }
+    for (var c = 0; c < 7; c++) {
+      snap += tableau[c].map(function (cd) { return (cd.faceUp ? 'U' : 'D') + cd.suit + cd.rank; }).join(',') + '|';
+    }
+    return snap;
   }
 
   // ===== Hint system =====
@@ -284,6 +298,7 @@
     moveHistory = [];
     gameOver = false;
     autoCompleting = false;
+    lastRecycleSnapshot = null;
     drag = null;
     movesEl.textContent = '0';
 
@@ -747,6 +762,21 @@
     if (gameOver || autoCompleting || waste.length === 0) return;
     clearSelection();
 
+    // Check if game is stuck (board unchanged since last recycle)
+    var snap = getGameSnapshot();
+    if (lastRecycleSnapshot !== null && snap === lastRecycleSnapshot) {
+      gameOver = true;
+      timer.stop();
+      Stats.save('solitaire', {
+        played: (Stats.get('solitaire').played || 0) + 1,
+      });
+      setTimeout(function () {
+        showResult(false, 'Ingen flere træk mulige<br>Træk: ' + moves + '<br>Tid: ' + timer.getFormatted(), 'solitaire');
+      }, 300);
+      return;
+    }
+    lastRecycleSnapshot = snap;
+
     moveHistory.push({ type: 'recycle', count: waste.length });
 
     while (waste.length > 0) {
@@ -964,6 +994,7 @@
 
   function moveToFoundation(card, source, col, idx, f) {
     if (!canMoveToFoundation(card, f)) return;
+    lastRecycleSnapshot = null;
     var flipped = false;
 
     if (source === 'waste') {
@@ -998,6 +1029,7 @@
   function moveWasteToTableau(targetCol) {
     var card = waste[waste.length - 1];
     if (!canMoveToTableau(card, targetCol)) return;
+    lastRecycleSnapshot = null;
     waste.pop();
     tableau[targetCol].push(card);
     moveHistory.push({ type: 'wasteToTableau', targetCol: targetCol, card: card });
@@ -1009,6 +1041,7 @@
   function moveFoundationToTableau(f, targetCol) {
     var card = foundations[f][foundations[f].length - 1];
     if (!canMoveToTableau(card, targetCol)) return;
+    lastRecycleSnapshot = null;
     foundations[f].pop();
     tableau[targetCol].push(card);
     moveHistory.push({ type: 'foundationToTableau', f: f, targetCol: targetCol, card: card });
@@ -1020,6 +1053,7 @@
   function moveTableauStack(fromCol, fromIdx, toCol) {
     var card = tableau[fromCol][fromIdx];
     if (!canMoveToTableau(card, toCol)) return;
+    lastRecycleSnapshot = null;
     var cards = tableau[fromCol].splice(fromIdx);
     var flipped = false;
 
