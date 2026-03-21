@@ -491,6 +491,84 @@ function showResult(won, statsHtml, game) {
 
 window.gameRestarters = {};
 
+/* ----- Home Screen Rendering ----- */
+
+const GAME_DEFS = [
+  { id: 'lightsout', icon: '💡', name: 'Lights Out', desc: 'Sluk alle lysene', init: 'initLightsOut' },
+  { id: 'memory', icon: '🃏', name: 'Vendespil', desc: 'Find alle par', init: 'initMemory' },
+  { id: 'minesweeper', icon: '💣', name: 'Minerydder', desc: 'Undgå minerne', init: 'initMinesweeper' },
+  { id: 'wordsearch', icon: '🔤', name: 'Ordsjagt', desc: 'Find de skjulte ord', init: 'initWordSearch' },
+  { id: 'nback', icon: '🧠', name: 'N-Back', desc: 'Træn din hukommelse', init: 'initNBack' },
+  { id: 'solitaire', icon: '♠️', name: 'Kabale', desc: 'Klassisk kortspil', init: 'initSolitaire' },
+];
+
+function formatTimeAgo(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Lige nu';
+  if (mins < 60) return mins + ' min siden';
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + (hours === 1 ? ' time' : ' timer') + ' siden';
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'I går';
+  if (days < 7) return days + ' dage siden';
+  const weeks = Math.floor(days / 7);
+  return weeks + (weeks === 1 ? ' uge' : ' uger') + ' siden';
+}
+
+function formatTime(ms) {
+  if (!ms) return '';
+  const sec = Math.floor(ms / 1000);
+  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+}
+
+function renderHomeScreen() {
+  const grid = document.querySelector('.game-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  GAME_DEFS.forEach((game) => {
+    const stats = Stats.get(game.id);
+    const btn = document.createElement('button');
+    btn.className = 'game-card';
+    btn.onclick = () => { goScreen(game.id); window[game.init](); };
+
+    let statLine = '';
+    if (stats.lastPlayed) {
+      const parts = [];
+      if (stats.won) parts.push('Vundet: ' + stats.won);
+      if (stats.bestTime) parts.push('Bedste: ' + formatTime(stats.bestTime));
+      statLine = '<span class="game-stat">' +
+        formatTimeAgo(stats.lastPlayed) +
+        (parts.length ? ' · ' + parts.join(' · ') : '') +
+        '</span>';
+    }
+
+    btn.innerHTML =
+      '<span class="game-icon">' + game.icon + '</span>' +
+      '<span class="game-name">' + game.name + '</span>' +
+      '<span class="game-desc">' + game.desc + '</span>' +
+      statLine;
+
+    grid.appendChild(btn);
+  });
+
+  // Stats page link
+  const statsLink = document.createElement('button');
+  statsLink.className = 'stats-link-btn';
+  statsLink.innerHTML = '📊 Se dine resultater';
+  statsLink.onclick = () => { goScreen('stats'); renderStatsPage(); };
+  grid.parentElement.appendChild(statsLink);
+}
+
+// Re-render home screen stats when returning home
+const _originalGoHome = goHome;
+goHome = function () {
+  _originalGoHome();
+  renderHomeScreen();
+};
+
 /* ----- PWA Registration ----- */
 
 if ('serviceWorker' in navigator) {
@@ -498,3 +576,6 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+
+// Initial home render
+document.addEventListener('DOMContentLoaded', renderHomeScreen);

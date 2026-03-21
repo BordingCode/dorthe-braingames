@@ -27,38 +27,7 @@
       <h1>Dorthe's Brain Games</h1>
       <p class="subtitle">Vælg et spil og hav det sjovt!</p>
     </div>
-    <div class="game-grid">
-      <button class="game-card" onclick="goScreen('lightsout'); initLightsOut();">
-        <span class="game-icon">💡</span>
-        <span class="game-name">Lights Out</span>
-        <span class="game-desc">Sluk alle lysene</span>
-      </button>
-      <button class="game-card" onclick="goScreen('memory'); initMemory();">
-        <span class="game-icon">🃏</span>
-        <span class="game-name">Vendespil</span>
-        <span class="game-desc">Find alle par</span>
-      </button>
-      <button class="game-card" onclick="goScreen('minesweeper'); initMinesweeper();">
-        <span class="game-icon">💣</span>
-        <span class="game-name">Minerydder</span>
-        <span class="game-desc">Undgå minerne</span>
-      </button>
-      <button class="game-card" onclick="goScreen('wordsearch'); initWordSearch();">
-        <span class="game-icon">🔤</span>
-        <span class="game-name">Ordsjagt</span>
-        <span class="game-desc">Find de skjulte ord</span>
-      </button>
-      <button class="game-card" onclick="goScreen('nback'); initNBack();">
-        <span class="game-icon">🧠</span>
-        <span class="game-name">N-Back</span>
-        <span class="game-desc">Træn din hukommelse</span>
-      </button>
-      <button class="game-card" onclick="goScreen('solitaire'); initSolitaire();">
-        <span class="game-icon">♠️</span>
-        <span class="game-name">Kabale</span>
-        <span class="game-desc">Klassisk kortspil</span>
-      </button>
-    </div>
+    <div class="game-grid"></div>
   </div>
 
   <!-- ===== Lights Out ===== -->
@@ -166,6 +135,16 @@
     <div class="game-area">
       <div id="solitaire-board"></div>
     </div>
+  </div>
+
+  <!-- ===== Stats / Results ===== -->
+  <div id="screen-stats" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Mine resultater</span>
+      <span></span>
+    </div>
+    <div class="stats-content" id="stats-content"></div>
   </div>
 
   <!-- ===== Card Back Picker Modal ===== -->
