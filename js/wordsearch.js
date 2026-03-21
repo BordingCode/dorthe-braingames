@@ -314,9 +314,10 @@
 
         if (foundWords.size === words.length) {
           timer.stop();
-          Stats.save('wordsearch', {
-            played: (Stats.get('wordsearch').played || 0) + 1,
-            completed: (Stats.get('wordsearch').completed || 0) + 1,
+          Stats.record('wordsearch', {
+            won: true,
+            time: timer.getElapsed(),
+            difficulty: getDifficulty('wordsearch'),
           });
           setTimeout(() => {
             showResult(true, 'Alle ord fundet!<br>Tid: ' + timer.getFormatted(), 'wordsearch');

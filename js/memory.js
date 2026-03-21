@@ -151,9 +151,10 @@
           if (matchedCount === totalPairs) {
             locked = true;
             timer.stop();
-            Stats.save('memory', {
-              played: (Stats.get('memory').played || 0) + 1,
-              won: (Stats.get('memory').won || 0) + 1,
+            Stats.record('memory', {
+              won: true,
+              time: timer.getElapsed(),
+              difficulty: getDifficulty('memory'),
             });
             setTimeout(() => {
               showResult(true, 'Træk: ' + moves + '<br>Tid: ' + timer.getFormatted(), 'memory');

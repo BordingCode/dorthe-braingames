@@ -142,9 +142,10 @@
         }, i * 60);
       });
 
-      Stats.save('lightsout', {
-        played: (Stats.get('lightsout').played || 0) + 1,
-        won: (Stats.get('lightsout').won || 0) + 1,
+      Stats.record('lightsout', {
+        won: true,
+        time: timer.getElapsed(),
+        difficulty: getDifficulty('lightsout'),
       });
 
       setTimeout(() => {

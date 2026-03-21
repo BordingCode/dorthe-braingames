@@ -198,12 +198,14 @@
     const hits = results.filter((r) => r.isMatch && r.responded).length;
     const totalMatches = results.filter((r) => r.isMatch).length;
 
-    Stats.save('nback', {
-      played: (Stats.get('nback').played || 0) + 1,
-      bestAccuracy: Math.max(Stats.get('nback').bestAccuracy || 0, accuracy),
-    });
-
     const won = accuracy >= getConfig().winThreshold;
+
+    Stats.record('nback', {
+      won,
+      time: 0,
+      difficulty: nLevel.toString(),
+      extra: { bestAccuracy: Math.max(Stats.get('nback').bestAccuracy || 0, accuracy) },
+    });
 
     setTimeout(() => {
       showResult(

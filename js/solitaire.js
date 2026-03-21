@@ -768,8 +768,10 @@
     if (lastRecycleSnapshot !== null && snap === lastRecycleSnapshot) {
       gameOver = true;
       timer.stop();
-      Stats.save('solitaire', {
-        played: (Stats.get('solitaire').played || 0) + 1,
+      Stats.record('solitaire', {
+        won: false,
+        time: timer.getElapsed(),
+        difficulty: getDifficulty('solitaire'),
       });
       setTimeout(function () {
         showResult(false, 'Ingen flere træk mulige<br>Træk: ' + moves + '<br>Tid: ' + timer.getFormatted(), 'solitaire');
@@ -1200,9 +1202,10 @@
       autoCompleting = false;
       timer.stop();
 
-      Stats.save('solitaire', {
-        played: (Stats.get('solitaire').played || 0) + 1,
-        won: (Stats.get('solitaire').won || 0) + 1,
+      Stats.record('solitaire', {
+        won: true,
+        time: timer.getElapsed(),
+        difficulty: getDifficulty('solitaire'),
       });
 
       setTimeout(function () {

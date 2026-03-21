@@ -53,6 +53,8 @@ function showDifficultyModal(game, options, onSelect) {
 
 /* ----- Stats ----- */
 
+const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire'];
+
 const Stats = {
   get(game) {
     try {
@@ -73,7 +75,103 @@ const Stats = {
     const stats = this.get(game);
     stats[key] = (stats[key] || 0) + 1;
     this.save(game, stats);
-  }
+  },
+
+  record(game, { won, time, difficulty, extra }) {
+    const stats = this.get(game);
+    stats.played = (stats.played || 0) + 1;
+    if (won) stats.won = (stats.won || 0) + 1;
+    stats.lastPlayed = Date.now();
+
+    // Best time (only on wins with time)
+    if (won && time > 0) {
+      stats.bestTime = stats.bestTime ? Math.min(stats.bestTime, time) : time;
+    }
+    if (time > 0) {
+      stats.totalTime = (stats.totalTime || 0) + time;
+    }
+
+    // Merge extra stats
+    if (extra) Object.assign(stats, extra);
+
+    // History (last 30 sessions)
+    if (!stats.history) stats.history = [];
+    stats.history.push({
+      date: new Date().toISOString().slice(0, 10),
+      won: !!won,
+      time: time || 0,
+      difficulty: difficulty || 'easy',
+    });
+    if (stats.history.length > 30) stats.history = stats.history.slice(-30);
+
+    // Update streaks
+    this._updateStreaks(stats);
+
+    localStorage.setItem('bg_stats_' + game, JSON.stringify(stats));
+  },
+
+  _updateStreaks(stats) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (stats._lastStreakDate === today) return;
+
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (!stats.streaks) stats.streaks = { current: 0, best: 0 };
+
+    if (stats._lastStreakDate === yesterday) {
+      stats.streaks.current++;
+    } else if (stats._lastStreakDate !== today) {
+      stats.streaks.current = 1;
+    }
+    stats.streaks.best = Math.max(stats.streaks.best, stats.streaks.current);
+    stats._lastStreakDate = today;
+  },
+
+  getAll() {
+    const all = {};
+    ALL_GAMES.forEach((g) => { all[g] = this.get(g); });
+    return all;
+  },
+
+  getGlobalStreak() {
+    const all = this.getAll();
+    const dates = new Set();
+    Object.values(all).forEach((s) => {
+      if (s.history) s.history.forEach((h) => dates.add(h.date));
+    });
+    if (dates.size === 0) return { current: 0, best: 0 };
+
+    const sorted = [...dates].sort().reverse();
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    // Current streak
+    let current = 0;
+    let checkDate = sorted[0] === today || sorted[0] === yesterday ? sorted[0] : null;
+    if (checkDate) {
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i] === checkDate) {
+          current++;
+          checkDate = new Date(new Date(checkDate).getTime() - 86400000).toISOString().slice(0, 10);
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Best streak
+    let best = 1, streak = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      const diff = new Date(sorted[i - 1]).getTime() - new Date(sorted[i]).getTime();
+      if (diff === 86400000) {
+        streak++;
+        best = Math.max(best, streak);
+      } else {
+        streak = 1;
+      }
+    }
+
+    return { current, best: Math.max(best, current) };
+  },
 };
 
 /* ----- Timer ----- */

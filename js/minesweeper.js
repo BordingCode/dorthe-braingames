@@ -224,8 +224,10 @@
       const idx = r * cols + c;
       if (boardEl.children[idx]) boardEl.children[idx].className = 'ms-cell mine-hit';
 
-      Stats.save('minesweeper', {
-        played: (Stats.get('minesweeper').played || 0) + 1,
+      Stats.record('minesweeper', {
+        won: false,
+        time: timer.getElapsed(),
+        difficulty: getDifficulty('minesweeper'),
       });
 
       setTimeout(() => {
@@ -243,9 +245,10 @@
       gameOver = true;
       timer.stop();
 
-      Stats.save('minesweeper', {
-        played: (Stats.get('minesweeper').played || 0) + 1,
-        won: (Stats.get('minesweeper').won || 0) + 1,
+      Stats.record('minesweeper', {
+        won: true,
+        time: timer.getElapsed(),
+        difficulty: getDifficulty('minesweeper'),
       });
 
       setTimeout(() => {
