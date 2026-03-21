@@ -1,0 +1,174 @@
+/* ===== Sudoku ===== */
+
+#sudoku-board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  --board-size: min(calc(100vw - 24px), calc(100dvh - 300px), 400px);
+  width: var(--board-size);
+  background: var(--text);
+  gap: 1px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.su-cell {
+  aspect-ratio: 1;
+  border: none;
+  background: var(--surface);
+  font-size: clamp(16px, 4vw, 24px);
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+  position: relative;
+  line-height: 1;
+}
+
+/* 3x3 box borders */
+.su-cell[data-col="2"],
+.su-cell[data-col="5"] {
+  border-right: 2px solid var(--text);
+}
+.su-cell[data-row="2"],
+.su-cell[data-row="5"] {
+  border-bottom: 2px solid var(--text);
+}
+
+.su-cell.given {
+  font-weight: 800;
+  color: var(--text);
+  background: var(--surface-alt);
+}
+
+.su-cell.user-filled {
+  color: var(--primary);
+}
+
+.su-cell.selected {
+  background: #d5e8da;
+}
+
+.su-cell.same-num {
+  background: #e2ede5;
+}
+
+.su-cell.error-flash {
+  animation: suError 0.5s ease-out;
+}
+
+@keyframes suError {
+  0% { background: #f8d7d5; }
+  100% { background: var(--surface); }
+}
+
+.su-cell.row-col-highlight {
+  background: #eef3f0;
+}
+
+.su-cell.selected.row-col-highlight {
+  background: #d5e8da;
+}
+
+/* Pencil marks */
+.su-cell .pencil-marks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+}
+
+.su-cell .pencil-marks span {
+  font-size: clamp(7px, 1.8vw, 10px);
+  font-weight: 400;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Complete row/col/box flash */
+.su-cell.complete-flash {
+  animation: suComplete 0.4s ease-out;
+}
+
+@keyframes suComplete {
+  0% { background: #c8e6c9; }
+  100% { background: var(--surface); }
+}
+
+/* Number pad */
+#sudoku-numpad {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: var(--board-size);
+  width: 100%;
+}
+
+.su-num-btn {
+  width: clamp(36px, 8vw, 48px);
+  height: clamp(36px, 8vw, 48px);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-on-primary);
+  font-size: clamp(16px, 4vw, 22px);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.su-num-btn:active {
+  transform: scale(0.9);
+  background: var(--primary-dark);
+}
+
+.su-num-btn.completed {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.su-num-btn.eraser {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+.su-num-btn.eraser:active {
+  background: #ddd5c8;
+}
+
+/* Pencil mode button */
+#sudoku-pencil-btn.active {
+  background: var(--info);
+  border-color: var(--info);
+  color: #fff;
+}
+
+@media (min-width: 768px) {
+  #sudoku-board {
+    --board-size: min(calc(100vw - 64px), calc(100dvh - 320px), 450px);
+  }
+
+  .su-cell {
+    font-size: clamp(18px, 3vw, 26px);
+  }
+
+  .su-num-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+  }
+}
