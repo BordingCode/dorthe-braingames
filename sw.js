@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v15';
+const CACHE_NAME = 'brain-games-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,8 @@ const ASSETS = [
   './css/wordsearch.css',
   './css/nback.css',
   './css/solitaire.css',
+  './css/sudoku.css',
+  './css/stats.css',
   './js/shared.js',
   './js/lightsout.js',
   './js/memory.js',
@@ -19,6 +21,7 @@ const ASSETS = [
   './js/wordsearch.js',
   './js/nback.js',
   './js/solitaire.js',
+  './js/sudoku.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/favicon.svg'

@@ -555,12 +555,15 @@ function renderHomeScreen() {
     grid.appendChild(btn);
   });
 
-  // Stats page link
-  const statsLink = document.createElement('button');
-  statsLink.className = 'stats-link-btn';
-  statsLink.innerHTML = '📊 Se dine resultater';
-  statsLink.onclick = () => { goScreen('stats'); renderStatsPage(); };
-  grid.parentElement.appendChild(statsLink);
+  // Stats page link (avoid duplicating)
+  let existingLink = grid.parentElement.querySelector('.stats-link-btn');
+  if (!existingLink) {
+    const statsLink = document.createElement('button');
+    statsLink.className = 'stats-link-btn';
+    statsLink.innerHTML = '📊 Se dine resultater';
+    statsLink.onclick = () => { goScreen('stats'); renderStatsPage(); };
+    grid.parentElement.appendChild(statsLink);
+  }
 }
 
 // Re-render home screen stats when returning home
@@ -570,6 +573,191 @@ goHome = function () {
   renderHomeScreen();
 };
 
+/* ----- Achievements ----- */
+
+const ACHIEVEMENTS = [
+  { id: 'first_win', icon: '🏆', title: 'Første sejr', desc: 'Vind dit første spil',
+    check: (all) => Object.values(all).some(s => s.won > 0) },
+  { id: 'play_5', icon: '🎮', title: 'Ivrig spiller', desc: 'Spil 5 gange i alt',
+    check: (all) => Object.values(all).reduce((sum, s) => sum + (s.played || 0), 0) >= 5 },
+  { id: 'win_10', icon: '👑', title: 'Ti sejre', desc: 'Vind 10 spil i alt',
+    check: (all) => Object.values(all).reduce((sum, s) => sum + (s.won || 0), 0) >= 10 },
+  { id: 'win_25', icon: '💎', title: '25 sejre!', desc: 'Vind 25 spil i alt',
+    check: (all) => Object.values(all).reduce((sum, s) => sum + (s.won || 0), 0) >= 25 },
+  { id: 'all_games', icon: '🌟', title: 'Allrounder', desc: 'Spil alle spil mindst én gang',
+    check: (all) => ALL_GAMES.every(g => all[g] && all[g].played > 0) },
+  { id: 'streak_3', icon: '🔥', title: 'På stribe!', desc: 'Spil 3 dage i træk',
+    check: (all, streak) => streak.current >= 3 || streak.best >= 3 },
+  { id: 'streak_7', icon: '💪', title: 'Ugens mester', desc: 'Spil 7 dage i træk',
+    check: (all, streak) => streak.current >= 7 || streak.best >= 7 },
+  { id: 'speed_demon', icon: '⚡', title: 'Lynhurtig', desc: 'Vind et spil på under 1 minut',
+    check: (all) => Object.values(all).some(s => s.bestTime && s.bestTime < 60000) },
+];
+
+function getUnlockedAchievements() {
+  const all = Stats.getAll();
+  const streak = Stats.getGlobalStreak();
+  const unlocked = new Set();
+  try {
+    const saved = JSON.parse(localStorage.getItem('bg_achievements') || '[]');
+    saved.forEach(id => unlocked.add(id));
+  } catch {}
+
+  let newlyUnlocked = [];
+  ACHIEVEMENTS.forEach(a => {
+    if (!unlocked.has(a.id) && a.check(all, streak)) {
+      unlocked.add(a.id);
+      newlyUnlocked.push(a);
+    }
+  });
+
+  localStorage.setItem('bg_achievements', JSON.stringify([...unlocked]));
+  return { unlocked, newlyUnlocked };
+}
+
+function showAchievementToast(achievement) {
+  const toast = document.createElement('div');
+  toast.className = 'achievement-toast';
+  toast.innerHTML = '<span class="toast-icon">' + achievement.icon + '</span>' +
+    '<span class="toast-text">' + achievement.title + '</span>';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// Check achievements after showing results
+const _originalShowResult = showResult;
+showResult = function (won, statsHtml, game) {
+  _originalShowResult(won, statsHtml, game);
+  // Check for new achievements
+  setTimeout(() => {
+    const { newlyUnlocked } = getUnlockedAchievements();
+    newlyUnlocked.forEach((a, i) => {
+      setTimeout(() => showAchievementToast(a), i * 1000);
+    });
+  }, 1500);
+};
+
+/* ----- Stats Page Rendering ----- */
+
+function renderStatsPage() {
+  const content = document.getElementById('stats-content');
+  if (!content) return;
+  content.innerHTML = '';
+
+  const all = Stats.getAll();
+  const streak = Stats.getGlobalStreak();
+  const totalPlayed = Object.values(all).reduce((s, v) => s + (v.played || 0), 0);
+  const totalWon = Object.values(all).reduce((s, v) => s + (v.won || 0), 0);
+
+  if (totalPlayed === 0) {
+    content.innerHTML = '<div class="stats-empty"><div class="empty-icon">🎮</div>' +
+      '<p>Ingen spil endnu!<br>Spil et par spil og kom tilbage.</p></div>';
+    return;
+  }
+
+  // Summary
+  const winPct = totalPlayed > 0 ? Math.round((totalWon / totalPlayed) * 100) : 0;
+  const summary = document.createElement('div');
+  summary.className = 'stats-summary';
+  summary.innerHTML =
+    '<h2>Din fremgang</h2>' +
+    '<div class="stats-big-number">' + totalWon + '</div>' +
+    '<div class="stats-label">sejre i alt</div>' +
+    '<div class="stats-row">' +
+      '<div class="stat-item"><div class="stat-value">' + totalPlayed + '</div><div class="stat-label">spillet</div></div>' +
+      '<div class="stat-item"><div class="stat-value">' + winPct + '%</div><div class="stat-label">vundet</div></div>' +
+      '<div class="stat-item"><div class="stat-value">' + streak.current + '</div><div class="stat-label">dages stime</div></div>' +
+    '</div>';
+  content.appendChild(summary);
+
+  // Streak banner
+  if (streak.current >= 3) {
+    const banner = document.createElement('div');
+    banner.className = 'streak-banner';
+    banner.textContent = '🔥 ' + streak.current + ' dages stime! Bliv ved!';
+    content.appendChild(banner);
+  }
+
+  // Week activity
+  const weekDiv = document.createElement('div');
+  const dayNames = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
+  const playedDates = new Set();
+  Object.values(all).forEach(s => {
+    if (s.history) s.history.forEach(h => playedDates.add(h.date));
+  });
+
+  weekDiv.className = 'week-activity';
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const isToday = i === 0;
+    const active = playedDates.has(dateStr);
+    const day = document.createElement('div');
+    day.className = 'week-day';
+    day.innerHTML =
+      '<span class="day-label">' + dayNames[d.getDay()] + '</span>' +
+      '<div class="day-dot' + (active ? ' active' : '') + (isToday ? ' today' : '') + '"></div>';
+    weekDiv.appendChild(day);
+  }
+  content.appendChild(weekDiv);
+
+  // Per-game cards
+  const title = document.createElement('div');
+  title.className = 'stats-section-title';
+  title.textContent = 'Spil';
+  content.appendChild(title);
+
+  const list = document.createElement('div');
+  list.className = 'stats-game-list';
+
+  GAME_DEFS.forEach(game => {
+    const s = all[game.id] || {};
+    if (!s.played) return;
+    const card = document.createElement('div');
+    card.className = 'stats-game-card';
+
+    let detail = 'Spillet ' + (s.played || 0) + ' gange';
+    if (s.bestTime) detail += ' · Bedste: ' + formatTime(s.bestTime);
+    if (s.lastPlayed) detail += ' · ' + formatTimeAgo(s.lastPlayed);
+
+    card.innerHTML =
+      '<span class="stats-game-icon">' + game.icon + '</span>' +
+      '<div class="stats-game-info">' +
+        '<div class="stats-game-name">' + game.name + '</div>' +
+        '<div class="stats-game-detail">' + detail + '</div>' +
+      '</div>' +
+      '<div class="stats-game-wins">' +
+        '<div class="win-count">' + (s.won || 0) + '</div>' +
+        '<div class="win-label">sejre</div>' +
+      '</div>';
+    list.appendChild(card);
+  });
+  content.appendChild(list);
+
+  // Achievements
+  const { unlocked } = getUnlockedAchievements();
+  const achTitle = document.createElement('div');
+  achTitle.className = 'stats-section-title';
+  achTitle.textContent = 'Bedrifter (' + unlocked.size + '/' + ACHIEVEMENTS.length + ')';
+  content.appendChild(achTitle);
+
+  const achGrid = document.createElement('div');
+  achGrid.className = 'achievements-grid';
+
+  ACHIEVEMENTS.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'achievement-card' + (unlocked.has(a.id) ? '' : ' locked');
+    card.innerHTML =
+      '<div class="achievement-icon">' + a.icon + '</div>' +
+      '<div class="achievement-title">' + a.title + '</div>' +
+      '<div class="achievement-desc">' + a.desc + '</div>';
+    achGrid.appendChild(card);
+  });
+  content.appendChild(achGrid);
+}
+
 /* ----- PWA Registration ----- */
 
 if ('serviceWorker' in navigator) {
@@ -577,6 +765,27 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+
+// Close modals with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const diffModal = document.getElementById('difficulty-modal');
+    if (diffModal && diffModal.classList.contains('active')) {
+      diffModal.classList.remove('active');
+      return;
+    }
+    const cardbackModal = document.getElementById('cardback-modal');
+    if (cardbackModal && cardbackModal.classList.contains('active')) {
+      cardbackModal.classList.remove('active');
+      return;
+    }
+    const resultOverlay = document.getElementById('result-overlay');
+    if (resultOverlay && resultOverlay.classList.contains('active')) {
+      resultOverlay.classList.remove('active');
+      goHome();
+    }
+  }
+});
 
 // Initial home render
 document.addEventListener('DOMContentLoaded', renderHomeScreen);
