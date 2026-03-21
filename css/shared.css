@@ -1,19 +1,19 @@
 /* ===== Design System: Dorthe's Brain Games ===== */
 
 :root {
-  /* Primary */
-  --primary: #4A7C59;
-  --primary-light: #6B9F78;
-  --primary-dark: #3A6147;
+  /* Primary — softer, warmer green */
+  --primary: #527D5C;
+  --primary-light: #7BAF88;
+  --primary-dark: #3D6147;
 
-  /* Background & Surface */
-  --bg: #F5F0E8;
+  /* Background & Surface — warmer, brighter */
+  --bg: #FAF7F2;
   --surface: #FFFFFF;
-  --surface-alt: #EDE7DB;
+  --surface-alt: #F0EBE3;
 
-  /* Text */
-  --text: #2C3E2D;
-  --text-muted: #7A8B7C;
+  /* Text — softer tones */
+  --text: #2D3B2E;
+  --text-muted: #8A9A8C;
   --text-on-primary: #FFFFFF;
 
   /* Feedback */
@@ -25,17 +25,26 @@
   /* Game accents */
   --gold: #C4A35A;
   --dark-green: #3D5C42;
-  --card-back: #4A7C59;
+  --card-back: #527D5C;
+
+  /* Per-game accent colors */
+  --accent-lightsout: #D4A843;
+  --accent-memory: #7B68AE;
+  --accent-minesweeper: #D9534F;
+  --accent-wordsearch: #5BC0DE;
+  --accent-nback: #E88A4F;
+  --accent-solitaire: #527D5C;
+  --accent-sudoku: #4A90D9;
 
   /* Spacing & Radii */
-  --radius: 12px;
+  --radius: 14px;
   --radius-sm: 8px;
-  --radius-lg: 20px;
+  --radius-lg: 22px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(44, 62, 45, 0.1);
-  --shadow-md: 0 4px 12px rgba(44, 62, 45, 0.12);
-  --shadow-lg: 0 8px 24px rgba(44, 62, 45, 0.15);
+  --shadow-sm: 0 1px 3px rgba(44, 62, 45, 0.08);
+  --shadow-md: 0 4px 14px rgba(44, 62, 45, 0.1);
+  --shadow-lg: 0 8px 28px rgba(44, 62, 45, 0.13);
 }
 
 /* ===== Reset & Base ===== */
@@ -52,9 +61,9 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 18px;
-  line-height: 1.5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 19px;
+  line-height: 1.55;
   color: var(--text);
   background: var(--bg);
   min-height: 100%;
@@ -114,8 +123,8 @@ h3 {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--surface-alt);
+  background: linear-gradient(180deg, var(--surface), var(--surface-alt));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
 
@@ -237,6 +246,20 @@ button, .tap-target {
 
 .btn-secondary:active {
   background: #ddd5c8;
+}
+
+/* Focus indicators for accessibility */
+button:focus-visible, .btn:focus-visible {
+  outline: 3px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ===== Difficulty Modal ===== */
