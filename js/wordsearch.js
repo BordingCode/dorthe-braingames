@@ -83,9 +83,10 @@
     allWords = shuffle([...new Set(allWords)]);
 
     let placed = [];
+    let bestPlaced = [];
     let attempts = 0;
 
-    while (placed.length < config.wordCount && attempts < 50) {
+    while (placed.length < config.wordCount && attempts < 200) {
       placed = [];
       grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
 
@@ -95,10 +96,22 @@
           placed.push(word);
         }
       }
+      if (placed.length > bestPlaced.length) {
+        bestPlaced = placed.slice();
+      }
       if (placed.length < config.wordCount) {
         allWords = shuffle(allWords);
       }
       attempts++;
+    }
+
+    // Use best result if we couldn't place all words
+    if (placed.length < config.wordCount && bestPlaced.length > placed.length) {
+      placed = bestPlaced;
+      grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
+      for (const word of placed) {
+        tryPlaceWord(word, config);
+      }
     }
 
     words = placed.map((w) => ({ word: w, cells: getWordCells(w), found: false }));

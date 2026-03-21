@@ -15,8 +15,11 @@
     '2': 'Tryk Match når symbolet er det samme som for 2 trin siden',
     '3': 'Tryk Match når symbolet er det samme som for 3 trin siden',
   };
-  const SEQUENCE_LENGTH = 25;
-  const SHOW_MS = 2000;
+  const LEVEL_CONFIG = {
+    '1': { length: 20, showMs: 2500, winThreshold: 80 },
+    '2': { length: 25, showMs: 2000, winThreshold: 70 },
+    '3': { length: 30, showMs: 1800, winThreshold: 60 },
+  };
   const GAP_MS = 500;
 
   let nLevel = 1;
@@ -77,18 +80,24 @@
     displayEl.classList.remove('flash-correct', 'flash-wrong', 'show');
     matchBtn.classList.remove('visible', 'pressed');
     startBtn.classList.remove('hidden');
-    progressEl.textContent = '0/' + SEQUENCE_LENGTH;
+    const seqLen = LEVEL_CONFIG[nLevel] ? LEVEL_CONFIG[nLevel].length : 25;
+    progressEl.textContent = '0/' + seqLen;
     scoreEl.textContent = '0';
     if (progressFill) progressFill.style.width = '0%';
     if (levelDesc) levelDesc.textContent = DESC_MAP[nLevel] || DESC_MAP['1'];
   }
 
+  function getConfig() {
+    return LEVEL_CONFIG[nLevel] || LEVEL_CONFIG['1'];
+  }
+
   function generateSequence() {
     sequence = [];
-    const matchTarget = Math.floor(SEQUENCE_LENGTH * 0.33);
+    const seqLen = getConfig().length;
+    const matchTarget = Math.floor(seqLen * 0.33);
     let matches = 0;
 
-    for (let i = 0; i < SEQUENCE_LENGTH; i++) {
+    for (let i = 0; i < seqLen; i++) {
       if (i >= nLevel && matches < matchTarget && Math.random() < 0.4) {
         sequence.push(sequence[i - nLevel]);
         matches++;
@@ -123,7 +132,7 @@
     if (!running) return;
     currentIndex++;
 
-    if (currentIndex >= SEQUENCE_LENGTH) {
+    if (currentIndex >= getConfig().length) {
       endGame();
       return;
     }
@@ -137,9 +146,10 @@
     displayEl.textContent = sequence[currentIndex];
     displayEl.classList.add('show');
 
-    progressEl.textContent = (currentIndex + 1) + '/' + SEQUENCE_LENGTH;
+    const cfg = getConfig();
+    progressEl.textContent = (currentIndex + 1) + '/' + cfg.length;
     if (progressFill) {
-      progressFill.style.width = ((currentIndex + 1) / SEQUENCE_LENGTH * 100) + '%';
+      progressFill.style.width = ((currentIndex + 1) / cfg.length * 100) + '%';
     }
 
     timeoutId = setTimeout(() => {
@@ -149,7 +159,7 @@
       displayEl.classList.add('empty');
 
       timeoutId = setTimeout(showNext, GAP_MS);
-    }, SHOW_MS);
+    }, cfg.showMs);
   }
 
   function evaluateCurrent() {
@@ -193,7 +203,7 @@
       bestAccuracy: Math.max(Stats.get('nback').bestAccuracy || 0, accuracy),
     });
 
-    const won = accuracy >= 70;
+    const won = accuracy >= getConfig().winThreshold;
 
     setTimeout(() => {
       showResult(

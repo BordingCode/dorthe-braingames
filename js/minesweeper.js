@@ -147,22 +147,41 @@
     }
   }
 
+  let longPressCell = null;
+
   function onCellDown(r, c, e) {
     longPressTriggered = false;
+    // Add pressing visual feedback
+    const idx = r * cols + c;
+    const btn = boardEl.children[idx];
+    if (btn && btn.classList.contains('hidden')) {
+      btn.classList.add('pressing');
+      longPressCell = btn;
+    }
     longPressTimer = setTimeout(() => {
       longPressTriggered = true;
+      clearPressing();
       toggleFlag(r, c);
     }, LONG_PRESS_MS);
   }
 
   function onCellUp(r, c, e) {
     clearTimeout(longPressTimer);
+    clearPressing();
     if (longPressTriggered) return; // Long press already handled
     handleTap(r, c);
   }
 
   function cancelLongPress() {
     clearTimeout(longPressTimer);
+    clearPressing();
+  }
+
+  function clearPressing() {
+    if (longPressCell) {
+      longPressCell.classList.remove('pressing');
+      longPressCell = null;
+    }
   }
 
   function toggleFlag(r, c) {

@@ -298,6 +298,7 @@
     moveHistory = [];
     gameOver = false;
     autoCompleting = false;
+    autoCompleteDeclined = false;
     lastRecycleSnapshot = null;
     drag = null;
     movesEl.textContent = '0';
@@ -1130,14 +1131,43 @@
     render();
   }
 
+  let autoCompleteDeclined = false;
+
   function checkAutoComplete() {
+    if (autoCompleteDeclined) return;
     if (stock.length > 0 || waste.length > 0) return;
     var allFaceUp = tableau.every(function (col) {
       return col.every(function (card) { return card.faceUp; });
     });
     if (!allFaceUp) return;
-    autoCompleting = true;
-    runAutoComplete();
+    showAutoCompleteBanner();
+  }
+
+  function showAutoCompleteBanner() {
+    // Remove any existing banner
+    var existing = document.getElementById('sol-autocomplete-banner');
+    if (existing) existing.remove();
+
+    var banner = document.createElement('div');
+    banner.id = 'sol-autocomplete-banner';
+    banner.className = 'sol-autocomplete-banner';
+    banner.innerHTML =
+      '<span>Alle kort er synlige! Afslutte automatisk?</span>' +
+      '<button class="btn btn-primary" id="sol-ac-yes">Ja</button>' +
+      '<button class="btn btn-secondary" id="sol-ac-no">Nej</button>';
+
+    var area = document.querySelector('#screen-solitaire .game-area');
+    area.insertBefore(banner, area.firstChild);
+
+    document.getElementById('sol-ac-yes').onclick = function () {
+      banner.remove();
+      autoCompleting = true;
+      runAutoComplete();
+    };
+    document.getElementById('sol-ac-no').onclick = function () {
+      banner.remove();
+      autoCompleteDeclined = true;
+    };
   }
 
   function runAutoComplete() {

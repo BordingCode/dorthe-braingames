@@ -99,12 +99,12 @@ h3 {
 
 .screen.active {
   display: flex;
-  animation: screenIn 0.25s ease-out;
+  animation: screenIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 @keyframes screenIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ===== Game Header ===== */

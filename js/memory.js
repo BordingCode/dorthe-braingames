@@ -22,6 +22,8 @@
   let totalPairs = 0;
   let moves = 0;
   let locked = false;
+  let peeking = false;
+  let peekTimer = null;
   let timer = null;
   let currentCols = 3;
 
@@ -74,13 +76,29 @@
     renderBoard(config.cols);
 
     // Brief peek: show all cards for 1.2s then flip back
+    peeking = true;
     board.querySelectorAll('.mem-card').forEach((el) => el.classList.add('peek'));
 
-    setTimeout(() => {
-      board.querySelectorAll('.mem-card').forEach((el) => el.classList.remove('peek'));
-      locked = false;
-      timer.start();
-    }, 1200);
+    peekTimer = setTimeout(() => endPeek(), 1200);
+
+    // Handle tab becoming hidden during peek
+    document.addEventListener('visibilitychange', onVisibilityDuringPeek);
+  }
+
+  function endPeek() {
+    if (!peeking) return;
+    peeking = false;
+    clearTimeout(peekTimer);
+    document.removeEventListener('visibilitychange', onVisibilityDuringPeek);
+    board.querySelectorAll('.mem-card').forEach((el) => el.classList.remove('peek'));
+    locked = false;
+    timer.start();
+  }
+
+  function onVisibilityDuringPeek() {
+    if (document.hidden && peeking) {
+      endPeek();
+    }
   }
 
   function renderBoard(cols) {
@@ -101,7 +119,7 @@
   }
 
   function handleTap(idx) {
-    if (locked) return;
+    if (locked || peeking) return;
     const card = cards[idx];
     if (card.flipped || card.matched) return;
     if (flipped.length >= 2) return;

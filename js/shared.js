@@ -150,18 +150,20 @@ function launchConfetti(duration) {
   const particles = [];
   const startTime = Date.now();
 
-  for (let i = 0; i < 80; i++) {
+  const shapes = ['rect', 'circle', 'ribbon'];
+  for (let i = 0; i < 90; i++) {
     particles.push({
-      x: Math.random() * canvas.width,
-      y: -20 - Math.random() * canvas.height * 0.5,
-      vx: (Math.random() - 0.5) * 4,
-      vy: Math.random() * 3 + 2,
+      x: canvas.width * 0.3 + Math.random() * canvas.width * 0.4,
+      y: -20 - Math.random() * canvas.height * 0.3,
+      vx: (Math.random() - 0.5) * 5,
+      vy: Math.random() * 3 + 1.5,
       w: Math.random() * 10 + 5,
       h: Math.random() * 6 + 3,
       color: colors[Math.floor(Math.random() * colors.length)],
       rot: Math.random() * 360,
-      rotV: (Math.random() - 0.5) * 8,
+      rotV: (Math.random() - 0.5) * 10,
       wobble: Math.random() * Math.PI * 2,
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
     });
   }
 
@@ -173,17 +175,27 @@ function launchConfetti(duration) {
     ctx.globalAlpha = fade;
 
     particles.forEach((p) => {
-      p.x += p.vx + Math.sin(p.wobble) * 0.5;
+      p.x += p.vx + Math.sin(p.wobble) * 0.7;
       p.y += p.vy;
       p.rot += p.rotV;
-      p.wobble += 0.05;
-      p.vy += 0.02; // gravity
+      p.wobble += 0.06;
+      p.vy += 0.025; // gravity
 
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate((p.rot * Math.PI) / 180);
       ctx.fillStyle = p.color;
-      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.w / 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.shape === 'ribbon') {
+        ctx.fillRect(-p.w / 2, -1, p.w, 3);
+      } else {
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+
       ctx.restore();
     });
 
