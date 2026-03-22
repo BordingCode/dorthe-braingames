@@ -28,6 +28,7 @@
 
   // Drag state
   let drag = null;
+  let lastTouchTime = 0;
 
   // Card back designs
   const CARD_BACKS = [
@@ -521,12 +522,14 @@
 
     el.addEventListener('mousedown', function (e) {
       if (e.button !== 0) return;
+      if (Date.now() - lastTouchTime < 500) return;
       e.preventDefault();
       startDrag(e.clientX, e.clientY, el, source, col, idx);
     });
 
     el.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
+      lastTouchTime = Date.now();
       var t = e.touches[0];
       startDrag(t.clientX, t.clientY, el, source, col, idx);
     }, { passive: true });
