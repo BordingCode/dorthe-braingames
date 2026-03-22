@@ -513,6 +513,11 @@
 
   function renderBoard() {
     boardEl.innerHTML = '';
+
+    // Determine which number to highlight across the board
+    const activeNum = (selectedNumber && selectedNumber !== 'erase') ? selectedNumber
+      : (selectedCell ? board[selectedCell.r][selectedCell.c] || null : null);
+
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         const btn = document.createElement('button');
@@ -533,7 +538,7 @@
             const s = document.createElement('span');
             if (pencil[r][c].has(n)) {
               s.textContent = n;
-              if (highlightCandidates && selectedNumber && selectedNumber === n) {
+              if (activeNum && activeNum === n) {
                 s.classList.add('pm-active');
               }
             }
@@ -542,32 +547,28 @@
           btn.appendChild(marks);
         }
 
+        // Highlight all cells with the active number
+        if (activeNum && board[r][c] === activeNum) {
+          btn.classList.add('same-num');
+        }
+
         // Selection highlights
         if (selectedNumber) {
-          // Number-first mode: only highlight matching numbers and candidates
-          if (selectedNumber !== 'erase') {
-            if (board[r][c] === selectedNumber) {
-              btn.classList.add('same-num');
-            } else if (highlightCandidates && board[r][c] === 0 && !given[r][c] && getCandidates(r, c).has(selectedNumber)) {
-              btn.classList.add('num-candidate');
-            }
+          // Number-first mode: highlight candidates
+          if (selectedNumber !== 'erase' && highlightCandidates && board[r][c] === 0 && !given[r][c] && getCandidates(r, c).has(selectedNumber)) {
+            btn.classList.add('num-candidate');
           }
           if (selectedCell && r === selectedCell.r && c === selectedCell.c) {
             btn.classList.add('selected');
           }
         } else if (selectedCell) {
-          // Cell-first mode: highlight row/col/box and same number
+          // Cell-first mode: highlight row/col/box
           if (r === selectedCell.r && c === selectedCell.c) {
             btn.classList.add('selected');
           } else if (r === selectedCell.r || c === selectedCell.c ||
             (Math.floor(r / 3) === Math.floor(selectedCell.r / 3) &&
              Math.floor(c / 3) === Math.floor(selectedCell.c / 3))) {
             btn.classList.add('row-col-highlight');
-          }
-          const selVal = board[selectedCell.r][selectedCell.c];
-          if (selVal !== 0 && board[r][c] === selVal &&
-              !(r === selectedCell.r && c === selectedCell.c)) {
-            btn.classList.add('same-num');
           }
         }
 
@@ -662,8 +663,19 @@
       renderBoard();
       renderNumpad();
     } else {
-      // Cell-first mode: place directly into the selected cell
-      if (!selectedCell) return;
+      // Cell-first mode
+      if (!selectedCell) {
+        // No cell selected — toggle highlight only
+        if (selectedNumber === n) {
+          selectedNumber = null;
+        } else {
+          selectedNumber = n;
+        }
+        renderBoard();
+        renderNumpad();
+        return;
+      }
+      selectedNumber = null;
       if (n === 'erase') {
         handleErase();
       } else {
