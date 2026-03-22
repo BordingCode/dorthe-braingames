@@ -112,6 +112,30 @@
       example: 'En celle har 3,7 — den ser en celle med 3,5 og en med 5,7. Tallet 5 kan fjernes fra celler der ser begge vinger!',
       level: 'Ekspert',
     },
+    {
+      id: 'naked_quad',
+      name: 'Nøgen firer',
+      icon: '4\uFE0F\u20E3',
+      desc: 'Fire celler i en enhed deler tilsammen kun 4 mulige tal. Disse tal kan fjernes fra alle andre celler i enheden.',
+      example: 'Fire celler i en boks kan kun indeholde 1, 3, 6 og 9. Fjern disse fra resten af boksen!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'skyscraper',
+      name: 'Skyscraper',
+      icon: '\uD83C\uDFD9\uFE0F',
+      desc: 'To rækker har et tal i præcis 2 celler. En af kolonnerne er ens — den anden er forskudt. Tallet kan fjernes fra celler der ser begge "toppe".',
+      example: 'Tallet 3 står i kolonne 2 og 5 i række 1, og kolonne 2 og 8 i række 6. Kolonne 2 deles — fjern 3 fra celler der ser kolonne 5 OG 8!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'simple_coloring',
+      name: 'Simpel farvning',
+      icon: '\uD83C\uDFA8',
+      desc: 'Når et tal kun kan stå 2 steder i en enhed, danner det en kæde af "enten-eller". Hvis to celler med samme farve ser hinanden, er den farve falsk.',
+      example: 'Tallet 7 danner en kæde: A eller B i række 1, B eller C i kolonne 3... Hvis to "blå" celler ser hinanden, er alle blå falske!',
+      level: 'Ekspert',
+    },
   ];
 
   // --- State ---
@@ -350,6 +374,12 @@
     hint = findSwordfishHint();
     if (hint) return hint;
     hint = findXYWingHint();
+    if (hint) return hint;
+    hint = findNakedQuadHint();
+    if (hint) return hint;
+    hint = findSkyscraperHint();
+    if (hint) return hint;
+    hint = findSimpleColoringHint();
     if (hint) return hint;
     return findFallback();
   }
@@ -1325,6 +1355,339 @@
               },
             };
           }
+        }
+      }
+    }
+    return null;
+  }
+
+  function findNakedQuadHint() {
+    const cands = getAllCandidates();
+
+    function checkUnit(cells, unitName) {
+      const small = cells.filter(([r, c]) => cands[r][c].size >= 2 && cands[r][c].size <= 4);
+      if (small.length < 4) return null;
+
+      for (let i = 0; i < small.length; i++)
+        for (let j = i+1; j < small.length; j++)
+          for (let k = j+1; k < small.length; k++)
+            for (let l = k+1; l < small.length; l++) {
+              const quad = [small[i], small[j], small[k], small[l]];
+              const union = new Set();
+              for (const [r, c] of quad) for (const v of cands[r][c]) union.add(v);
+              if (union.size !== 4) continue;
+
+              const copy = copyCands(cands);
+              let eliminated = false;
+              const quadVals = [...union];
+              for (const [r, c] of cells) {
+                if (quad.some(q => q[0] === r && q[1] === c)) continue;
+                for (const v of quadVals)
+                  if (copy[r][c].delete(v)) eliminated = true;
+              }
+              if (!eliminated) continue;
+
+              const single = findSingleInCands(copy);
+              if (single && single.val === solution[single.r][single.c]) {
+                const highlights = quad.map(([r, c]) => ({ r, c, type: 'eliminator' }));
+                highlights.push({ r: single.r, c: single.c, type: 'target' });
+                return {
+                  type: 'naked_quad', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+                  technique: {
+                    name: 'Nøgen firer', icon: '4\uFE0F\u20E3',
+                    steps: [
+                      'Fire celler i ' + unitName + ' kan tilsammen kun indeholde ' + quadVals.join(', ') + '.',
+                      'Disse tal fjernes fra de andre celler.',
+                      'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                    ],
+                  },
+                };
+              }
+            }
+      return null;
+    }
+
+    for (let r = 0; r < 9; r++) {
+      const cells = []; for (let c = 0; c < 9; c++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'række ' + (r+1)); if (result) return result;
+    }
+    for (let c = 0; c < 9; c++) {
+      const cells = []; for (let r = 0; r < 9; r++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'kolonne ' + (c+1)); if (result) return result;
+    }
+    for (let br = 0; br < 9; br += 3)
+      for (let bc = 0; bc < 9; bc += 3) {
+        const cells = [];
+        for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++)
+          if (board[br+dr][bc+dc] === 0) cells.push([br+dr, bc+dc]);
+        const result = checkUnit(cells, 'boks ' + (Math.floor(br/3)*3 + Math.floor(bc/3) + 1));
+        if (result) return result;
+      }
+    return null;
+  }
+
+  function findSkyscraperHint() {
+    const cands = getAllCandidates();
+
+    function sees(a, b) {
+      return a.r === b.r || a.c === b.c ||
+        (Math.floor(a.r/3) === Math.floor(b.r/3) && Math.floor(a.c/3) === Math.floor(b.c/3));
+    }
+
+    for (let num = 1; num <= 9; num++) {
+      // Find rows with exactly 2 positions for num
+      const rowPairs = [];
+      for (let r = 0; r < 9; r++) {
+        const cols = [];
+        for (let c = 0; c < 9; c++) if (cands[r][c].has(num)) cols.push(c);
+        if (cols.length === 2) rowPairs.push({ r, c1: cols[0], c2: cols[1] });
+      }
+
+      for (let i = 0; i < rowPairs.length; i++)
+        for (let j = i+1; j < rowPairs.length; j++) {
+          const a = rowPairs[i], b = rowPairs[j];
+          // One column must match (the "base"), the other differs (the "tops")
+          let baseCol, topA, topB;
+          if (a.c1 === b.c1) { baseCol = a.c1; topA = { r: a.r, c: a.c2 }; topB = { r: b.r, c: b.c2 }; }
+          else if (a.c1 === b.c2) { baseCol = a.c1; topA = { r: a.r, c: a.c2 }; topB = { r: b.r, c: b.c1 }; }
+          else if (a.c2 === b.c1) { baseCol = a.c2; topA = { r: a.r, c: a.c1 }; topB = { r: b.r, c: b.c1 }; }
+          else if (a.c2 === b.c2) { baseCol = a.c2; topA = { r: a.r, c: a.c1 }; topB = { r: b.r, c: b.c2 }; }
+          else continue;
+
+          if (topA.c === topB.c) continue; // that would be X-Wing
+
+          const copy = copyCands(cands);
+          let eliminated = false;
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++) {
+              if ((r === a.r && (c === a.c1 || c === a.c2)) || (r === b.r && (c === b.c1 || c === b.c2))) continue;
+              if (!sees({ r, c }, topA) || !sees({ r, c }, topB)) continue;
+              if (copy[r][c].delete(num)) eliminated = true;
+            }
+          if (!eliminated) continue;
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: a.r, c: a.c1, type: 'eliminator' }, { r: a.r, c: a.c2, type: 'eliminator' },
+              { r: b.r, c: b.c1, type: 'eliminator' }, { r: b.r, c: b.c2, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            return {
+              type: 'skyscraper', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'Skyscraper', icon: '\uD83C\uDFD9\uFE0F',
+                steps: [
+                  num + ' kan kun stå 2 steder i både række ' + (a.r+1) + ' og ' + (b.r+1) + '.',
+                  'De deler kolonne ' + (baseCol+1) + ' som "base" — toppene er kolonne ' + (topA.c+1) + ' og ' + (topB.c+1) + '.',
+                  num + ' fjernes fra celler der ser begge toppe. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+
+      // Column-based skyscrapers
+      const colPairs = [];
+      for (let c = 0; c < 9; c++) {
+        const rows = [];
+        for (let r = 0; r < 9; r++) if (cands[r][c].has(num)) rows.push(r);
+        if (rows.length === 2) colPairs.push({ c, r1: rows[0], r2: rows[1] });
+      }
+
+      for (let i = 0; i < colPairs.length; i++)
+        for (let j = i+1; j < colPairs.length; j++) {
+          const a = colPairs[i], b = colPairs[j];
+          let baseRow, topA, topB;
+          if (a.r1 === b.r1) { baseRow = a.r1; topA = { r: a.r2, c: a.c }; topB = { r: b.r2, c: b.c }; }
+          else if (a.r1 === b.r2) { baseRow = a.r1; topA = { r: a.r2, c: a.c }; topB = { r: b.r1, c: b.c }; }
+          else if (a.r2 === b.r1) { baseRow = a.r2; topA = { r: a.r1, c: a.c }; topB = { r: b.r1, c: b.c }; }
+          else if (a.r2 === b.r2) { baseRow = a.r2; topA = { r: a.r1, c: a.c }; topB = { r: b.r1, c: b.c }; }
+          else continue;
+
+          if (topA.r === topB.r) continue;
+
+          const copy = copyCands(cands);
+          let eliminated = false;
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++) {
+              if ((c === a.c && (r === a.r1 || r === a.r2)) || (c === b.c && (r === b.r1 || r === b.r2))) continue;
+              if (!sees({ r, c }, topA) || !sees({ r, c }, topB)) continue;
+              if (copy[r][c].delete(num)) eliminated = true;
+            }
+          if (!eliminated) continue;
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: a.r1, c: a.c, type: 'eliminator' }, { r: a.r2, c: a.c, type: 'eliminator' },
+              { r: b.r1, c: b.c, type: 'eliminator' }, { r: b.r2, c: b.c, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            return {
+              type: 'skyscraper', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'Skyscraper', icon: '\uD83C\uDFD9\uFE0F',
+                steps: [
+                  num + ' kan kun stå 2 steder i både kolonne ' + (a.c+1) + ' og ' + (b.c+1) + '.',
+                  'De deler række ' + (baseRow+1) + ' som "base" — toppene er række ' + (topA.r+1) + ' og ' + (topB.r+1) + '.',
+                  num + ' fjernes fra celler der ser begge toppe. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+    }
+    return null;
+  }
+
+  function findSimpleColoringHint() {
+    const cands = getAllCandidates();
+
+    function sees(a, b) {
+      return a[0] === b[0] || a[1] === b[1] ||
+        (Math.floor(a[0]/3) === Math.floor(b[0]/3) && Math.floor(a[1]/3) === Math.floor(b[1]/3));
+    }
+
+    for (let num = 1; num <= 9; num++) {
+      // Build conjugate pairs: cells in a unit where num appears exactly twice
+      const links = new Map(); // "r,c" -> Set of "r,c" it's linked to
+      function key(r, c) { return r + ',' + c; }
+
+      // Row conjugates
+      for (let r = 0; r < 9; r++) {
+        const cols = [];
+        for (let c = 0; c < 9; c++) if (cands[r][c].has(num)) cols.push(c);
+        if (cols.length === 2) {
+          const a = key(r, cols[0]), b = key(r, cols[1]);
+          if (!links.has(a)) links.set(a, new Set());
+          if (!links.has(b)) links.set(b, new Set());
+          links.get(a).add(b);
+          links.get(b).add(a);
+        }
+      }
+      // Column conjugates
+      for (let c = 0; c < 9; c++) {
+        const rows = [];
+        for (let r = 0; r < 9; r++) if (cands[r][c].has(num)) rows.push(r);
+        if (rows.length === 2) {
+          const a = key(rows[0], c), b = key(rows[1], c);
+          if (!links.has(a)) links.set(a, new Set());
+          if (!links.has(b)) links.set(b, new Set());
+          links.get(a).add(b);
+          links.get(b).add(a);
+        }
+      }
+      // Box conjugates
+      for (let br = 0; br < 9; br += 3)
+        for (let bc = 0; bc < 9; bc += 3) {
+          const pos = [];
+          for (let dr = 0; dr < 3; dr++)
+            for (let dc = 0; dc < 3; dc++)
+              if (cands[br+dr][bc+dc].has(num)) pos.push([br+dr, bc+dc]);
+          if (pos.length === 2) {
+            const a = key(pos[0][0], pos[0][1]), b = key(pos[1][0], pos[1][1]);
+            if (!links.has(a)) links.set(a, new Set());
+            if (!links.has(b)) links.set(b, new Set());
+            links.get(a).add(b);
+            links.get(b).add(a);
+          }
+        }
+
+      if (links.size < 4) continue;
+
+      // BFS to color the chain
+      const visited = new Map();
+      for (const startKey of links.keys()) {
+        if (visited.has(startKey)) continue;
+        const queue = [[startKey, 0]];
+        const chain = new Map();
+        let conflict = -1;
+
+        while (queue.length > 0) {
+          const [ck, color] = queue.shift();
+          if (chain.has(ck)) {
+            if (chain.get(ck) !== color) conflict = color;
+            continue;
+          }
+          chain.set(ck, color);
+          const neighbors = links.get(ck);
+          if (neighbors) for (const nk of neighbors) {
+            if (!chain.has(nk)) queue.push([nk, 1 - color]);
+          }
+        }
+
+        if (chain.size < 4) continue;
+
+        // Rule 1: Two same-color cells see each other → that color is false
+        const colors = [[], []];
+        for (const [ck, color] of chain) {
+          const [r, c] = ck.split(',').map(Number);
+          colors[color].push([r, c]);
+        }
+
+        for (let col = 0; col < 2; col++) {
+          const group = colors[col];
+          let sameColorConflict = false;
+          for (let i = 0; i < group.length && !sameColorConflict; i++)
+            for (let j = i+1; j < group.length && !sameColorConflict; j++)
+              if (sees(group[i], group[j])) sameColorConflict = true;
+
+          if (!sameColorConflict) continue;
+
+          // This color is false — eliminate num from all cells in this color
+          const copy = copyCands(cands);
+          for (const [r, c] of group) copy[r][c].delete(num);
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = group.map(([r, c]) => ({ r, c, type: 'eliminator' }));
+            highlights.push({ r: single.r, c: single.c, type: 'target' });
+            return {
+              type: 'simple_coloring', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'Simpel farvning', icon: '\uD83C\uDFA8',
+                steps: [
+                  num + ' danner en kæde af "enten-eller" forbindelser.',
+                  'To celler med samme farve kan se hinanden — den farve er falsk.',
+                  num + ' fjernes fra de forkerte celler. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+
+        // Rule 2: A cell sees both colors → eliminate num from it
+        const copy = copyCands(cands);
+        let eliminated = false;
+        for (let r = 0; r < 9; r++)
+          for (let c = 0; c < 9; c++) {
+            if (chain.has(key(r, c))) continue;
+            if (!cands[r][c].has(num)) continue;
+            const seesColor0 = colors[0].some(p => sees([r, c], p));
+            const seesColor1 = colors[1].some(p => sees([r, c], p));
+            if (seesColor0 && seesColor1) {
+              if (copy[r][c].delete(num)) eliminated = true;
+            }
+          }
+
+        if (!eliminated) continue;
+        const single = findSingleInCands(copy);
+        if (single && single.val === solution[single.r][single.c]) {
+          const allChain = [...chain.keys()].map(k => { const [r, c] = k.split(',').map(Number); return { r, c }; });
+          const highlights = allChain.map(p => ({ ...p, type: 'eliminator' }));
+          highlights.push({ r: single.r, c: single.c, type: 'target' });
+          return {
+            type: 'simple_coloring', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+            technique: {
+              name: 'Simpel farvning', icon: '\uD83C\uDFA8',
+              steps: [
+                num + ' danner en kæde af "enten-eller" forbindelser.',
+                'En celle kan se begge farver — så ' + num + ' kan ikke stå der.',
+                'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+              ],
+            },
+          };
         }
       }
     }
