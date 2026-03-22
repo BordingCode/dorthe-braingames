@@ -733,6 +733,8 @@
       if (pencil[r][c].has(num)) {
         pencil[r][c].delete(num);
       } else {
+        // Only allow if the number is a valid candidate
+        if (!getCandidates(r, c).has(num) && board[r][c] === 0) return;
         pencil[r][c].add(num);
       }
       board[r][c] = 0;
