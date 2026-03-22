@@ -1,93 +1,88 @@
 /* ===== Sudoku ===== */
 
+#screen-sudoku .game-area {
+  padding: 8px 10px;
+}
+
 /* --- Board --- */
 #sudoku-board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  --board-size: min(calc(100vw - 16px), calc(100dvh - 260px), 460px);
+  --board-size: min(calc(100vw - 20px), calc(100dvh - 220px));
   width: var(--board-size);
-  background: var(--text);
+  background: #c8cdc9;
   gap: 1px;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  border: 2px solid var(--text);
 }
 
 .su-cell {
   aspect-ratio: 1;
   border: none;
-  background: var(--surface);
-  font-size: clamp(17px, 4.5vw, 26px);
+  background: #fff;
+  font-size: clamp(18px, 5vw, 30px);
   font-weight: 600;
   color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.12s;
   padding: 0;
   position: relative;
   line-height: 1;
 }
 
-/* 3x3 box borders */
+/* 3x3 box borders — clean thick lines */
 .su-cell[data-col="2"],
 .su-cell[data-col="5"] {
-  border-right: 3px solid var(--text);
+  border-right: 2px solid var(--text);
 }
 .su-cell[data-row="2"],
 .su-cell[data-row="5"] {
-  border-bottom: 3px solid var(--text);
-}
-
-/* Alternating 3x3 box backgrounds */
-.su-cell.alt-box {
-  background: #f5f1ec;
+  border-bottom: 2px solid var(--text);
 }
 
 /* Cell states */
 .su-cell.given {
   font-weight: 800;
   color: var(--text);
-  background: var(--surface-alt);
-}
-.su-cell.given.alt-box {
-  background: #ebe5dc;
+  background: #f4f1ed;
 }
 
 .su-cell.user-filled {
-  color: var(--primary);
+  color: var(--accent-sudoku, #4A90D9);
+  font-weight: 700;
 }
 .su-cell.hint-placed {
-  color: var(--info);
+  color: #6aab7b;
+  font-weight: 700;
 }
 
 /* Selection & highlights */
 .su-cell.selected {
-  background: #d5e8da;
+  background: #c8dff0;
 }
 .su-cell.same-num {
-  background: #e2ede5;
+  background: #dde9f4;
 }
 .su-cell.row-col-highlight {
-  background: #eef3f0;
+  background: #edf2f7;
 }
-.su-cell.alt-box.row-col-highlight {
-  background: #e8e3db;
+.su-cell.given.row-col-highlight {
+  background: #e8eae6;
 }
 .su-cell.selected.row-col-highlight {
-  background: #d5e8da;
+  background: #c8dff0;
 }
 
 /* Number-first mode: highlight legal cells */
 .su-cell.num-candidate {
-  background: #e0eef8;
-}
-.su-cell.alt-box.num-candidate {
-  background: #d8e6f0;
+  background: #e4f0fb;
 }
 .su-cell.num-candidate.selected {
-  background: #d5e8da;
+  background: #c8dff0;
 }
 
 /* Error flash */
@@ -95,17 +90,17 @@
   animation: suError 0.5s ease-out;
 }
 @keyframes suError {
-  0% { background: #f8d7d5; }
-  100% { background: var(--surface); }
+  0% { background: #fad4d4; }
+  100% { background: #fff; }
 }
 
 /* Complete row/col/box flash */
 .su-cell.complete-flash {
-  animation: suComplete 0.4s ease-out;
+  animation: suComplete 0.5s ease-out;
 }
 @keyframes suComplete {
-  0% { background: #c8e6c9; }
-  100% { background: var(--surface); }
+  0% { background: #b8e6c1; }
+  100% { background: #fff; }
 }
 
 /* Undo flash */
@@ -113,8 +108,8 @@
   animation: suUndo 0.5s ease-out;
 }
 @keyframes suUndo {
-  0% { background: #d5e8ff; }
-  100% { background: var(--surface); }
+  0% { background: #d0e4f7; }
+  100% { background: #fff; }
 }
 
 /* Hint highlights */
@@ -123,21 +118,21 @@
   z-index: 2;
 }
 @keyframes suHintPulse {
-  from { background: #d0e4f7; box-shadow: inset 0 0 0 2px var(--accent-sudoku, #4A90D9); }
-  to { background: #b8d4f0; box-shadow: inset 0 0 0 3px var(--accent-sudoku, #4A90D9); }
+  from { background: #c4daf0; box-shadow: inset 0 0 0 2px var(--accent-sudoku, #4A90D9); }
+  to { background: #aecbe8; box-shadow: inset 0 0 0 3px var(--accent-sudoku, #4A90D9); }
 }
 .su-cell.su-hint-unit {
-  background: #e8f0f8;
+  background: #e4eef7;
 }
 .su-cell.su-hint-eliminator {
-  background: #fef3e0;
+  background: #fdf0de;
 }
 .su-cell.hint-flash {
   animation: suHintFlash 0.8s ease-out;
 }
 @keyframes suHintFlash {
-  0% { background: #d5e8ff; }
-  100% { background: var(--surface); }
+  0% { background: #c4daf0; }
+  100% { background: #fff; }
 }
 
 /* Pencil marks */
@@ -146,13 +141,13 @@
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   position: absolute;
-  inset: 2px;
+  inset: 1px;
   pointer-events: none;
 }
 .su-cell .pencil-marks span {
-  font-size: clamp(7px, 2vw, 11px);
-  font-weight: 400;
-  color: var(--text-muted);
+  font-size: clamp(8px, 2.2vw, 12px);
+  font-weight: 500;
+  color: #8ea0a8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,18 +160,18 @@
   align-items: center;
   gap: 10px;
   width: var(--board-size);
-  margin: 0 auto 10px;
+  margin: 0 auto 8px;
 }
 .su-progress-bar {
   flex: 1;
-  height: 6px;
-  background: var(--surface-alt);
+  height: 5px;
+  background: #e8e4df;
   border-radius: 3px;
   overflow: hidden;
 }
 .su-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7cb88a, var(--primary));
+  background: var(--accent-sudoku, #4A90D9);
   border-radius: 3px;
   transition: width 0.4s ease;
   width: 0%;
@@ -192,24 +187,24 @@
 .su-actions {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin: 12px auto 4px;
+  gap: 6px;
+  margin: 10px auto 2px;
   max-width: var(--board-size);
   width: 100%;
 }
 
 .su-action-btn {
   flex: 1;
-  max-width: 100px;
-  padding: 6px 4px;
-  border: 2px solid var(--surface-alt);
-  border-radius: 12px;
-  background: var(--surface);
+  max-width: 90px;
+  padding: 7px 2px;
+  border: none;
+  border-radius: 10px;
+  background: #f0ece7;
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.12s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -218,10 +213,10 @@
 }
 .su-action-btn:active {
   transform: scale(0.95);
-  background: var(--surface-alt);
+  background: #e0dbd4;
 }
 .su-action-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   pointer-events: none;
 }
 .su-action-btn:focus-visible {
@@ -232,52 +227,52 @@
 /* --- Number pad --- */
 #sudoku-numpad {
   display: flex;
-  gap: 6px;
-  margin-top: 12px;
-  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
   justify-content: center;
   max-width: var(--board-size);
   width: 100%;
 }
 
 .su-num-btn {
-  width: clamp(36px, 8.5vw, 50px);
-  height: clamp(36px, 8.5vw, 50px);
+  flex: 1;
+  max-width: 52px;
+  aspect-ratio: 1;
   border: none;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: var(--text-on-primary);
-  font-size: clamp(16px, 4.5vw, 24px);
+  border-radius: 10px;
+  background: var(--accent-sudoku, #4A90D9);
+  color: #fff;
+  font-size: clamp(17px, 5vw, 26px);
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s, opacity 0.2s, box-shadow 0.15s;
+  transition: background 0.12s, transform 0.1s, opacity 0.2s, box-shadow 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
 }
 .su-num-btn:active {
-  transform: scale(0.9);
-  background: var(--primary-dark);
+  transform: scale(0.92);
+  background: #3a78bf;
 }
 .su-num-btn.completed {
-  opacity: 0.3;
+  opacity: 0.25;
   pointer-events: none;
 }
 
 /* Number-first: selected numpad button */
 .su-num-btn.num-selected {
-  background: var(--accent-sudoku, #4A90D9);
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.4);
-  transform: scale(1.05);
+  background: #2e6aad;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.45);
+  transform: scale(1.08);
 }
 
 .su-num-btn.eraser {
-  background: var(--surface-alt);
+  background: #e0dbd4;
   color: var(--text);
 }
 .su-num-btn.eraser:active {
-  background: #ddd5c8;
+  background: #d0cac2;
 }
 .su-num-btn.eraser.num-selected {
   background: var(--danger);
@@ -288,10 +283,10 @@
 .su-num-remaining {
   position: absolute;
   top: 2px;
-  right: 3px;
+  right: 4px;
   font-size: 9px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.55);
   line-height: 1;
 }
 
@@ -318,65 +313,65 @@
 .su-hint-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(44, 62, 45, 0.5);
+  background: rgba(30, 40, 30, 0.45);
 }
 .su-hint-content {
   position: relative;
-  background: var(--surface);
-  border-radius: var(--radius-lg);
+  background: #fff;
+  border-radius: 20px;
   padding: 28px 24px;
   width: 100%;
   max-width: 380px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
   animation: popIn 0.25s ease-out;
   text-align: center;
   z-index: 1;
 }
 .su-hint-badge {
-  font-size: 40px;
-  margin-bottom: 8px;
+  font-size: 38px;
+  margin-bottom: 6px;
 }
 .su-hint-title {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 700;
   color: var(--accent-sudoku, #4A90D9);
-  margin: 0 0 16px;
+  margin: 0 0 14px;
 }
 .su-hint-steps {
   text-align: left;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 .su-hint-step {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--text);
 }
 .su-hint-step-num {
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   background: var(--accent-sudoku, #4A90D9);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   margin-top: 2px;
 }
 .su-hint-answer {
   font-size: 20px;
   font-weight: 700;
-  color: var(--primary);
-  padding: 12px;
-  background: #e8f0ea;
-  border-radius: var(--radius);
-  margin-bottom: 16px;
+  color: var(--accent-sudoku, #4A90D9);
+  padding: 10px;
+  background: #edf4fc;
+  border-radius: 12px;
+  margin-bottom: 14px;
 }
 .su-hint-answer.hidden {
   display: none;
@@ -487,13 +482,13 @@
   top: 80px;
   left: 50%;
   transform: translateX(-50%) scale(0);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--primary);
-  background: var(--surface);
-  padding: 14px 24px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  color: var(--accent-sudoku, #4A90D9);
+  background: #fff;
+  padding: 12px 22px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
   z-index: 160;
   animation: milestonePop 1.5s ease-out forwards;
   pointer-events: none;
@@ -502,7 +497,7 @@
 }
 @keyframes milestonePop {
   0% { transform: translateX(-50%) scale(0); opacity: 0; }
-  15% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+  15% { transform: translateX(-50%) scale(1.1); opacity: 1; }
   30% { transform: translateX(-50%) scale(1); }
   80% { opacity: 1; }
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.95); }
@@ -511,21 +506,23 @@
 /* --- Desktop --- */
 @media (min-width: 768px) {
   #sudoku-board {
-    --board-size: min(calc(100vw - 64px), calc(100dvh - 280px), 500px);
+    --board-size: min(calc(100vw - 48px), calc(100dvh - 240px), 540px);
   }
   .su-cell {
-    font-size: clamp(20px, 3vw, 28px);
+    font-size: clamp(22px, 3.5vw, 32px);
   }
   .su-num-btn {
-    width: 54px;
-    height: 54px;
-    font-size: 24px;
+    max-width: 58px;
+    font-size: 26px;
   }
   .su-hint-step {
     font-size: 17px;
   }
   .su-action-btn {
-    font-size: 14px;
-    padding: 8px 6px;
+    font-size: 13px;
+    padding: 8px 4px;
+  }
+  .su-cell .pencil-marks span {
+    font-size: 12px;
   }
 }

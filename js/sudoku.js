@@ -526,10 +526,6 @@
         btn.dataset.row = r;
         btn.dataset.col = c;
 
-        // Alternating 3x3 box
-        const boxIdx = Math.floor(r / 3) * 3 + Math.floor(c / 3);
-        if (boxIdx % 2 === 1) btn.classList.add('alt-box');
-
         if (given[r][c]) {
           btn.classList.add('given');
           btn.textContent = board[r][c];
