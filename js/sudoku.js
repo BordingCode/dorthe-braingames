@@ -64,6 +64,30 @@
       example: 'I række 5 kan tallet 8 kun stå i boks 6. Så kan 8 fjernes fra resten af boks 6 — og det afslører svaret!',
       level: 'Øvet',
     },
+    {
+      id: 'naked_triple',
+      name: 'Nøgen triple',
+      icon: '3\uFE0F\u20E3',
+      desc: 'Tre celler i en enhed deler tilsammen kun 3 mulige tal. Disse tal kan fjernes fra alle andre celler i enheden.',
+      example: 'Tre celler kan kun være 2, 5 eller 8. Så kan 2, 5 og 8 fjernes fra resten af rækken — og det afslører svaret!',
+      level: 'Avanceret',
+    },
+    {
+      id: 'hidden_pair',
+      name: 'Skjult par',
+      icon: '\uD83D\uDD75\uFE0F',
+      desc: 'To tal kan kun stå i de samme to celler i en enhed. Alle andre kandidater kan fjernes fra de to celler.',
+      example: 'Tallene 3 og 9 kan kun stå i to bestemte celler i en kolonne. Fjern alt andet fra de celler — og svaret afsløres!',
+      level: 'Avanceret',
+    },
+    {
+      id: 'x_wing',
+      name: 'X-Wing',
+      icon: '\u2716\uFE0F',
+      desc: 'Et tal optræder i præcis 2 celler i 2 rækker, og disse celler er i de samme 2 kolonner. Tallet kan fjernes fra resten af de kolonner.',
+      example: 'Tallet 6 kan kun stå i kolonne 2 og 7 i både række 1 og række 5. Så kan 6 fjernes fra resten af kolonne 2 og 7!',
+      level: 'Avanceret',
+    },
   ];
 
   // --- State ---
@@ -290,6 +314,12 @@
     hint = findPointingPairHint();
     if (hint) return hint;
     hint = findBoxLineHint();
+    if (hint) return hint;
+    hint = findNakedTripleHint();
+    if (hint) return hint;
+    hint = findHiddenPairHint();
+    if (hint) return hint;
+    hint = findXWingHint();
     if (hint) return hint;
     return findFallback();
   }
@@ -772,6 +802,258 @@
                   'Hvor kan ' + num + ' stå i boks ' + boxNum + '?',
                   'Kig på alle tomme celler i boksen.',
                   'Der er kun ét sted ' + num + ' kan være — her!',
+                ],
+              },
+            };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function findNakedTripleHint() {
+    const cands = getAllCandidates();
+
+    function checkUnit(cells, unitName) {
+      // Find cells with 2-3 candidates
+      const small = cells.filter(([r, c]) => cands[r][c].size >= 2 && cands[r][c].size <= 3);
+      if (small.length < 3) return null;
+
+      for (let i = 0; i < small.length; i++)
+        for (let j = i + 1; j < small.length; j++)
+          for (let k = j + 1; k < small.length; k++) {
+            const union = new Set([...cands[small[i][0]][small[i][1]], ...cands[small[j][0]][small[j][1]], ...cands[small[k][0]][small[k][1]]]);
+            if (union.size !== 3) continue;
+
+            const copy = copyCands(cands);
+            let eliminated = false;
+            const tripleVals = [...union];
+            for (const [r, c] of cells) {
+              if ((r === small[i][0] && c === small[i][1]) ||
+                  (r === small[j][0] && c === small[j][1]) ||
+                  (r === small[k][0] && c === small[k][1])) continue;
+              for (const v of tripleVals)
+                if (copy[r][c].delete(v)) eliminated = true;
+            }
+            if (!eliminated) continue;
+
+            const single = findSingleInCands(copy);
+            if (single && single.val === solution[single.r][single.c]) {
+              const highlights = [
+                { r: small[i][0], c: small[i][1], type: 'eliminator' },
+                { r: small[j][0], c: small[j][1], type: 'eliminator' },
+                { r: small[k][0], c: small[k][1], type: 'eliminator' },
+                { r: single.r, c: single.c, type: 'target' },
+              ];
+              return {
+                type: 'naked_triple', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+                technique: {
+                  name: 'Nøgen triple', icon: '3\uFE0F\u20E3',
+                  steps: [
+                    'Tre celler i ' + unitName + ' kan tilsammen kun indeholde ' + tripleVals.join(', ') + '.',
+                    'Derfor kan disse tal fjernes fra de andre celler.',
+                    'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                  ],
+                },
+              };
+            }
+          }
+      return null;
+    }
+
+    for (let r = 0; r < 9; r++) {
+      const cells = [];
+      for (let c = 0; c < 9; c++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'række ' + (r+1));
+      if (result) return result;
+    }
+    for (let c = 0; c < 9; c++) {
+      const cells = [];
+      for (let r = 0; r < 9; r++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'kolonne ' + (c+1));
+      if (result) return result;
+    }
+    for (let br = 0; br < 9; br += 3)
+      for (let bc = 0; bc < 9; bc += 3) {
+        const cells = [];
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++)
+            if (board[br+dr][bc+dc] === 0) cells.push([br+dr, bc+dc]);
+        const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
+        const result = checkUnit(cells, 'boks ' + boxNum);
+        if (result) return result;
+      }
+    return null;
+  }
+
+  function findHiddenPairHint() {
+    const cands = getAllCandidates();
+
+    function checkUnit(cells, unitName) {
+      // For each pair of numbers 1-9, check if they appear in exactly 2 cells
+      for (let n1 = 1; n1 <= 9; n1++) {
+        for (let n2 = n1 + 1; n2 <= 9; n2++) {
+          const cellsWithN1 = cells.filter(([r, c]) => cands[r][c].has(n1));
+          const cellsWithN2 = cells.filter(([r, c]) => cands[r][c].has(n2));
+          if (cellsWithN1.length !== 2 || cellsWithN2.length !== 2) continue;
+          // Check same 2 cells
+          if (cellsWithN1[0][0] !== cellsWithN2[0][0] || cellsWithN1[0][1] !== cellsWithN2[0][1]) continue;
+          if (cellsWithN1[1][0] !== cellsWithN2[1][0] || cellsWithN1[1][1] !== cellsWithN2[1][1]) continue;
+
+          const [r1, c1] = cellsWithN1[0];
+          const [r2, c2] = cellsWithN1[1];
+          // Only useful if these cells have MORE than just n1,n2
+          if (cands[r1][c1].size <= 2 && cands[r2][c2].size <= 2) continue;
+
+          const copy = copyCands(cands);
+          copy[r1][c1] = new Set([n1, n2]);
+          copy[r2][c2] = new Set([n1, n2]);
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: r1, c: c1, type: 'eliminator' },
+              { r: r2, c: c2, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            return {
+              type: 'hidden_pair', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'Skjult par', icon: '\uD83D\uDD75\uFE0F',
+                steps: [
+                  'I ' + unitName + ' kan ' + n1 + ' og ' + n2 + ' kun stå i cellerne (' + (r1+1) + ',' + (c1+1) + ') og (' + (r2+1) + ',' + (c2+1) + ').',
+                  'Alle andre kandidater kan fjernes fra disse celler.',
+                  'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+      }
+      return null;
+    }
+
+    for (let r = 0; r < 9; r++) {
+      const cells = [];
+      for (let c = 0; c < 9; c++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'række ' + (r+1));
+      if (result) return result;
+    }
+    for (let c = 0; c < 9; c++) {
+      const cells = [];
+      for (let r = 0; r < 9; r++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'kolonne ' + (c+1));
+      if (result) return result;
+    }
+    for (let br = 0; br < 9; br += 3)
+      for (let bc = 0; bc < 9; bc += 3) {
+        const cells = [];
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++)
+            if (board[br+dr][bc+dc] === 0) cells.push([br+dr, bc+dc]);
+        const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
+        const result = checkUnit(cells, 'boks ' + boxNum);
+        if (result) return result;
+      }
+    return null;
+  }
+
+  function findXWingHint() {
+    const cands = getAllCandidates();
+
+    // Check rows: find num that appears in exactly 2 cols in 2 different rows
+    for (let num = 1; num <= 9; num++) {
+      // Collect rows where num appears in exactly 2 cells
+      const rowPairs = [];
+      for (let r = 0; r < 9; r++) {
+        const cols = [];
+        for (let c = 0; c < 9; c++)
+          if (cands[r][c].has(num)) cols.push(c);
+        if (cols.length === 2) rowPairs.push({ r, cols });
+      }
+
+      for (let i = 0; i < rowPairs.length; i++) {
+        for (let j = i + 1; j < rowPairs.length; j++) {
+          if (rowPairs[i].cols[0] !== rowPairs[j].cols[0] ||
+              rowPairs[i].cols[1] !== rowPairs[j].cols[1]) continue;
+
+          const r1 = rowPairs[i].r, r2 = rowPairs[j].r;
+          const c1 = rowPairs[i].cols[0], c2 = rowPairs[i].cols[1];
+
+          // Eliminate num from the 2 columns (outside the 2 rows)
+          const copy = copyCands(cands);
+          let eliminated = false;
+          for (let r = 0; r < 9; r++) {
+            if (r === r1 || r === r2) continue;
+            if (copy[r][c1].delete(num)) eliminated = true;
+            if (copy[r][c2].delete(num)) eliminated = true;
+          }
+          if (!eliminated) continue;
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: r1, c: c1, type: 'eliminator' }, { r: r1, c: c2, type: 'eliminator' },
+              { r: r2, c: c1, type: 'eliminator' }, { r: r2, c: c2, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            return {
+              type: 'x_wing', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'X-Wing', icon: '\u2716\uFE0F',
+                steps: [
+                  num + ' kan kun stå i kolonne ' + (c1+1) + ' og ' + (c2+1) + ' i både række ' + (r1+1) + ' og ' + (r2+1) + '.',
+                  'Derfor kan ' + num + ' fjernes fra resten af kolonne ' + (c1+1) + ' og ' + (c2+1) + '.',
+                  'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+      }
+
+      // Check columns: num in exactly 2 rows in 2 different cols
+      const colPairs = [];
+      for (let c = 0; c < 9; c++) {
+        const rows = [];
+        for (let r = 0; r < 9; r++)
+          if (cands[r][c].has(num)) rows.push(r);
+        if (rows.length === 2) colPairs.push({ c, rows });
+      }
+
+      for (let i = 0; i < colPairs.length; i++) {
+        for (let j = i + 1; j < colPairs.length; j++) {
+          if (colPairs[i].rows[0] !== colPairs[j].rows[0] ||
+              colPairs[i].rows[1] !== colPairs[j].rows[1]) continue;
+
+          const c1 = colPairs[i].c, c2 = colPairs[j].c;
+          const r1 = colPairs[i].rows[0], r2 = colPairs[i].rows[1];
+
+          const copy = copyCands(cands);
+          let eliminated = false;
+          for (let c = 0; c < 9; c++) {
+            if (c === c1 || c === c2) continue;
+            if (copy[r1][c].delete(num)) eliminated = true;
+            if (copy[r2][c].delete(num)) eliminated = true;
+          }
+          if (!eliminated) continue;
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: r1, c: c1, type: 'eliminator' }, { r: r2, c: c1, type: 'eliminator' },
+              { r: r1, c: c2, type: 'eliminator' }, { r: r2, c: c2, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            return {
+              type: 'x_wing', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'X-Wing', icon: '\u2716\uFE0F',
+                steps: [
+                  num + ' kan kun stå i række ' + (r1+1) + ' og ' + (r2+1) + ' i både kolonne ' + (c1+1) + ' og ' + (c2+1) + '.',
+                  'Derfor kan ' + num + ' fjernes fra resten af række ' + (r1+1) + ' og ' + (r2+1) + '.',
+                  'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
                 ],
               },
             };
