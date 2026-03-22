@@ -545,12 +545,40 @@
     return cands.map(r => r.map(c => new Set(c)));
   }
 
-  // Find a naked single in a candidate grid
-  function findSingleInCands(cands) {
+  // Find a cell revealed by elimination: naked single OR hidden single
+  function findRevealedCell(cands) {
+    // Check for naked singles (cell with 1 candidate)
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
         if (cands[r][c].size === 1)
           return { r, c, val: cands[r][c].values().next().value };
+    // Check for hidden singles (number with only 1 position in a unit)
+    // Rows
+    for (let r = 0; r < 9; r++)
+      for (let num = 1; num <= 9; num++) {
+        let count = 0, lastC = -1;
+        for (let c = 0; c < 9; c++)
+          if (cands[r][c].has(num)) { count++; lastC = c; }
+        if (count === 1) return { r, c: lastC, val: num };
+      }
+    // Columns
+    for (let c = 0; c < 9; c++)
+      for (let num = 1; num <= 9; num++) {
+        let count = 0, lastR = -1;
+        for (let r = 0; r < 9; r++)
+          if (cands[r][c].has(num)) { count++; lastR = r; }
+        if (count === 1) return { r: lastR, c, val: num };
+      }
+    // Boxes
+    for (let br = 0; br < 9; br += 3)
+      for (let bc = 0; bc < 9; bc += 3)
+        for (let num = 1; num <= 9; num++) {
+          let count = 0, lastR = -1, lastC = -1;
+          for (let dr = 0; dr < 3; dr++)
+            for (let dc = 0; dc < 3; dc++)
+              if (cands[br + dr][bc + dc].has(num)) { count++; lastR = br + dr; lastC = bc + dc; }
+          if (count === 1) return { r: lastR, c: lastC, val: num };
+        }
     return null;
   }
 
@@ -587,7 +615,7 @@
           if (!eliminated) continue;
 
           // Check if elimination created a single
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: r1, c: c1, type: 'eliminator' },
@@ -678,7 +706,7 @@
           }
 
           if (!eliminated) continue;
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
             const unitName = allSameRow ? 'række ' + (positions[0][0]+1) : 'kolonne ' + (positions[0][1]+1);
@@ -728,7 +756,7 @@
           }
 
         if (!eliminated) continue;
-        const single = findSingleInCands(copy);
+        const single = findRevealedCell(copy);
         if (single && single.val === solution[single.r][single.c]) {
           const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
           const highlights = [{ r: single.r, c: single.c, type: 'target' }];
@@ -769,7 +797,7 @@
           }
 
         if (!eliminated) continue;
-        const single = findSingleInCands(copy);
+        const single = findRevealedCell(copy);
         if (single && single.val === solution[single.r][single.c]) {
           const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
           const highlights = [{ r: single.r, c: single.c, type: 'target' }];
@@ -800,18 +828,12 @@
       if (empties.length === 1) {
         const c = empties[0];
         const val = solution[r][c];
-        const highlights = [];
-        for (let cc = 0; cc < 9; cc++)
-          highlights.push({ r, c: cc, type: cc === c ? 'target' : 'unit' });
         return {
-          type: 'last_remaining', cell: { r, c }, value: val, highlights,
+          type: 'last_remaining', cell: { r, c }, value: val,
+          highlights: [{ r, c, type: 'target' }],
           technique: {
             name: 'Sidste plads', icon: '1\uFE0F\u20E3',
-            steps: [
-              'Kig på række ' + (r + 1) + ' — der er kun én tom plads.',
-              'Tallene 1\u20139 skal alle være der.',
-              'Tallet ' + val + ' mangler — så det skal stå her!',
-            ],
+            steps: ['Der er kun én tom plads i rækken.'],
           },
         };
       }
@@ -824,18 +846,12 @@
       if (empties.length === 1) {
         const r = empties[0];
         const val = solution[r][c];
-        const highlights = [];
-        for (let rr = 0; rr < 9; rr++)
-          highlights.push({ r: rr, c, type: rr === r ? 'target' : 'unit' });
         return {
-          type: 'last_remaining', cell: { r, c }, value: val, highlights,
+          type: 'last_remaining', cell: { r, c }, value: val,
+          highlights: [{ r, c, type: 'target' }],
           technique: {
             name: 'Sidste plads', icon: '1\uFE0F\u20E3',
-            steps: [
-              'Kig på kolonne ' + (c + 1) + ' — der er kun én tom plads.',
-              'Tallene 1\u20139 skal alle være der.',
-              'Tallet ' + val + ' mangler — så det skal stå her!',
-            ],
+            steps: ['Der er kun én tom plads i kolonnen.'],
           },
         };
       }
@@ -850,22 +866,12 @@
         if (empties.length === 1) {
           const [r, c] = empties[0];
           const val = solution[r][c];
-          const highlights = [];
-          for (let dr = 0; dr < 3; dr++)
-            for (let dc = 0; dc < 3; dc++) {
-              const rr = br + dr, cc = bc + dc;
-              highlights.push({ r: rr, c: cc, type: (rr === r && cc === c) ? 'target' : 'unit' });
-            }
-          const boxNum = Math.floor(br / 3) * 3 + Math.floor(bc / 3) + 1;
           return {
-            type: 'last_remaining', cell: { r, c }, value: val, highlights,
+            type: 'last_remaining', cell: { r, c }, value: val,
+            highlights: [{ r, c, type: 'target' }],
             technique: {
               name: 'Sidste plads', icon: '1\uFE0F\u20E3',
-              steps: [
-                'Kig på boks ' + boxNum + ' — der er kun én tom plads.',
-                'Tallene 1\u20139 skal alle være der.',
-                'Tallet ' + val + ' mangler — så det skal stå her!',
-              ],
+              steps: ['Der er kun én tom plads i boksen.'],
             },
           };
         }
@@ -882,32 +888,10 @@
         if (cands.size === 1) {
           const val = cands.values().next().value;
           const highlights = [{ r, c, type: 'target' }];
-          const rowNums = [], colNums = [], boxNums = [];
-          for (let i = 0; i < 9; i++) {
-            if (board[r][i] !== 0 && i !== c) {
-              rowNums.push(board[r][i]);
-              highlights.push({ r, c: i, type: 'eliminator' });
-            }
-            if (board[i][c] !== 0 && i !== r) {
-              colNums.push(board[i][c]);
-              highlights.push({ r: i, c, type: 'eliminator' });
-            }
-          }
-          const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
-          for (let dr = 0; dr < 3; dr++)
-            for (let dc = 0; dc < 3; dc++) {
-              const rr = br + dr, cc = bc + dc;
-              if (board[rr][cc] !== 0 && !(rr === r && cc === c)) {
-                if (!rowNums.includes(board[rr][cc]) && !colNums.includes(board[rr][cc]))
-                  boxNums.push(board[rr][cc]);
-                highlights.push({ r: rr, c: cc, type: 'eliminator' });
-              }
-            }
-          const steps = ['Kig på cellen i række ' + (r + 1) + ', kolonne ' + (c + 1) + '.'];
-          if (rowNums.length > 0) steps.push('Rækken har allerede: ' + rowNums.sort((a, b) => a - b).join(', '));
-          if (colNums.length > 0) steps.push('Kolonnen har allerede: ' + colNums.sort((a, b) => a - b).join(', '));
-          if (boxNums.length > 0) steps.push('Boksen har også: ' + boxNums.sort((a, b) => a - b).join(', '));
-          steps.push('Det eneste tal der er tilbage er ' + val + '!');
+          const steps = [
+            'Alle andre tal findes allerede i rækken, kolonnen eller boksen.',
+            'Det eneste tal der er tilbage er ' + val + '!',
+          ];
           return {
             type: 'naked_single', cell: { r, c }, value: val, highlights,
             technique: { name: 'Eneste mulighed', icon: '\uD83C\uDFAF', steps },
@@ -930,18 +914,12 @@
           if (board[r][c] === 0 && getCandidates(r, c).has(num)) possible.push(c);
         if (possible.length === 1) {
           const c = possible[0];
-          const highlights = [];
-          for (let cc = 0; cc < 9; cc++)
-            highlights.push({ r, c: cc, type: cc === c ? 'target' : 'unit' });
           return {
-            type: 'hidden_single', cell: { r, c }, value: num, highlights,
+            type: 'hidden_single', cell: { r, c }, value: num,
+            highlights: [{ r, c, type: 'target' }],
             technique: {
               name: 'Skjult eneste', icon: '\uD83D\uDD0D',
-              steps: [
-                'Hvor kan ' + num + ' stå i række ' + (r + 1) + '?',
-                'Kig på alle tomme celler i rækken.',
-                'Der er kun ét sted ' + num + ' kan være — her!',
-              ],
+              steps: [num + ' kan kun stå ét sted i denne række.'],
             },
           };
         }
@@ -958,18 +936,12 @@
           if (board[r][c] === 0 && getCandidates(r, c).has(num)) possible.push(r);
         if (possible.length === 1) {
           const r = possible[0];
-          const highlights = [];
-          for (let rr = 0; rr < 9; rr++)
-            highlights.push({ r: rr, c, type: rr === r ? 'target' : 'unit' });
           return {
-            type: 'hidden_single', cell: { r, c }, value: num, highlights,
+            type: 'hidden_single', cell: { r, c }, value: num,
+            highlights: [{ r, c, type: 'target' }],
             technique: {
               name: 'Skjult eneste', icon: '\uD83D\uDD0D',
-              steps: [
-                'Hvor kan ' + num + ' stå i kolonne ' + (c + 1) + '?',
-                'Kig på alle tomme celler i kolonnen.',
-                'Der er kun ét sted ' + num + ' kan være — her!',
-              ],
+              steps: [num + ' kan kun stå ét sted i denne kolonne.'],
             },
           };
         }
@@ -994,22 +966,12 @@
             }
           if (possible.length === 1) {
             const [r, c] = possible[0];
-            const highlights = [];
-            for (let dr = 0; dr < 3; dr++)
-              for (let dc = 0; dc < 3; dc++) {
-                const rr = br + dr, cc = bc + dc;
-                highlights.push({ r: rr, c: cc, type: (rr === r && cc === c) ? 'target' : 'unit' });
-              }
-            const boxNum = Math.floor(br / 3) * 3 + Math.floor(bc / 3) + 1;
             return {
-              type: 'hidden_single', cell: { r, c }, value: num, highlights,
+              type: 'hidden_single', cell: { r, c }, value: num,
+              highlights: [{ r, c, type: 'target' }],
               technique: {
                 name: 'Skjult eneste', icon: '\uD83D\uDD0D',
-                steps: [
-                  'Hvor kan ' + num + ' stå i boks ' + boxNum + '?',
-                  'Kig på alle tomme celler i boksen.',
-                  'Der er kun ét sted ' + num + ' kan være — her!',
-                ],
+                steps: [num + ' kan kun stå ét sted i denne boks.'],
               },
             };
           }
@@ -1045,7 +1007,7 @@
             }
             if (!eliminated) continue;
 
-            const single = findSingleInCands(copy);
+            const single = findRevealedCell(copy);
             if (single && single.val === solution[single.r][single.c]) {
               const highlights = [
                 { r: small[i][0], c: small[i][1], type: 'eliminator' },
@@ -1117,7 +1079,7 @@
           copy[r1][c1] = new Set([n1, n2]);
           copy[r2][c2] = new Set([n1, n2]);
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: r1, c: c1, type: 'eliminator' },
@@ -1198,7 +1160,7 @@
           }
           if (!eliminated) continue;
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: r1, c: c1, type: 'eliminator' }, { r: r1, c: c2, type: 'eliminator' },
@@ -1246,7 +1208,7 @@
           }
           if (!eliminated) continue;
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: r1, c: c1, type: 'eliminator' }, { r: r2, c: c1, type: 'eliminator' },
@@ -1299,7 +1261,7 @@
                 if (!nums.includes(v)) copy[r][c].delete(v);
             }
 
-            const single = findSingleInCands(copy);
+            const single = findRevealedCell(copy);
             if (single && single.val === solution[single.r][single.c]) {
               const highlights = containing.map(([r, c]) => ({ r, c, type: 'eliminator' }));
               highlights.push({ r: single.r, c: single.c, type: 'target' });
@@ -1367,7 +1329,7 @@
               }
             if (!eliminated) continue;
 
-            const single = findSingleInCands(copy);
+            const single = findRevealedCell(copy);
             if (single && single.val === solution[single.r][single.c]) {
               const highlights = [{ r: single.r, c: single.c, type: 'target' }];
               for (const r of rows) for (const c of targetCols)
@@ -1411,7 +1373,7 @@
               }
             if (!eliminated) continue;
 
-            const single = findSingleInCands(copy);
+            const single = findRevealedCell(copy);
             if (single && single.val === solution[single.r][single.c]) {
               const highlights = [{ r: single.r, c: single.c, type: 'target' }];
               for (const c of cols) for (const r of targetRows)
@@ -1482,7 +1444,7 @@
             }
           if (!eliminated) continue;
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: pivot.r, c: pivot.c, type: 'eliminator' },
@@ -1534,7 +1496,7 @@
               }
               if (!eliminated) continue;
 
-              const single = findSingleInCands(copy);
+              const single = findRevealedCell(copy);
               if (single && single.val === solution[single.r][single.c]) {
                 const highlights = quad.map(([r, c]) => ({ r, c, type: 'eliminator' }));
                 highlights.push({ r: single.r, c: single.c, type: 'target' });
@@ -1613,7 +1575,7 @@
             }
           if (!eliminated) continue;
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: a.r, c: a.c1, type: 'eliminator' }, { r: a.r, c: a.c2, type: 'eliminator' },
@@ -1664,7 +1626,7 @@
             }
           if (!eliminated) continue;
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = [
               { r: a.r1, c: a.c, type: 'eliminator' }, { r: a.r2, c: a.c, type: 'eliminator' },
@@ -1786,7 +1748,7 @@
           const copy = copyCands(cands);
           for (const [r, c] of group) copy[r][c].delete(num);
 
-          const single = findSingleInCands(copy);
+          const single = findRevealedCell(copy);
           if (single && single.val === solution[single.r][single.c]) {
             const highlights = group.map(([r, c]) => ({ r, c, type: 'eliminator' }));
             highlights.push({ r: single.r, c: single.c, type: 'target' });
@@ -1819,7 +1781,7 @@
           }
 
         if (!eliminated) continue;
-        const single = findSingleInCands(copy);
+        const single = findRevealedCell(copy);
         if (single && single.val === solution[single.r][single.c]) {
           const allChain = [...chain.keys()].map(k => { const [r, c] = k.split(',').map(Number); return { r, c }; });
           const highlights = allChain.map(p => ({ ...p, type: 'eliminator' }));
@@ -1951,7 +1913,7 @@
                 }
               if (!eliminated) continue;
 
-              const single = findSingleInCands(copy);
+              const single = findRevealedCell(copy);
               if (single && single.val === solution[single.r][single.c]) {
                 const highlights = [
                   { r: rp.r, c: rp.cols[0], type: 'eliminator' },
@@ -2024,7 +1986,7 @@
                     if (copy[rr][cc].delete(elimVal)) eliminated = true;
                 }
               if (!eliminated) continue;
-              const single = findSingleInCands(copy);
+              const single = findRevealedCell(copy);
               if (single && single.val === solution[single.r][single.c]) {
                 return {
                   type: 'w_wing', cell: { r: single.r, c: single.c }, value: single.val,
@@ -2063,7 +2025,7 @@
                     if (copy[rr][cc].delete(elimVal)) eliminated = true;
                 }
               if (!eliminated) continue;
-              const single = findSingleInCands(copy);
+              const single = findRevealedCell(copy);
               if (single && single.val === solution[single.r][single.c]) {
                 return {
                   type: 'w_wing', cell: { r: single.r, c: single.c }, value: single.val,
@@ -2133,7 +2095,7 @@
                     }
                   if (!eliminated) continue;
 
-                  const single = findSingleInCands(copy);
+                  const single = findRevealedCell(copy);
                   if (single && single.val === solution[single.r][single.c]) {
                     return {
                       type: 'xyz_wing', cell: { r: single.r, c: single.c }, value: single.val,
@@ -2212,18 +2174,33 @@
   }
 
   function findFallback() {
+    // Find the empty cell with fewest candidates — easiest to reason about
+    let bestR = -1, bestC = -1, bestSize = 10;
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
-        if (board[r][c] === 0)
-          return {
-            type: 'fallback', cell: { r, c }, value: solution[r][c],
-            highlights: [{ r, c, type: 'target' }],
-            technique: {
-              name: 'Hjælp', icon: '\uD83D\uDCA1',
-              steps: ['Dette er et svært trin.', 'Svaret er ' + solution[r][c] + '.'],
-            },
-          };
-    return null;
+        if (board[r][c] === 0) {
+          const size = getCandidates(r, c).size;
+          if (size > 0 && size < bestSize) { bestSize = size; bestR = r; bestC = c; }
+        }
+    if (bestR === -1) return null;
+    const r = bestR, c = bestC;
+    const cands = getCandidates(r, c);
+    const val = solution[r][c];
+    const candList = [...cands].sort((a, b) => a - b).join(' eller ');
+    const steps = [];
+    if (cands.size <= 3) {
+      steps.push('Denne celle kan kun være ' + candList + '.');
+      steps.push('Kig på rækken, kolonnen og boksen for at finde svaret.');
+    } else {
+      steps.push('Prøv at kigge på denne celle.');
+      steps.push('Den kan være ' + candList + '.');
+    }
+    steps.push('Svaret er ' + val + '.');
+    return {
+      type: 'fallback', cell: { r, c }, value: val,
+      highlights: [{ r, c, type: 'target' }],
+      technique: { name: 'Hjælp', icon: '\uD83D\uDCA1', steps },
+    };
   }
 
   // ========================
@@ -2682,12 +2659,11 @@
 
   function showHintModal(hint) {
     const modal = document.getElementById('sudoku-hint-modal');
-    const badge = document.getElementById('su-hint-badge');
     const title = document.getElementById('su-hint-title');
     const stepsEl = document.getElementById('su-hint-steps');
     const answer = document.getElementById('su-hint-answer');
 
-    badge.textContent = hint.technique.icon;
+    answer.textContent = 'Skriv ' + hint.value;
     title.textContent = hint.technique.name;
 
     stepsEl.innerHTML = '';
@@ -2697,10 +2673,6 @@
       div.innerHTML = '<span class="su-hint-step-num">' + (i + 1) + '</span><span>' + step + '</span>';
       stepsEl.appendChild(div);
     });
-
-    // Hide the answer initially
-    answer.textContent = 'Svaret er: ' + hint.value;
-    answer.classList.add('hidden');
 
     document.getElementById('su-hint-try-btn').onclick = function () {
       closeHintModal();
@@ -2714,14 +2686,9 @@
     };
 
     document.getElementById('su-hint-show-btn').onclick = function () {
-      // Show the answer first, then place it
-      answer.classList.remove('hidden');
       trackTechnique(hint.type);
-      // Small delay so user sees the answer before modal closes
-      setTimeout(() => {
-        closeHintModal();
-        placeHint(hint);
-      }, 600);
+      closeHintModal();
+      placeHint(hint);
     };
 
     // Backdrop click to close

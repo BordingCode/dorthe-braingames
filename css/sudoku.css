@@ -173,18 +173,20 @@
 
 /* Hint highlights */
 .su-cell.su-hint-target {
-  animation: suHintPulse 0.8s ease-in-out infinite alternate;
+  background: #a8e6b0 !important;
+  box-shadow: inset 0 0 0 3px #2e8b3e;
   z-index: 2;
+  animation: suHintPulse 1s ease-in-out infinite alternate;
 }
 @keyframes suHintPulse {
-  from { background: #c4daf0; box-shadow: inset 0 0 0 2px var(--accent-sudoku, #4A90D9); }
-  to { background: #aecbe8; box-shadow: inset 0 0 0 3px var(--accent-sudoku, #4A90D9); }
+  from { background: #a8e6b0 !important; }
+  to { background: #7dd68a !important; }
 }
 .su-cell.su-hint-unit {
-  background: #e4eef7;
+  background: transparent;
 }
 .su-cell.su-hint-eliminator {
-  background: #fdf0de;
+  background: #fff3cd;
 }
 .su-cell.hint-flash {
   animation: suHintFlash 0.8s ease-out;
@@ -371,16 +373,19 @@
   text-align: center;
   z-index: 1;
 }
-.su-hint-badge {
-  font-size: 38px;
-  margin-bottom: 6px;
+.su-hint-answer {
+  font-size: 32px;
+  font-weight: 800;
+  color: #2e8b3e;
+  padding: 12px;
+  background: #e8f5e9;
+  margin-bottom: 10px;
 }
 .su-hint-title {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 21px;
-  font-weight: 700;
-  color: var(--accent-sudoku, #4A90D9);
-  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 10px;
 }
 .su-hint-steps {
   text-align: left;
@@ -388,37 +393,25 @@
 }
 .su-hint-step {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--text);
 }
 .su-hint-step-num {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   background: var(--accent-sudoku, #4A90D9);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  margin-top: 2px;
-}
-.su-hint-answer {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent-sudoku, #4A90D9);
-  padding: 10px;
-  background: #edf4fc;
-  border-radius: 0;
-  margin-bottom: 14px;
-}
-.su-hint-answer.hidden {
-  display: none;
+  margin-top: 1px;
 }
 .su-hint-buttons {
   display: flex;
