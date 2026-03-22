@@ -10,16 +10,16 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-  <link rel="stylesheet" href="css/shared.css?v=20260322">
-  <link rel="stylesheet" href="css/home.css?v=20260322">
-  <link rel="stylesheet" href="css/lightsout.css?v=20260322">
-  <link rel="stylesheet" href="css/memory.css?v=20260322">
-  <link rel="stylesheet" href="css/minesweeper.css?v=20260322">
-  <link rel="stylesheet" href="css/wordsearch.css?v=20260322">
-  <link rel="stylesheet" href="css/nback.css?v=20260322">
-  <link rel="stylesheet" href="css/solitaire.css?v=20260322">
-  <link rel="stylesheet" href="css/sudoku.css?v=20260322">
-  <link rel="stylesheet" href="css/stats.css?v=20260322">
+  <link rel="stylesheet" href="css/shared.css?v=20260322b">
+  <link rel="stylesheet" href="css/home.css?v=20260322b">
+  <link rel="stylesheet" href="css/lightsout.css?v=20260322b">
+  <link rel="stylesheet" href="css/memory.css?v=20260322b">
+  <link rel="stylesheet" href="css/minesweeper.css?v=20260322b">
+  <link rel="stylesheet" href="css/wordsearch.css?v=20260322b">
+  <link rel="stylesheet" href="css/nback.css?v=20260322b">
+  <link rel="stylesheet" href="css/solitaire.css?v=20260322b">
+  <link rel="stylesheet" href="css/sudoku.css?v=20260322b">
+  <link rel="stylesheet" href="css/stats.css?v=20260322b">
 </head>
 <body>
 
@@ -150,28 +150,33 @@
       <span>Fejl: <b id="sudoku-errors">0</b>/<b id="sudoku-max-errors">5</b></span>
       <span>Tid: <b id="sudoku-timer">0:00</b></span>
       <button id="sudoku-pencil-btn" class="flag-mode-btn">✏️ Noter</button>
-      <button id="sudoku-autonote-btn" class="flag-mode-btn" title="Udfyld noter automatisk">📝 Auto</button>
-      <button id="sudoku-hint-btn" class="flag-mode-btn" title="Få et tip">💡 Tip</button>
-      <button id="sudoku-undo-btn" class="flag-mode-btn" disabled>↩</button>
-      <button id="sudoku-learn-btn" class="flag-mode-btn" title="Lær teknikker">📖</button>
     </div>
     <div class="game-area">
-      <div id="sudoku-progress-bar" class="su-progress-bar">
-        <div class="su-progress-fill" id="sudoku-progress-fill"></div>
+      <div id="sudoku-progress-wrap" class="su-progress-wrap">
+        <div class="su-progress-bar">
+          <div class="su-progress-fill" id="sudoku-progress-fill"></div>
+        </div>
         <span class="su-progress-text" id="sudoku-progress-text">0/81</span>
       </div>
       <div id="sudoku-board"></div>
+      <div id="sudoku-actions" class="su-actions">
+        <button id="sudoku-hint-btn" class="su-action-btn" title="Få et tip">💡 Tip</button>
+        <button id="sudoku-undo-btn" class="su-action-btn" disabled title="Fortryd">↩ Fortryd</button>
+        <button id="sudoku-autonote-btn" class="su-action-btn" title="Udfyld noter automatisk">📝 Auto</button>
+        <button id="sudoku-learn-btn" class="su-action-btn" title="Lær teknikker">📖</button>
+      </div>
       <div id="sudoku-numpad"></div>
     </div>
   </div>
 
   <!-- ===== Sudoku Hint Modal ===== -->
   <div id="sudoku-hint-modal" class="su-hint-modal">
+    <div class="su-hint-backdrop"></div>
     <div class="su-hint-content">
       <div class="su-hint-badge" id="su-hint-badge"></div>
       <h3 class="su-hint-title" id="su-hint-title"></h3>
       <div class="su-hint-steps" id="su-hint-steps"></div>
-      <div class="su-hint-answer" id="su-hint-answer"></div>
+      <div class="su-hint-answer hidden" id="su-hint-answer"></div>
       <div class="su-hint-buttons">
         <button class="btn btn-secondary" id="su-hint-try-btn">Jeg prøver selv</button>
         <button class="btn btn-primary" id="su-hint-show-btn">Vis mig</button>
@@ -233,13 +238,13 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/shared.js?v=20260322"></script>
-  <script src="js/lightsout.js?v=20260322"></script>
-  <script src="js/memory.js?v=20260322"></script>
-  <script src="js/minesweeper.js?v=20260322"></script>
-  <script src="js/wordsearch.js?v=20260322"></script>
-  <script src="js/nback.js?v=20260322"></script>
-  <script src="js/solitaire.js?v=20260322"></script>
-  <script src="js/sudoku.js?v=20260322"></script>
+  <script src="js/shared.js?v=20260322b"></script>
+  <script src="js/lightsout.js?v=20260322b"></script>
+  <script src="js/memory.js?v=20260322b"></script>
+  <script src="js/minesweeper.js?v=20260322b"></script>
+  <script src="js/wordsearch.js?v=20260322b"></script>
+  <script src="js/nback.js?v=20260322b"></script>
+  <script src="js/solitaire.js?v=20260322b"></script>
+  <script src="js/sudoku.js?v=20260322b"></script>
 </body>
 </html>

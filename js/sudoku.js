@@ -47,7 +47,7 @@
   let solution = [];
   let given = [];
   let pencil = [];
-  let hinted = [];       // true if cell was filled by hint
+  let hinted = [];
   let errors = 0;
   let maxErrors = 5;
   let selectedCell = null;
@@ -60,6 +60,7 @@
   let milestoneShown = {};
   let techniquesLearned = {};
   let initialEmpty = 0;
+  let selectedNumber = null;  // number-first mode
 
   try {
     techniquesLearned = JSON.parse(localStorage.getItem('bg_sudoku_techniques') || '{}');
@@ -90,7 +91,6 @@
     const diff = getDifficulty('sudoku');
     diffBtn.textContent = LABEL_MAP[diff] || 'Let';
 
-    // Try to resume saved game
     const saved = localStorage.getItem('bg_sudoku_save');
     if (saved) {
       try {
@@ -99,7 +99,7 @@
           loadGame(state);
           return;
         }
-      } catch (e) { /* corrupted save, ignore */ }
+      } catch (e) { /* corrupted save */ }
     }
     startGame();
   }
@@ -112,6 +112,7 @@
     gameOver = false;
     pencilMode = false;
     selectedCell = null;
+    selectedNumber = null;
     moveHistory = [];
     hintCount = 0;
     activeHint = null;
@@ -124,17 +125,14 @@
     if (timer) timer.reset();
     timer = new GameTimer(timerEl);
 
-    // Generate puzzle
     solution = generateSolved();
     board = solution.map(r => r.slice());
     given = Array.from({ length: 9 }, () => Array(9).fill(true));
     pencil = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
     hinted = Array.from({ length: 9 }, () => Array(9).fill(false));
 
-    // Remove cells
     removeCells(81 - config.givens);
 
-    // Count initial empties for milestone tracking
     initialEmpty = 0;
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
@@ -174,28 +172,22 @@
   }
 
   function findEmpty(grid) {
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
         if (grid[r][c] === 0) return [r, c];
-      }
-    }
     return null;
   }
 
   function isValid(grid, row, col, num) {
-    for (let c = 0; c < 9; c++) {
+    for (let c = 0; c < 9; c++)
       if (grid[row][c] === num) return false;
-    }
-    for (let r = 0; r < 9; r++) {
+    for (let r = 0; r < 9; r++)
       if (grid[r][col] === num) return false;
-    }
     const br = Math.floor(row / 3) * 3;
     const bc = Math.floor(col / 3) * 3;
-    for (let r = br; r < br + 3; r++) {
-      for (let c = bc; c < bc + 3; c++) {
+    for (let r = br; r < br + 3; r++)
+      for (let c = bc; c < bc + 3; c++)
         if (grid[r][c] === num) return false;
-      }
-    }
     return true;
   }
 
@@ -269,41 +261,31 @@
   // ========================
 
   function findHint() {
-    // 1. Last Remaining in Unit
-    var hint = findLastRemaining();
+    let hint = findLastRemaining();
     if (hint) return hint;
-    // 2. Naked Single
     hint = findNakedSingle();
     if (hint) return hint;
-    // 3. Hidden Single
     hint = findHiddenSingle();
     if (hint) return hint;
-    // Fallback
     return findFallback();
   }
 
   function findLastRemaining() {
-    // Check rows
+    // Rows
     for (let r = 0; r < 9; r++) {
       const empties = [];
-      for (let c = 0; c < 9; c++) {
+      for (let c = 0; c < 9; c++)
         if (board[r][c] === 0) empties.push(c);
-      }
       if (empties.length === 1) {
         const c = empties[0];
         const val = solution[r][c];
         const highlights = [];
-        for (let cc = 0; cc < 9; cc++) {
-          highlights.push({ r: r, c: cc, type: cc === c ? 'target' : 'unit' });
-        }
+        for (let cc = 0; cc < 9; cc++)
+          highlights.push({ r, c: cc, type: cc === c ? 'target' : 'unit' });
         return {
-          type: 'last_remaining',
-          cell: { r, c },
-          value: val,
-          highlights: highlights,
+          type: 'last_remaining', cell: { r, c }, value: val, highlights,
           technique: {
-            name: 'Sidste plads',
-            icon: '1\uFE0F\u20E3',
+            name: 'Sidste plads', icon: '1\uFE0F\u20E3',
             steps: [
               'Kig på række ' + (r + 1) + ' — der er kun én tom plads.',
               'Tallene 1\u20139 skal alle være der.',
@@ -313,27 +295,21 @@
         };
       }
     }
-    // Check columns
+    // Columns
     for (let c = 0; c < 9; c++) {
       const empties = [];
-      for (let r = 0; r < 9; r++) {
+      for (let r = 0; r < 9; r++)
         if (board[r][c] === 0) empties.push(r);
-      }
       if (empties.length === 1) {
         const r = empties[0];
         const val = solution[r][c];
         const highlights = [];
-        for (let rr = 0; rr < 9; rr++) {
-          highlights.push({ r: rr, c: c, type: rr === r ? 'target' : 'unit' });
-        }
+        for (let rr = 0; rr < 9; rr++)
+          highlights.push({ r: rr, c, type: rr === r ? 'target' : 'unit' });
         return {
-          type: 'last_remaining',
-          cell: { r, c },
-          value: val,
-          highlights: highlights,
+          type: 'last_remaining', cell: { r, c }, value: val, highlights,
           technique: {
-            name: 'Sidste plads',
-            icon: '1\uFE0F\u20E3',
+            name: 'Sidste plads', icon: '1\uFE0F\u20E3',
             steps: [
               'Kig på kolonne ' + (c + 1) + ' — der er kun én tom plads.',
               'Tallene 1\u20139 skal alle være der.',
@@ -343,34 +319,27 @@
         };
       }
     }
-    // Check boxes
+    // Boxes
     for (let br = 0; br < 9; br += 3) {
       for (let bc = 0; bc < 9; bc += 3) {
         const empties = [];
-        for (let dr = 0; dr < 3; dr++) {
-          for (let dc = 0; dc < 3; dc++) {
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++)
             if (board[br + dr][bc + dc] === 0) empties.push([br + dr, bc + dc]);
-          }
-        }
         if (empties.length === 1) {
           const [r, c] = empties[0];
           const val = solution[r][c];
           const highlights = [];
-          for (let dr = 0; dr < 3; dr++) {
+          for (let dr = 0; dr < 3; dr++)
             for (let dc = 0; dc < 3; dc++) {
               const rr = br + dr, cc = bc + dc;
               highlights.push({ r: rr, c: cc, type: (rr === r && cc === c) ? 'target' : 'unit' });
             }
-          }
           const boxNum = Math.floor(br / 3) * 3 + Math.floor(bc / 3) + 1;
           return {
-            type: 'last_remaining',
-            cell: { r, c },
-            value: val,
-            highlights: highlights,
+            type: 'last_remaining', cell: { r, c }, value: val, highlights,
             technique: {
-              name: 'Sidste plads',
-              icon: '1\uFE0F\u20E3',
+              name: 'Sidste plads', icon: '1\uFE0F\u20E3',
               steps: [
                 'Kig på boks ' + boxNum + ' — der er kun én tom plads.',
                 'Tallene 1\u20139 skal alle være der.',
@@ -392,8 +361,6 @@
         if (cands.size === 1) {
           const val = cands.values().next().value;
           const highlights = [{ r, c, type: 'target' }];
-
-          // Find which numbers eliminate what
           const rowNums = [], colNums = [], boxNums = [];
           for (let i = 0; i < 9; i++) {
             if (board[r][i] !== 0 && i !== c) {
@@ -406,34 +373,23 @@
             }
           }
           const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
-          for (let dr = 0; dr < 3; dr++) {
+          for (let dr = 0; dr < 3; dr++)
             for (let dc = 0; dc < 3; dc++) {
               const rr = br + dr, cc = bc + dc;
               if (board[rr][cc] !== 0 && !(rr === r && cc === c)) {
-                if (!rowNums.includes(board[rr][cc]) && !colNums.includes(board[rr][cc])) {
+                if (!rowNums.includes(board[rr][cc]) && !colNums.includes(board[rr][cc]))
                   boxNums.push(board[rr][cc]);
-                }
                 highlights.push({ r: rr, c: cc, type: 'eliminator' });
               }
             }
-          }
-
           const steps = ['Kig på cellen i række ' + (r + 1) + ', kolonne ' + (c + 1) + '.'];
           if (rowNums.length > 0) steps.push('Rækken har allerede: ' + rowNums.sort((a, b) => a - b).join(', '));
           if (colNums.length > 0) steps.push('Kolonnen har allerede: ' + colNums.sort((a, b) => a - b).join(', '));
           if (boxNums.length > 0) steps.push('Boksen har også: ' + boxNums.sort((a, b) => a - b).join(', '));
           steps.push('Det eneste tal der er tilbage er ' + val + '!');
-
           return {
-            type: 'naked_single',
-            cell: { r, c },
-            value: val,
-            highlights: highlights,
-            technique: {
-              name: 'Eneste mulighed',
-              icon: '\uD83C\uDFAF',
-              steps: steps,
-            },
+            type: 'naked_single', cell: { r, c }, value: val, highlights,
+            technique: { name: 'Eneste mulighed', icon: '\uD83C\uDFAF', steps },
           };
         }
       }
@@ -442,39 +398,24 @@
   }
 
   function findHiddenSingle() {
-    const unitNames = { row: 'række', col: 'kolonne', box: 'boks' };
-
-    // Check rows
+    // Rows
     for (let r = 0; r < 9; r++) {
       for (let num = 1; num <= 9; num++) {
-        // Skip if already placed in row
         let placed = false;
-        for (let c = 0; c < 9; c++) {
-          if (board[r][c] === num) { placed = true; break; }
-        }
+        for (let c = 0; c < 9; c++) if (board[r][c] === num) { placed = true; break; }
         if (placed) continue;
-
         const possible = [];
-        for (let c = 0; c < 9; c++) {
-          if (board[r][c] === 0 && getCandidates(r, c).has(num)) {
-            possible.push(c);
-          }
-        }
+        for (let c = 0; c < 9; c++)
+          if (board[r][c] === 0 && getCandidates(r, c).has(num)) possible.push(c);
         if (possible.length === 1) {
           const c = possible[0];
           const highlights = [];
-          for (let cc = 0; cc < 9; cc++) {
-            if (cc === c) highlights.push({ r, c: cc, type: 'target' });
-            else highlights.push({ r, c: cc, type: 'unit' });
-          }
+          for (let cc = 0; cc < 9; cc++)
+            highlights.push({ r, c: cc, type: cc === c ? 'target' : 'unit' });
           return {
-            type: 'hidden_single',
-            cell: { r, c },
-            value: num,
-            highlights: highlights,
+            type: 'hidden_single', cell: { r, c }, value: num, highlights,
             technique: {
-              name: 'Skjult eneste',
-              icon: '\uD83D\uDD0D',
+              name: 'Skjult eneste', icon: '\uD83D\uDD0D',
               steps: [
                 'Hvor kan ' + num + ' stå i række ' + (r + 1) + '?',
                 'Kig på alle tomme celler i rækken.',
@@ -485,36 +426,24 @@
         }
       }
     }
-    // Check columns
+    // Columns
     for (let c = 0; c < 9; c++) {
       for (let num = 1; num <= 9; num++) {
         let placed = false;
-        for (let r = 0; r < 9; r++) {
-          if (board[r][c] === num) { placed = true; break; }
-        }
+        for (let r = 0; r < 9; r++) if (board[r][c] === num) { placed = true; break; }
         if (placed) continue;
-
         const possible = [];
-        for (let r = 0; r < 9; r++) {
-          if (board[r][c] === 0 && getCandidates(r, c).has(num)) {
-            possible.push(r);
-          }
-        }
+        for (let r = 0; r < 9; r++)
+          if (board[r][c] === 0 && getCandidates(r, c).has(num)) possible.push(r);
         if (possible.length === 1) {
           const r = possible[0];
           const highlights = [];
-          for (let rr = 0; rr < 9; rr++) {
-            if (rr === r) highlights.push({ r: rr, c, type: 'target' });
-            else highlights.push({ r: rr, c, type: 'unit' });
-          }
+          for (let rr = 0; rr < 9; rr++)
+            highlights.push({ r: rr, c, type: rr === r ? 'target' : 'unit' });
           return {
-            type: 'hidden_single',
-            cell: { r, c },
-            value: num,
-            highlights: highlights,
+            type: 'hidden_single', cell: { r, c }, value: num, highlights,
             technique: {
-              name: 'Skjult eneste',
-              icon: '\uD83D\uDD0D',
+              name: 'Skjult eneste', icon: '\uD83D\uDD0D',
               steps: [
                 'Hvor kan ' + num + ' stå i kolonne ' + (c + 1) + '?',
                 'Kig på alle tomme celler i kolonnen.',
@@ -525,46 +454,36 @@
         }
       }
     }
-    // Check boxes
+    // Boxes
     for (let br = 0; br < 9; br += 3) {
       for (let bc = 0; bc < 9; bc += 3) {
         for (let num = 1; num <= 9; num++) {
           let placed = false;
           for (let dr = 0; dr < 3; dr++) {
-            for (let dc = 0; dc < 3; dc++) {
+            for (let dc = 0; dc < 3; dc++)
               if (board[br + dr][bc + dc] === num) { placed = true; break; }
-            }
             if (placed) break;
           }
           if (placed) continue;
-
           const possible = [];
-          for (let dr = 0; dr < 3; dr++) {
+          for (let dr = 0; dr < 3; dr++)
             for (let dc = 0; dc < 3; dc++) {
               const r = br + dr, c = bc + dc;
-              if (board[r][c] === 0 && getCandidates(r, c).has(num)) {
-                possible.push([r, c]);
-              }
+              if (board[r][c] === 0 && getCandidates(r, c).has(num)) possible.push([r, c]);
             }
-          }
           if (possible.length === 1) {
             const [r, c] = possible[0];
             const highlights = [];
-            for (let dr = 0; dr < 3; dr++) {
+            for (let dr = 0; dr < 3; dr++)
               for (let dc = 0; dc < 3; dc++) {
                 const rr = br + dr, cc = bc + dc;
                 highlights.push({ r: rr, c: cc, type: (rr === r && cc === c) ? 'target' : 'unit' });
               }
-            }
             const boxNum = Math.floor(br / 3) * 3 + Math.floor(bc / 3) + 1;
             return {
-              type: 'hidden_single',
-              cell: { r, c },
-              value: num,
-              highlights: highlights,
+              type: 'hidden_single', cell: { r, c }, value: num, highlights,
               technique: {
-                name: 'Skjult eneste',
-                icon: '\uD83D\uDD0D',
+                name: 'Skjult eneste', icon: '\uD83D\uDD0D',
                 steps: [
                   'Hvor kan ' + num + ' stå i boks ' + boxNum + '?',
                   'Kig på alle tomme celler i boksen.',
@@ -580,27 +499,17 @@
   }
 
   function findFallback() {
-    // Find any empty cell and just give the answer
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (board[r][c] === 0) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (board[r][c] === 0)
           return {
-            type: 'fallback',
-            cell: { r, c },
-            value: solution[r][c],
+            type: 'fallback', cell: { r, c }, value: solution[r][c],
             highlights: [{ r, c, type: 'target' }],
             technique: {
-              name: 'Hjælp',
-              icon: '\uD83D\uDCA1',
-              steps: [
-                'Dette er et svært trin.',
-                'Svaret er ' + solution[r][c] + '.',
-              ],
+              name: 'Hjælp', icon: '\uD83D\uDCA1',
+              steps: ['Dette er et svært trin.', 'Svaret er ' + solution[r][c] + '.'],
             },
           };
-        }
-      }
-    }
     return null;
   }
 
@@ -617,21 +526,15 @@
         btn.dataset.row = r;
         btn.dataset.col = c;
 
-        // Alternating 3x3 box backgrounds
+        // Alternating 3x3 box
         const boxIdx = Math.floor(r / 3) * 3 + Math.floor(c / 3);
-        if (boxIdx % 2 === 1) {
-          btn.classList.add('alt-box');
-        }
+        if (boxIdx % 2 === 1) btn.classList.add('alt-box');
 
         if (given[r][c]) {
           btn.classList.add('given');
           btn.textContent = board[r][c];
         } else if (board[r][c] !== 0) {
-          if (hinted[r][c]) {
-            btn.classList.add('hint-placed');
-          } else {
-            btn.classList.add('user-filled');
-          }
+          btn.classList.add(hinted[r][c] ? 'hint-placed' : 'user-filled');
           btn.textContent = board[r][c];
         } else if (pencil[r][c].size > 0) {
           const marks = document.createElement('div');
@@ -660,12 +563,21 @@
           }
         }
 
+        // Number-first mode: highlight candidate cells
+        if (selectedNumber && board[r][c] === 0 && !given[r][c]) {
+          if (getCandidates(r, c).has(selectedNumber)) {
+            btn.classList.add('num-candidate');
+          }
+        }
+        // Highlight same number as selectedNumber
+        if (selectedNumber && board[r][c] === selectedNumber) {
+          btn.classList.add('same-num');
+        }
+
         // Hint highlights
         if (activeHint) {
           for (const h of activeHint.highlights) {
-            if (h.r === r && h.c === c) {
-              btn.classList.add('su-hint-' + h.type);
-            }
+            if (h.r === r && h.c === c) btn.classList.add('su-hint-' + h.type);
           }
         }
 
@@ -678,11 +590,9 @@
   function renderNumpad() {
     numpadEl.innerHTML = '';
     const counts = Array(10).fill(0);
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
         if (board[r][c] !== 0) counts[board[r][c]]++;
-      }
-    }
 
     for (let n = 1; n <= 9; n++) {
       const btn = document.createElement('button');
@@ -698,7 +608,9 @@
         badge.textContent = remaining;
         btn.appendChild(badge);
       }
-      btn.onclick = () => handleNumberInput(n);
+      // Number-first mode: highlight selected number
+      if (selectedNumber === n) btn.classList.add('num-selected');
+      btn.onclick = () => handleNumpadClick(n);
       numpadEl.appendChild(btn);
     }
 
@@ -706,7 +618,8 @@
     const eraser = document.createElement('button');
     eraser.className = 'su-num-btn eraser';
     eraser.textContent = '\u232B';
-    eraser.onclick = () => handleErase();
+    if (selectedNumber === 'erase') eraser.classList.add('num-selected');
+    eraser.onclick = () => handleNumpadClick('erase');
     numpadEl.appendChild(eraser);
   }
 
@@ -725,11 +638,9 @@
     if (progressFill) progressFill.style.width = pct + '%';
     if (progressText) progressText.textContent = filled + '/81';
 
-    // Milestone celebrations
     if (initialEmpty > 0) {
-      const totalFilled = filled - (81 - initialEmpty); // user-placed cells
+      const totalFilled = filled - (81 - initialEmpty);
       const pctDone = totalFilled / initialEmpty;
-
       if (pctDone >= 0.25 && !milestoneShown[25]) {
         milestoneShown[25] = true;
         showMilestone('Godt i gang! \uD83D\uDCAA');
@@ -757,9 +668,50 @@
 
   function selectCell(r, c) {
     if (gameOver) return;
+    activeHint = null;  // Bug fix: clear hint highlights
+
+    // Number-first mode: place selected number directly
+    if (selectedNumber && !given[r][c]) {
+      selectedCell = { r, c };
+      if (selectedNumber === 'erase') {
+        handleErase();
+      } else {
+        handleNumberInput(selectedNumber);
+      }
+      return;
+    }
+
     selectedCell = { r, c };
     vibrate(10);
     renderBoard();
+  }
+
+  function handleNumpadClick(n) {
+    if (gameOver) return;
+
+    // Toggle number-first selection
+    if (selectedNumber === n) {
+      // Deselect
+      selectedNumber = null;
+      renderBoard();
+      renderNumpad();
+      return;
+    }
+
+    // If a cell is selected and no number-first mode active, place directly (cell-first)
+    if (selectedCell && selectedNumber === null) {
+      if (n === 'erase') {
+        handleErase();
+      } else {
+        handleNumberInput(n);
+      }
+      return;
+    }
+
+    // Enter or switch number-first mode
+    selectedNumber = n;
+    renderBoard();
+    renderNumpad();
   }
 
   function handleNumberInput(num) {
@@ -767,13 +719,11 @@
     const { r, c } = selectedCell;
     if (given[r][c]) return;
 
-    // Push to move history
     moveHistory.push({
       r, c,
       prevValue: board[r][c],
       prevPencil: new Set(pencil[r][c]),
       prevHinted: hinted[r][c],
-      wasPencilMode: pencilMode,
     });
 
     if (pencilMode) {
@@ -791,7 +741,6 @@
       return;
     }
 
-    // Normal mode
     pencil[r][c].clear();
 
     if (num === solution[r][c]) {
@@ -854,13 +803,13 @@
     if (gameOver || !selectedCell) return;
     const { r, c } = selectedCell;
     if (given[r][c]) return;
+    if (board[r][c] === 0 && pencil[r][c].size === 0) return;
 
     moveHistory.push({
       r, c,
       prevValue: board[r][c],
       prevPencil: new Set(pencil[r][c]),
       prevHinted: hinted[r][c],
-      wasErase: true,
     });
 
     board[r][c] = 0;
@@ -881,34 +830,26 @@
       pencil[row][i].delete(num);
       pencil[i][col].delete(num);
     }
-    for (let r = br; r < br + 3; r++) {
-      for (let c = bc; c < bc + 3; c++) {
+    for (let r = br; r < br + 3; r++)
+      for (let c = bc; c < bc + 3; c++)
         pencil[r][c].delete(num);
-      }
-    }
   }
 
   function flashCompletions(row, col) {
     const cells = [];
-    if (Array.from({ length: 9 }, (_, c) => board[row][c]).every(v => v !== 0)) {
+    if (Array.from({ length: 9 }, (_, c) => board[row][c]).every(v => v !== 0))
       for (let c = 0; c < 9; c++) cells.push(row * 9 + c);
-    }
-    if (Array.from({ length: 9 }, (_, r) => board[r][col]).every(v => v !== 0)) {
+    if (Array.from({ length: 9 }, (_, r) => board[r][col]).every(v => v !== 0))
       for (let r = 0; r < 9; r++) cells.push(r * 9 + col);
-    }
     const br = Math.floor(row / 3) * 3;
     const bc = Math.floor(col / 3) * 3;
     let boxComplete = true;
-    for (let r = br; r < br + 3; r++) {
-      for (let c = bc; c < bc + 3; c++) {
+    for (let r = br; r < br + 3; r++)
+      for (let c = bc; c < bc + 3; c++)
         if (board[r][c] === 0) boxComplete = false;
-      }
-    }
-    if (boxComplete) {
-      for (let r = br; r < br + 3; r++) {
+    if (boxComplete)
+      for (let r = br; r < br + 3; r++)
         for (let c = bc; c < bc + 3; c++) cells.push(r * 9 + c);
-      }
-    }
     const unique = [...new Set(cells)];
     unique.forEach(idx => {
       const el = boardEl.children[idx];
@@ -920,11 +861,9 @@
   }
 
   function checkWin() {
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
         if (board[r][c] !== solution[r][c]) return;
-      }
-    }
     gameOver = true;
     timer.stop();
     clearSave();
@@ -955,6 +894,15 @@
     renderNumpad();
     renderToolbar();
     updateProgress();
+
+    // Flash the undone cell
+    const idx = move.r * 9 + move.c;
+    const cell = boardEl.children[idx];
+    if (cell) {
+      cell.classList.add('undo-flash');
+      setTimeout(() => cell.classList.remove('undo-flash'), 500);
+    }
+
     saveGame();
   }
 
@@ -966,19 +914,14 @@
     if (gameOver) return;
     activeHint = null;
 
-    // If a cell is selected, prefer finding a hint for that cell
     let hint = null;
     if (selectedCell && !given[selectedCell.r][selectedCell.c] &&
         board[selectedCell.r][selectedCell.c] === 0) {
-      // Try to find a hint that targets this cell
       const fullHint = findHint();
-      if (fullHint && fullHint.cell.r === selectedCell.r && fullHint.cell.c === selectedCell.c) {
+      if (fullHint && fullHint.cell.r === selectedCell.r && fullHint.cell.c === selectedCell.c)
         hint = fullHint;
-      }
     }
-    if (!hint) {
-      hint = findHint();
-    }
+    if (!hint) hint = findHint();
     if (!hint) return;
 
     activeHint = hint;
@@ -1004,14 +947,13 @@
       stepsEl.appendChild(div);
     });
 
+    // Hide the answer initially
     answer.textContent = 'Svaret er: ' + hint.value;
+    answer.classList.add('hidden');
 
-    // Wire buttons
     document.getElementById('su-hint-try-btn').onclick = function () {
       closeHintModal();
-      // Track technique learning
       trackTechnique(hint.type);
-      // Select the target cell and keep highlights briefly
       selectedCell = { r: hint.cell.r, c: hint.cell.c };
       renderBoard();
       setTimeout(() => {
@@ -1021,9 +963,21 @@
     };
 
     document.getElementById('su-hint-show-btn').onclick = function () {
-      closeHintModal();
+      // Show the answer first, then place it
+      answer.classList.remove('hidden');
       trackTechnique(hint.type);
-      placeHint(hint);
+      // Small delay so user sees the answer before modal closes
+      setTimeout(() => {
+        closeHintModal();
+        placeHint(hint);
+      }, 600);
+    };
+
+    // Backdrop click to close
+    modal.querySelector('.su-hint-backdrop').onclick = function () {
+      closeHintModal();
+      activeHint = null;
+      renderBoard();
     };
 
     modal.classList.add('active');
@@ -1037,13 +991,11 @@
     const { r, c } = hint.cell;
     const val = hint.value;
 
-    // Push to history
     moveHistory.push({
       r, c,
       prevValue: board[r][c],
       prevPencil: new Set(pencil[r][c]),
       prevHinted: hinted[r][c],
-      wasHint: true,
     });
 
     board[r][c] = val;
@@ -1060,7 +1012,6 @@
     renderToolbar();
     updateProgress();
 
-    // Flash the hinted cell
     const idx = r * 9 + c;
     const cell = boardEl.children[idx];
     if (cell) {
@@ -1075,7 +1026,9 @@
 
   function trackTechnique(type) {
     techniquesLearned[type] = (techniquesLearned[type] || 0) + 1;
-    localStorage.setItem('bg_sudoku_techniques', JSON.stringify(techniquesLearned));
+    try {
+      localStorage.setItem('bg_sudoku_techniques', JSON.stringify(techniquesLearned));
+    } catch (e) { /* storage full */ }
   }
 
   // ========================
@@ -1084,13 +1037,10 @@
 
   function autoFillPencilMarks() {
     if (gameOver) return;
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (board[r][c] === 0) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (board[r][c] === 0)
           pencil[r][c] = getCandidates(r, c);
-        }
-      }
-    }
     vibrate(10);
     renderBoard();
     saveGame();
@@ -1129,7 +1079,6 @@
       example.textContent = tech.example;
       card.appendChild(example);
 
-      // Show learning progress
       const count = techniquesLearned[tech.id] || 0;
       if (count > 0) {
         const badge = document.createElement('div');
@@ -1158,62 +1107,56 @@
   // ========================
 
   function saveGame() {
-    if (gameOver) {
-      clearSave();
-      return;
-    }
-    const state = {
-      board: board.map(r => r.slice()),
-      solution: solution.map(r => r.slice()),
-      given: given.map(r => r.slice()),
-      pencil: pencil.map(r => r.map(c => [...c])),
-      hinted: hinted.map(r => r.slice()),
-      errors: errors,
-      maxErrors: maxErrors,
-      hintCount: hintCount,
-      difficulty: getDifficulty('sudoku'),
-      elapsed: timer ? timer.getElapsed() : 0,
-      selectedCell: selectedCell,
-      initialEmpty: initialEmpty,
-      milestoneShown: milestoneShown,
-      moveHistory: moveHistory.map(m => ({
-        r: m.r,
-        c: m.c,
-        prevValue: m.prevValue,
-        prevPencil: [...m.prevPencil],
-        prevHinted: m.prevHinted || false,
-        wasPencilMode: m.wasPencilMode || false,
-        wasErase: m.wasErase || false,
-        wasHint: m.wasHint || false,
-      })),
-    };
-    localStorage.setItem('bg_sudoku_save', JSON.stringify(state));
+    if (gameOver) { clearSave(); return; }
+    try {
+      const state = {
+        board: board.map(r => r.slice()),
+        solution: solution.map(r => r.slice()),
+        given: given.map(r => r.slice()),
+        pencil: pencil.map(r => r.map(c => [...c])),
+        hinted: hinted.map(r => r.slice()),
+        errors, maxErrors, hintCount,
+        difficulty: getDifficulty('sudoku'),
+        elapsed: timer ? timer.getElapsed() : 0,
+        selectedCell, initialEmpty, milestoneShown,
+        moveHistory: moveHistory.map(m => ({
+          r: m.r, c: m.c,
+          prevValue: m.prevValue,
+          prevPencil: [...m.prevPencil],
+          prevHinted: m.prevHinted || false,
+        })),
+      };
+      localStorage.setItem('bg_sudoku_save', JSON.stringify(state));
+    } catch (e) { /* storage full */ }
   }
 
   function loadGame(state) {
-    board = state.board;
-    solution = state.solution;
-    given = state.given;
-    pencil = state.pencil.map(r => r.map(c => new Set(c)));
-    hinted = state.hinted || Array.from({ length: 9 }, () => Array(9).fill(false));
+    try {
+      board = state.board;
+      solution = state.solution;
+      given = state.given;
+      pencil = state.pencil.map(r => r.map(c => new Set(c)));
+      hinted = state.hinted || Array.from({ length: 9 }, () => Array(9).fill(false));
+    } catch (e) {
+      // Corrupted save — start fresh
+      startGame();
+      return;
+    }
     errors = state.errors;
     maxErrors = state.maxErrors;
     hintCount = state.hintCount || 0;
     selectedCell = state.selectedCell;
+    selectedNumber = null;
     gameOver = false;
     pencilMode = false;
     activeHint = null;
     initialEmpty = state.initialEmpty || 0;
     milestoneShown = state.milestoneShown || {};
     moveHistory = (state.moveHistory || []).map(m => ({
-      r: m.r,
-      c: m.c,
+      r: m.r, c: m.c,
       prevValue: m.prevValue,
       prevPencil: new Set(m.prevPencil),
       prevHinted: m.prevHinted || false,
-      wasPencilMode: m.wasPencilMode || false,
-      wasErase: m.wasErase || false,
-      wasHint: m.wasHint || false,
     }));
 
     errorsEl.textContent = errors;
@@ -1234,6 +1177,89 @@
   function clearSave() {
     localStorage.removeItem('bg_sudoku_save');
   }
+
+  // ========================
+  //  Keyboard Support
+  // ========================
+
+  function handleKeydown(e) {
+    // Only when sudoku screen is active
+    const screen = document.getElementById('screen-sudoku');
+    if (!screen || !screen.classList.contains('active')) return;
+    if (gameOver) return;
+
+    // Close modals on Escape
+    if (e.key === 'Escape') {
+      const hintModal = document.getElementById('sudoku-hint-modal');
+      if (hintModal.classList.contains('active')) {
+        closeHintModal();
+        activeHint = null;
+        renderBoard();
+        e.preventDefault();
+        return;
+      }
+      const techOverlay = document.getElementById('sudoku-techniques-overlay');
+      if (techOverlay.classList.contains('active')) {
+        closeTechniqueLibrary();
+        e.preventDefault();
+        return;
+      }
+      // Deselect number-first mode
+      if (selectedNumber !== null) {
+        selectedNumber = null;
+        renderBoard();
+        renderNumpad();
+        e.preventDefault();
+        return;
+      }
+      return;
+    }
+
+    // Number keys 1-9
+    if (e.key >= '1' && e.key <= '9') {
+      const num = parseInt(e.key);
+      handleNumpadClick(num);
+      e.preventDefault();
+      return;
+    }
+
+    // Backspace / Delete to erase
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (selectedCell) handleErase();
+      e.preventDefault();
+      return;
+    }
+
+    // Arrow keys to navigate
+    if (e.key.startsWith('Arrow') && selectedCell) {
+      let { r, c } = selectedCell;
+      if (e.key === 'ArrowUp') r = Math.max(0, r - 1);
+      else if (e.key === 'ArrowDown') r = Math.min(8, r + 1);
+      else if (e.key === 'ArrowLeft') c = Math.max(0, c - 1);
+      else if (e.key === 'ArrowRight') c = Math.min(8, c + 1);
+      selectedCell = { r, c };
+      activeHint = null;
+      renderBoard();
+      e.preventDefault();
+      return;
+    }
+
+    // H for hint
+    if (e.key === 'h' || e.key === 'H') {
+      showHint();
+      e.preventDefault();
+      return;
+    }
+
+    // Z for undo
+    if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) {
+      undoMove();
+      e.preventDefault();
+      return;
+    }
+  }
+
+  document.addEventListener('keydown', handleKeydown);
 
   // ========================
   //  Event Wiring
@@ -1265,6 +1291,8 @@
   };
   window.gameCleanups.sudoku = function () {
     gameOver = true;
+    selectedNumber = null;
+    activeHint = null;
     if (timer) timer.reset();
     closeHintModal();
     closeTechniqueLibrary();

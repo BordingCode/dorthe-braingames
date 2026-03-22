@@ -1,9 +1,10 @@
 /* ===== Sudoku ===== */
 
+/* --- Board --- */
 #sudoku-board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  --board-size: min(calc(100vw - 24px), calc(100dvh - 300px), 400px);
+  --board-size: min(calc(100vw - 16px), calc(100dvh - 260px), 460px);
   width: var(--board-size);
   background: var(--text);
   gap: 1px;
@@ -16,7 +17,7 @@
   aspect-ratio: 1;
   border: none;
   background: var(--surface);
-  font-size: clamp(16px, 4vw, 24px);
+  font-size: clamp(17px, 4.5vw, 26px);
   font-weight: 600;
   color: var(--text);
   display: flex;
@@ -44,12 +45,12 @@
   background: #f5f1ec;
 }
 
+/* Cell states */
 .su-cell.given {
   font-weight: 800;
   color: var(--text);
   background: var(--surface-alt);
 }
-
 .su-cell.given.alt-box {
   background: #ebe5dc;
 }
@@ -57,38 +58,86 @@
 .su-cell.user-filled {
   color: var(--primary);
 }
-
 .su-cell.hint-placed {
   color: var(--info);
 }
 
+/* Selection & highlights */
 .su-cell.selected {
   background: #d5e8da;
 }
-
 .su-cell.same-num {
   background: #e2ede5;
 }
+.su-cell.row-col-highlight {
+  background: #eef3f0;
+}
+.su-cell.alt-box.row-col-highlight {
+  background: #e8e3db;
+}
+.su-cell.selected.row-col-highlight {
+  background: #d5e8da;
+}
 
+/* Number-first mode: highlight legal cells */
+.su-cell.num-candidate {
+  background: #e0eef8;
+}
+.su-cell.alt-box.num-candidate {
+  background: #d8e6f0;
+}
+.su-cell.num-candidate.selected {
+  background: #d5e8da;
+}
+
+/* Error flash */
 .su-cell.error-flash {
   animation: suError 0.5s ease-out;
 }
-
 @keyframes suError {
   0% { background: #f8d7d5; }
   100% { background: var(--surface); }
 }
 
-.su-cell.row-col-highlight {
-  background: #eef3f0;
+/* Complete row/col/box flash */
+.su-cell.complete-flash {
+  animation: suComplete 0.4s ease-out;
+}
+@keyframes suComplete {
+  0% { background: #c8e6c9; }
+  100% { background: var(--surface); }
 }
 
-.su-cell.alt-box.row-col-highlight {
-  background: #e8e3db;
+/* Undo flash */
+.su-cell.undo-flash {
+  animation: suUndo 0.5s ease-out;
+}
+@keyframes suUndo {
+  0% { background: #d5e8ff; }
+  100% { background: var(--surface); }
 }
 
-.su-cell.selected.row-col-highlight {
-  background: #d5e8da;
+/* Hint highlights */
+.su-cell.su-hint-target {
+  animation: suHintPulse 0.8s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes suHintPulse {
+  from { background: #d0e4f7; box-shadow: inset 0 0 0 2px var(--accent-sudoku, #4A90D9); }
+  to { background: #b8d4f0; box-shadow: inset 0 0 0 3px var(--accent-sudoku, #4A90D9); }
+}
+.su-cell.su-hint-unit {
+  background: #e8f0f8;
+}
+.su-cell.su-hint-eliminator {
+  background: #fef3e0;
+}
+.su-cell.hint-flash {
+  animation: suHintFlash 0.8s ease-out;
+}
+@keyframes suHintFlash {
+  0% { background: #d5e8ff; }
+  100% { background: var(--surface); }
 }
 
 /* Pencil marks */
@@ -100,9 +149,8 @@
   inset: 2px;
   pointer-events: none;
 }
-
 .su-cell .pencil-marks span {
-  font-size: clamp(7px, 1.8vw, 10px);
+  font-size: clamp(7px, 2vw, 11px);
   font-weight: 400;
   color: var(--text-muted);
   display: flex;
@@ -111,49 +159,81 @@
   line-height: 1;
 }
 
-/* Complete row/col/box flash */
-.su-cell.complete-flash {
-  animation: suComplete 0.4s ease-out;
+/* --- Progress bar --- */
+.su-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: var(--board-size);
+  margin: 0 auto 10px;
+}
+.su-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-alt);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.su-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7cb88a, var(--primary));
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.su-progress-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-@keyframes suComplete {
-  0% { background: #c8e6c9; }
-  100% { background: var(--surface); }
+/* --- Action bar (below board, above numpad) --- */
+.su-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px auto 4px;
+  max-width: var(--board-size);
+  width: 100%;
 }
 
-/* Hint highlights */
-.su-cell.su-hint-target {
-  animation: suHintPulse 0.8s ease-in-out infinite alternate;
-  z-index: 2;
+.su-action-btn {
+  flex: 1;
+  max-width: 100px;
+  padding: 6px 4px;
+  border: 2px solid var(--surface-alt);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.su-action-btn:active {
+  transform: scale(0.95);
+  background: var(--surface-alt);
+}
+.su-action-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.su-action-btn:focus-visible {
+  outline: 3px solid var(--primary-light);
+  outline-offset: 2px;
 }
 
-@keyframes suHintPulse {
-  from { background: #d0e4f7; box-shadow: inset 0 0 0 2px #4A90D9; }
-  to { background: #b8d4f0; box-shadow: inset 0 0 0 3px #4A90D9; }
-}
-
-.su-cell.su-hint-unit {
-  background: #e8f0f8;
-}
-
-.su-cell.su-hint-eliminator {
-  background: #fef3e0;
-}
-
-.su-cell.hint-flash {
-  animation: suHintFlash 0.8s ease-out;
-}
-
-@keyframes suHintFlash {
-  0% { background: #d5e8ff; }
-  100% { background: var(--surface); }
-}
-
-/* Number pad */
+/* --- Number pad --- */
 #sudoku-numpad {
   display: flex;
   gap: 6px;
-  margin-top: 16px;
+  margin-top: 12px;
   flex-wrap: wrap;
   justify-content: center;
   max-width: var(--board-size);
@@ -161,39 +241,48 @@
 }
 
 .su-num-btn {
-  width: clamp(36px, 8vw, 48px);
-  height: clamp(36px, 8vw, 48px);
+  width: clamp(36px, 8.5vw, 50px);
+  height: clamp(36px, 8.5vw, 50px);
   border: none;
   border-radius: var(--radius-sm);
   background: var(--primary);
   color: var(--text-on-primary);
-  font-size: clamp(16px, 4vw, 22px);
+  font-size: clamp(16px, 4.5vw, 24px);
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s, opacity 0.2s;
+  transition: background 0.15s, transform 0.1s, opacity 0.2s, box-shadow 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
 }
-
 .su-num-btn:active {
   transform: scale(0.9);
   background: var(--primary-dark);
 }
-
 .su-num-btn.completed {
   opacity: 0.3;
   pointer-events: none;
+}
+
+/* Number-first: selected numpad button */
+.su-num-btn.num-selected {
+  background: var(--accent-sudoku, #4A90D9);
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.4);
+  transform: scale(1.05);
 }
 
 .su-num-btn.eraser {
   background: var(--surface-alt);
   color: var(--text);
 }
-
 .su-num-btn.eraser:active {
   background: #ddd5c8;
+}
+.su-num-btn.eraser.num-selected {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.4);
 }
 
 .su-num-remaining {
@@ -202,104 +291,62 @@
   right: 3px;
   font-size: 9px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1;
 }
 
-/* Pencil mode button */
+/* --- Pencil mode button --- */
 #sudoku-pencil-btn.active {
-  background: var(--info);
-  border-color: var(--info);
+  background: var(--accent-sudoku, #4A90D9);
+  border-color: var(--accent-sudoku, #4A90D9);
   color: #fff;
 }
 
-/* Undo button */
-#sudoku-undo-btn:disabled {
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-/* Hint button */
-#sudoku-hint-btn:disabled {
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-/* Progress bar */
-.su-progress-bar {
-  position: relative;
-  width: var(--board-size);
-  height: 6px;
-  background: var(--surface-alt);
-  border-radius: 3px;
-  margin: 0 auto 12px;
-  overflow: hidden;
-}
-
-.su-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #7cb88a, var(--primary));
-  border-radius: 3px;
-  transition: width 0.4s ease;
-  width: 0%;
-}
-
-.su-progress-text {
-  position: absolute;
-  right: 0;
-  top: -18px;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* Hint modal */
+/* --- Hint modal --- */
 .su-hint-modal {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 150;
-  background: rgba(44, 62, 45, 0);
   align-items: center;
   justify-content: center;
   padding: 16px;
-  transition: background 0.2s;
 }
-
 .su-hint-modal.active {
   display: flex;
+}
+.su-hint-backdrop {
+  position: absolute;
+  inset: 0;
   background: rgba(44, 62, 45, 0.5);
 }
-
 .su-hint-content {
+  position: relative;
   background: var(--surface);
   border-radius: var(--radius-lg);
   padding: 28px 24px;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   box-shadow: var(--shadow-lg);
   animation: popIn 0.25s ease-out;
   text-align: center;
+  z-index: 1;
 }
-
 .su-hint-badge {
   font-size: 40px;
   margin-bottom: 8px;
 }
-
 .su-hint-title {
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 22px;
   font-weight: 700;
-  color: #4A90D9;
+  color: var(--accent-sudoku, #4A90D9);
   margin: 0 0 16px;
 }
-
 .su-hint-steps {
   text-align: left;
   margin-bottom: 16px;
 }
-
 .su-hint-step {
   display: flex;
   gap: 10px;
@@ -308,12 +355,11 @@
   line-height: 1.5;
   color: var(--text);
 }
-
 .su-hint-step-num {
   flex-shrink: 0;
   width: 26px;
   height: 26px;
-  background: #4A90D9;
+  background: var(--accent-sudoku, #4A90D9);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -323,7 +369,6 @@
   font-weight: 700;
   margin-top: 2px;
 }
-
 .su-hint-answer {
   font-size: 20px;
   font-weight: 700;
@@ -333,14 +378,16 @@
   border-radius: var(--radius);
   margin-bottom: 16px;
 }
-
+.su-hint-answer.hidden {
+  display: none;
+}
 .su-hint-buttons {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
 
-/* Technique library overlay */
+/* --- Technique library overlay --- */
 .su-techniques-overlay {
   display: none;
   position: fixed;
@@ -349,18 +396,16 @@
   background: var(--bg);
   overflow-y: auto;
   padding: 20px 16px;
+  -webkit-overflow-scrolling: touch;
 }
-
 .su-techniques-overlay.active {
   display: block;
 }
-
 .su-techniques-content {
   max-width: 420px;
   margin: 0 auto;
   position: relative;
 }
-
 .su-techniques-content h2 {
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 24px;
@@ -368,7 +413,6 @@
   margin-bottom: 20px;
   color: var(--text);
 }
-
 .su-techniques-close {
   position: absolute;
   top: 0;
@@ -385,7 +429,6 @@
   justify-content: center;
   color: var(--text);
 }
-
 .su-technique-card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -393,24 +436,20 @@
   margin-bottom: 12px;
   box-shadow: var(--shadow-sm);
 }
-
 .su-technique-card .tech-header {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 6px;
 }
-
 .su-technique-card .tech-icon {
   font-size: 24px;
 }
-
 .su-technique-card .tech-name {
   font-size: 18px;
   font-weight: 700;
   color: var(--text);
 }
-
 .su-technique-card .tech-level {
   font-size: 12px;
   color: var(--text-muted);
@@ -420,14 +459,12 @@
   display: inline-block;
   margin-bottom: 8px;
 }
-
 .su-technique-card .tech-desc {
   font-size: 16px;
   line-height: 1.5;
   margin-bottom: 8px;
   color: var(--text);
 }
-
 .su-technique-card .tech-example {
   font-size: 15px;
   color: var(--text-muted);
@@ -437,7 +474,6 @@
   border-radius: var(--radius-sm);
   line-height: 1.4;
 }
-
 .su-technique-badge {
   font-size: 13px;
   font-weight: 600;
@@ -445,49 +481,51 @@
   margin-top: 8px;
 }
 
-/* Milestone toast */
+/* --- Milestone toast --- */
 .su-milestone-toast {
   position: fixed;
-  top: 50%;
+  top: 80px;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  font-size: 24px;
+  transform: translateX(-50%) scale(0);
+  font-size: 22px;
   font-weight: 700;
   color: var(--primary);
   background: var(--surface);
-  padding: 16px 28px;
+  padding: 14px 24px;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 160;
   animation: milestonePop 1.5s ease-out forwards;
   pointer-events: none;
   text-align: center;
+  white-space: nowrap;
 }
-
 @keyframes milestonePop {
-  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-  15% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-  30% { transform: translate(-50%, -50%) scale(1); }
+  0% { transform: translateX(-50%) scale(0); opacity: 0; }
+  15% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+  30% { transform: translateX(-50%) scale(1); }
   80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.95); }
 }
 
+/* --- Desktop --- */
 @media (min-width: 768px) {
   #sudoku-board {
-    --board-size: min(calc(100vw - 64px), calc(100dvh - 320px), 450px);
+    --board-size: min(calc(100vw - 64px), calc(100dvh - 280px), 500px);
   }
-
   .su-cell {
-    font-size: clamp(18px, 3vw, 26px);
+    font-size: clamp(20px, 3vw, 28px);
   }
-
   .su-num-btn {
-    width: 52px;
-    height: 52px;
+    width: 54px;
+    height: 54px;
     font-size: 24px;
   }
-
   .su-hint-step {
     font-size: 17px;
+  }
+  .su-action-btn {
+    font-size: 14px;
+    padding: 8px 6px;
   }
 }
