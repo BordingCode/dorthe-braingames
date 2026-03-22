@@ -152,21 +152,32 @@
       <button id="sudoku-pencil-btn" class="flag-mode-btn">✏️ Noter</button>
     </div>
     <div class="game-area">
-      <div id="sudoku-progress-wrap" class="su-progress-wrap">
-        <div class="su-progress-bar">
-          <div class="su-progress-fill" id="sudoku-progress-fill"></div>
-        </div>
-        <span class="su-progress-text" id="sudoku-progress-text">0/81</span>
-      </div>
       <div id="sudoku-board"></div>
       <div id="sudoku-actions" class="su-actions">
         <button id="sudoku-hint-btn" class="su-action-btn" title="Få et tip">💡 Tip</button>
         <button id="sudoku-undo-btn" class="su-action-btn" disabled title="Fortryd">↩ Fortryd</button>
-        <button id="sudoku-autonote-btn" class="su-action-btn" title="Udfyld noter automatisk">📝 Auto</button>
-        <button id="sudoku-numfirst-btn" class="su-action-btn" title="Vælg tal først, tryk celle">🔢</button>
-        <button id="sudoku-learn-btn" class="su-action-btn" title="Lær teknikker">📖</button>
+        <button id="sudoku-settings-btn" class="su-action-btn" title="Indstillinger">⚙️</button>
       </div>
       <div id="sudoku-numpad"></div>
+    </div>
+  </div>
+
+  <!-- ===== Sudoku Settings Modal ===== -->
+  <div id="sudoku-settings-modal" class="difficulty-modal">
+    <div class="modal-content" style="max-width:340px">
+      <h3>Indstillinger</h3>
+      <div class="su-setting-row">
+        <span>🔢 Tal først</span>
+        <label class="su-toggle"><input type="checkbox" id="su-set-numfirst"><span class="su-toggle-slider"></span></label>
+      </div>
+      <div class="su-setting-row">
+        <span>🔵 Vis kandidater</span>
+        <label class="su-toggle"><input type="checkbox" id="su-set-highlights" checked><span class="su-toggle-slider"></span></label>
+      </div>
+      <div class="su-setting-actions">
+        <button class="btn btn-secondary" id="su-set-autonote">📝 Auto-noter</button>
+        <button class="btn btn-secondary" id="su-set-learn">📖 Teknikker</button>
+      </div>
     </div>
   </div>
 

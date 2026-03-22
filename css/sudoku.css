@@ -8,7 +8,7 @@
 #sudoku-board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  --board-size: min(100vw, calc(100dvh - 180px));
+  --board-size: min(100vw, calc(100dvh - 155px));
   width: var(--board-size);
   background: #e0e0e0;
   gap: 1px;
@@ -152,37 +152,6 @@
 }
 .su-cell .pencil-marks span.pm-active {
   color: #4A90D9;
-}
-
-/* --- Progress bar --- */
-.su-progress-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  max-width: var(--board-size);
-  margin: 0 auto 6px;
-  padding: 0 6px;
-}
-.su-progress-bar {
-  flex: 1;
-  height: 5px;
-  background: #e8e4df;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.su-progress-fill {
-  height: 100%;
-  background: var(--accent-sudoku, #4A90D9);
-  border-radius: 3px;
-  transition: width 0.4s ease;
-  width: 0%;
-}
-.su-progress-text {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-  white-space: nowrap;
 }
 
 /* --- Action bar (below board, above numpad) --- */
@@ -487,37 +456,72 @@
   margin-top: 8px;
 }
 
-/* --- Milestone toast --- */
-.su-milestone-toast {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%) scale(0);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent-sudoku, #4A90D9);
-  background: #fff;
-  padding: 12px 22px;
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-  z-index: 160;
-  animation: milestonePop 1.5s ease-out forwards;
-  pointer-events: none;
-  text-align: center;
-  white-space: nowrap;
+/* --- Settings modal --- */
+.su-setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--surface-alt);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
 }
-@keyframes milestonePop {
-  0% { transform: translateX(-50%) scale(0); opacity: 0; }
-  15% { transform: translateX(-50%) scale(1.1); opacity: 1; }
-  30% { transform: translateX(-50%) scale(1); }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.95); }
+.su-setting-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.su-setting-actions .btn {
+  flex: 1;
+  padding: 12px;
+  font-size: 15px;
+}
+
+/* Toggle switch */
+.su-toggle {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.su-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.su-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.su-toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.su-toggle input:checked + .su-toggle-slider {
+  background: var(--accent-sudoku, #4A90D9);
+}
+.su-toggle input:checked + .su-toggle-slider::before {
+  transform: translateX(20px);
 }
 
 /* --- Desktop --- */
 @media (min-width: 768px) {
   #sudoku-board {
-    --board-size: min(calc(100vw - 24px), calc(100dvh - 190px), 600px);
+    --board-size: min(calc(100vw - 24px), calc(100dvh - 165px), 600px);
   }
   .su-cell {
     font-size: clamp(22px, 3.5vw, 32px);

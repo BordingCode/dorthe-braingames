@@ -57,17 +57,22 @@
   let moveHistory = [];
   let hintCount = 0;
   let activeHint = null;
-  let milestoneShown = {};
   let techniquesLearned = {};
-  let initialEmpty = 0;
   let selectedNumber = null;
   let numberFirstMode = false;
+  let highlightCandidates = true;
 
+  // Load persisted settings
   try {
     techniquesLearned = JSON.parse(localStorage.getItem('bg_sudoku_techniques') || '{}');
   } catch (e) {
     techniquesLearned = {};
   }
+  try {
+    const s = JSON.parse(localStorage.getItem('bg_sudoku_settings') || '{}');
+    if (s.numberFirstMode !== undefined) numberFirstMode = s.numberFirstMode;
+    if (s.highlightCandidates !== undefined) highlightCandidates = s.highlightCandidates;
+  } catch (e) { /* ignore */ }
 
   // --- DOM ---
   const boardEl = document.getElementById('sudoku-board');
@@ -79,11 +84,6 @@
   const pencilBtn = document.getElementById('sudoku-pencil-btn');
   const undoBtn = document.getElementById('sudoku-undo-btn');
   const hintBtn = document.getElementById('sudoku-hint-btn');
-  const autonoteBtn = document.getElementById('sudoku-autonote-btn');
-  const numfirstBtn = document.getElementById('sudoku-numfirst-btn');
-  const learnBtn = document.getElementById('sudoku-learn-btn');
-  const progressFill = document.getElementById('sudoku-progress-fill');
-  const progressText = document.getElementById('sudoku-progress-text');
 
   // ========================
   //  Init & Start
@@ -115,12 +115,9 @@
     pencilMode = false;
     selectedCell = null;
     selectedNumber = null;
-    numberFirstMode = false;
-    if (numfirstBtn) numfirstBtn.classList.remove('active');
     moveHistory = [];
     hintCount = 0;
     activeHint = null;
-    milestoneShown = {};
 
     errorsEl.textContent = '0';
     maxErrorsEl.textContent = maxErrors;
@@ -137,15 +134,9 @@
 
     removeCells(81 - config.givens);
 
-    initialEmpty = 0;
-    for (let r = 0; r < 9; r++)
-      for (let c = 0; c < 9; c++)
-        if (board[r][c] === 0) initialEmpty++;
-
     renderBoard();
     renderNumpad();
     renderToolbar();
-    updateProgress();
     timer.start();
     clearSave();
   }
@@ -543,7 +534,7 @@
             const s = document.createElement('span');
             if (pencil[r][c].has(n)) {
               s.textContent = n;
-              if (selectedNumber && selectedNumber === n) {
+              if (highlightCandidates && selectedNumber && selectedNumber === n) {
                 s.classList.add('pm-active');
               }
             }
@@ -558,7 +549,7 @@
           if (selectedNumber !== 'erase') {
             if (board[r][c] === selectedNumber) {
               btn.classList.add('same-num');
-            } else if (board[r][c] === 0 && !given[r][c] && getCandidates(r, c).has(selectedNumber)) {
+            } else if (highlightCandidates && board[r][c] === 0 && !given[r][c] && getCandidates(r, c).has(selectedNumber)) {
               btn.classList.add('num-candidate');
             }
           }
@@ -635,40 +626,6 @@
     hintBtn.disabled = gameOver;
   }
 
-  function updateProgress() {
-    let filled = 0;
-    for (let r = 0; r < 9; r++)
-      for (let c = 0; c < 9; c++)
-        if (board[r][c] !== 0) filled++;
-
-    const pct = Math.round((filled / 81) * 100);
-    if (progressFill) progressFill.style.width = pct + '%';
-    if (progressText) progressText.textContent = filled + '/81';
-
-    if (initialEmpty > 0) {
-      const totalFilled = filled - (81 - initialEmpty);
-      const pctDone = totalFilled / initialEmpty;
-      if (pctDone >= 0.25 && !milestoneShown[25]) {
-        milestoneShown[25] = true;
-        showMilestone('Godt i gang! \uD83D\uDCAA');
-      } else if (pctDone >= 0.5 && !milestoneShown[50]) {
-        milestoneShown[50] = true;
-        showMilestone('Halvvejs! \u2B50');
-      } else if (pctDone >= 0.75 && !milestoneShown[75]) {
-        milestoneShown[75] = true;
-        showMilestone('Næsten der! \uD83D\uDD25');
-      }
-    }
-  }
-
-  function showMilestone(text) {
-    const toast = document.createElement('div');
-    toast.className = 'su-milestone-toast';
-    toast.textContent = text;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1600);
-  }
-
   // ========================
   //  Interaction
   // ========================
@@ -716,14 +673,12 @@
     }
   }
 
-  function toggleNumberFirstMode() {
-    numberFirstMode = !numberFirstMode;
-    numfirstBtn.classList.toggle('active', numberFirstMode);
-    if (!numberFirstMode) {
-      selectedNumber = null;
-    }
-    renderBoard();
-    renderNumpad();
+  function saveSettings() {
+    try {
+      localStorage.setItem('bg_sudoku_settings', JSON.stringify({
+        numberFirstMode, highlightCandidates,
+      }));
+    } catch (e) { /* storage full */ }
   }
 
   function handleNumberInput(num) {
@@ -765,7 +720,7 @@
       renderBoard();
       renderNumpad();
       renderToolbar();
-      updateProgress();
+  
       flashCompletions(r, c);
       saveGame();
       checkWin();
@@ -790,7 +745,7 @@
         board[r][c] = 0;
         renderBoard();
         renderNumpad();
-        updateProgress();
+    
         saveGame();
       }, 600);
 
@@ -833,7 +788,7 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
-    updateProgress();
+
     saveGame();
   }
 
@@ -907,7 +862,7 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
-    updateProgress();
+
 
     // Flash the undone cell
     const idx = move.r * 9 + move.c;
@@ -1024,7 +979,7 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
-    updateProgress();
+
 
     const idx = r * 9 + c;
     const cell = boardEl.children[idx];
@@ -1132,7 +1087,7 @@
         errors, maxErrors, hintCount,
         difficulty: getDifficulty('sudoku'),
         elapsed: timer ? timer.getElapsed() : 0,
-        selectedCell, initialEmpty, milestoneShown,
+        selectedCell,
         moveHistory: moveHistory.map(m => ({
           r: m.r, c: m.c,
           prevValue: m.prevValue,
@@ -1164,8 +1119,6 @@
     gameOver = false;
     pencilMode = false;
     activeHint = null;
-    initialEmpty = state.initialEmpty || 0;
-    milestoneShown = state.milestoneShown || {};
     moveHistory = (state.moveHistory || []).map(m => ({
       r: m.r, c: m.c,
       prevValue: m.prevValue,
@@ -1185,7 +1138,7 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
-    updateProgress();
+
   }
 
   function clearSave() {
@@ -1286,10 +1239,41 @@
 
   undoBtn.onclick = undoMove;
   hintBtn.onclick = showHint;
-  autonoteBtn.onclick = autoFillPencilMarks;
-  numfirstBtn.onclick = toggleNumberFirstMode;
-  learnBtn.onclick = showTechniqueLibrary;
   document.getElementById('su-techniques-close').onclick = closeTechniqueLibrary;
+
+  // Settings modal
+  const settingsModal = document.getElementById('sudoku-settings-modal');
+  const setNumfirst = document.getElementById('su-set-numfirst');
+  const setHighlights = document.getElementById('su-set-highlights');
+
+  document.getElementById('sudoku-settings-btn').onclick = function () {
+    setNumfirst.checked = numberFirstMode;
+    setHighlights.checked = highlightCandidates;
+    settingsModal.classList.add('active');
+  };
+  settingsModal.onclick = function (e) {
+    if (e.target === settingsModal) settingsModal.classList.remove('active');
+  };
+  setNumfirst.onchange = function () {
+    numberFirstMode = setNumfirst.checked;
+    if (!numberFirstMode) selectedNumber = null;
+    saveSettings();
+    renderBoard();
+    renderNumpad();
+  };
+  setHighlights.onchange = function () {
+    highlightCandidates = setHighlights.checked;
+    saveSettings();
+    renderBoard();
+  };
+  document.getElementById('su-set-autonote').onclick = function () {
+    settingsModal.classList.remove('active');
+    autoFillPencilMarks();
+  };
+  document.getElementById('su-set-learn').onclick = function () {
+    settingsModal.classList.remove('active');
+    showTechniqueLibrary();
+  };
 
   diffBtn.onclick = () => {
     showDifficultyModal('sudoku', DIFFICULTIES, (val) => {
@@ -1307,7 +1291,6 @@
   window.gameCleanups.sudoku = function () {
     gameOver = true;
     selectedNumber = null;
-    numberFirstMode = false;
     activeHint = null;
     if (timer) timer.reset();
     closeHintModal();
