@@ -70,7 +70,6 @@
   }
   try {
     const s = JSON.parse(localStorage.getItem('bg_sudoku_settings') || '{}');
-    if (s.numberFirstMode !== undefined) numberFirstMode = s.numberFirstMode;
     if (s.highlightCandidates !== undefined) highlightCandidates = s.highlightCandidates;
   } catch (e) { /* ignore */ }
 
@@ -676,7 +675,7 @@
   function saveSettings() {
     try {
       localStorage.setItem('bg_sudoku_settings', JSON.stringify({
-        numberFirstMode, highlightCandidates,
+        highlightCandidates,
       }));
     } catch (e) { /* storage full */ }
   }
