@@ -3,17 +3,21 @@
 (function () {
   const DIFFICULTIES = [
     { label: 'Let (38 tal)', value: 'easy' },
-    { label: 'Medium (30 tal)', value: 'medium' },
-    { label: 'Svær (24 tal)', value: 'hard' },
+    { label: 'Medium (32 tal)', value: 'medium' },
+    { label: 'Svær (26 tal)', value: 'hard' },
+    { label: 'Ekspert (22 tal)', value: 'expert' },
+    { label: 'Ond (17 tal)', value: 'evil' },
   ];
 
   const CONFIG = {
     easy:   { givens: 38, maxErrors: 5 },
-    medium: { givens: 30, maxErrors: 3 },
-    hard:   { givens: 24, maxErrors: 3 },
+    medium: { givens: 32, maxErrors: 3 },
+    hard:   { givens: 26, maxErrors: 3 },
+    expert: { givens: 22, maxErrors: 2 },
+    evil:   { givens: 17, maxErrors: 1 },
   };
 
-  const LABEL_MAP = { easy: 'Let', medium: 'Medium', hard: 'Svær' };
+  const LABEL_MAP = { easy: 'Let', medium: 'Medium', hard: 'Svær', expert: 'Ekspert', evil: 'Ond' };
 
   const TECHNIQUE_INFO = [
     {
@@ -134,6 +138,46 @@
       icon: '\uD83C\uDFA8',
       desc: 'Når et tal kun kan stå 2 steder i en enhed, danner det en kæde af "enten-eller". Hvis to celler med samme farve ser hinanden, er den farve falsk.',
       example: 'Tallet 7 danner en kæde: A eller B i række 1, B eller C i kolonne 3... Hvis to "blå" celler ser hinanden, er alle blå falske!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'unique_rectangle',
+      name: 'Unik rektangel',
+      icon: '\u25AD',
+      desc: 'Fire celler danner et rektangel over 2 bokse med de samme 2 kandidater. Da puzzlet kun har én løsning, må mønstret brydes.',
+      example: 'Tre hjørner har kun 3 og 7. Det fjerde hjørne har 3, 7 og 5. Tallet 5 MÅ placeres der — ellers ville der være to løsninger!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'two_string_kite',
+      name: '2-strengs drage',
+      icon: '\uD83E\uDE81',
+      desc: 'Et tal har præcis 2 positioner i både en række og en kolonne. Hvis en position fra hver deler en boks, kan tallet elimineres fra cellen der ser de to andre.',
+      example: 'Tallet 4 i række 2 og kolonne 5 deler en boks. Cellen der ser begge "ender" kan ikke indeholde 4!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'w_wing',
+      name: 'W-Wing',
+      icon: 'W',
+      desc: 'To identiske bivalue-celler forbundet af et stærkt link på en af deres kandidater. Den anden kandidat kan fjernes fra celler der ser begge.',
+      example: 'To celler har begge 3,8. De er forbundet via et stærkt link på 3. Så 8 kan fjernes fra celler der ser dem begge!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'xyz_wing',
+      name: 'XYZ-Wing',
+      icon: '\uD83E\uDEB6',
+      desc: 'Som XY-Wing men pivot-cellen har 3 kandidater (XYZ). Det fælles tal Z kan fjernes fra celler der ser alle tre celler.',
+      example: 'Pivot har 2,5,8. Vinger har 2,5 og 5,8. Tallet 5 fjernes fra celler der ser alle tre!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'bug_plus_one',
+      name: 'BUG+1',
+      icon: '\uD83D\uDC1B',
+      desc: 'Når alle celler undtagen én har præcis 2 kandidater, har den ene celle en ekstra kandidat. Den ekstra kandidat MÅ placeres.',
+      example: 'Alle celler har 2 kandidater undtagen én med 3. Den tredje kandidat — den der optræder 3 gange i en enhed — er svaret!',
       level: 'Ekspert',
     },
   ];
@@ -380,6 +424,16 @@
     hint = findSkyscraperHint();
     if (hint) return hint;
     hint = findSimpleColoringHint();
+    if (hint) return hint;
+    hint = findUniqueRectangleHint();
+    if (hint) return hint;
+    hint = findTwoStringKiteHint();
+    if (hint) return hint;
+    hint = findWWingHint();
+    if (hint) return hint;
+    hint = findXYZWingHint();
+    if (hint) return hint;
+    hint = findBugPlusOneHint();
     if (hint) return hint;
     return findFallback();
   }
@@ -1685,6 +1739,376 @@
                 num + ' danner en kæde af "enten-eller" forbindelser.',
                 'En celle kan se begge farver — så ' + num + ' kan ikke stå der.',
                 'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+              ],
+            },
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function findUniqueRectangleHint() {
+    const cands = getAllCandidates();
+    // Type 1: 3 corners are bivalue with same 2 candidates, 4th corner has those 2 + extras
+    for (let r1 = 0; r1 < 9; r1++)
+      for (let r2 = r1 + 1; r2 < 9; r2++)
+        for (let c1 = 0; c1 < 9; c1++)
+          for (let c2 = c1 + 1; c2 < 9; c2++) {
+            // Must span exactly 2 boxes
+            const b1 = Math.floor(r1/3)*3 + Math.floor(c1/3);
+            const b2 = Math.floor(r1/3)*3 + Math.floor(c2/3);
+            const b3 = Math.floor(r2/3)*3 + Math.floor(c1/3);
+            const b4 = Math.floor(r2/3)*3 + Math.floor(c2/3);
+            const boxes = new Set([b1, b2, b3, b4]);
+            if (boxes.size !== 2) continue;
+
+            const corners = [[r1,c1],[r1,c2],[r2,c1],[r2,c2]];
+            if (corners.some(([r,c]) => board[r][c] !== 0)) continue;
+
+            // Find which corners are bivalue with same candidates
+            const bivalueCorners = corners.filter(([r,c]) => cands[r][c].size === 2);
+            if (bivalueCorners.length !== 3) continue;
+
+            const refVals = [...cands[bivalueCorners[0][0]][bivalueCorners[0][1]]];
+            if (!bivalueCorners.every(([r,c]) => {
+              const s = cands[r][c];
+              return s.size === 2 && s.has(refVals[0]) && s.has(refVals[1]);
+            })) continue;
+
+            // Find the non-bivalue corner
+            const extraCorner = corners.find(([r,c]) => cands[r][c].size > 2);
+            if (!extraCorner) continue;
+            const extraCands = cands[extraCorner[0]][extraCorner[1]];
+            if (!extraCands.has(refVals[0]) || !extraCands.has(refVals[1])) continue;
+
+            // The extra candidates (not refVals) must be placed to break the deadly pattern
+            const extras = [...extraCands].filter(v => !refVals.includes(v));
+            if (extras.length !== 1) continue;
+
+            const val = extras[0];
+            if (val !== solution[extraCorner[0]][extraCorner[1]]) continue;
+
+            const highlights = corners.map(([r,c]) => ({
+              r, c, type: (r === extraCorner[0] && c === extraCorner[1]) ? 'target' : 'eliminator',
+            }));
+            return {
+              type: 'unique_rectangle', cell: { r: extraCorner[0], c: extraCorner[1] }, value: val, highlights,
+              technique: {
+                name: 'Unik rektangel', icon: '\u25AD',
+                steps: [
+                  'Fire celler danner et rektangel med kandidaterne ' + refVals[0] + ' og ' + refVals[1] + '.',
+                  'Tre hjørner har kun disse to tal. Det ville give to løsninger!',
+                  'Det fjerde hjørne MÅ bruge sit ekstra tal ' + val + ' for at bryde mønstret!',
+                ],
+              },
+            };
+          }
+    return null;
+  }
+
+  function findTwoStringKiteHint() {
+    const cands = getAllCandidates();
+
+    function sees(a, b) {
+      return a[0] === b[0] || a[1] === b[1] ||
+        (Math.floor(a[0]/3) === Math.floor(b[0]/3) && Math.floor(a[1]/3) === Math.floor(b[1]/3));
+    }
+
+    for (let num = 1; num <= 9; num++) {
+      // Find rows with exactly 2 positions
+      const rowPairs = [];
+      for (let r = 0; r < 9; r++) {
+        const cols = [];
+        for (let c = 0; c < 9; c++) if (cands[r][c].has(num)) cols.push(c);
+        if (cols.length === 2) rowPairs.push({ r, cols });
+      }
+      // Find cols with exactly 2 positions
+      const colPairs = [];
+      for (let c = 0; c < 9; c++) {
+        const rows = [];
+        for (let r = 0; r < 9; r++) if (cands[r][c].has(num)) rows.push(r);
+        if (rows.length === 2) colPairs.push({ c, rows });
+      }
+
+      for (const rp of rowPairs)
+        for (const cp of colPairs) {
+          // One end of the row and one end of the col must share a box
+          for (let ri = 0; ri < 2; ri++)
+            for (let ci = 0; ci < 2; ci++) {
+              const shared = [rp.r, rp.cols[ri]];
+              const colEnd = [cp.rows[ci], cp.c];
+              if (shared[0] === colEnd[0] && shared[1] === colEnd[1]) continue;
+              if (Math.floor(shared[0]/3) !== Math.floor(colEnd[0]/3) ||
+                  Math.floor(shared[1]/3) !== Math.floor(colEnd[1]/3)) continue;
+
+              // The other ends
+              const rowEnd = [rp.r, rp.cols[1 - ri]];
+              const colOther = [cp.rows[1 - ci], cp.c];
+
+              // Eliminate num from cells that see both endpoints
+              const copy = copyCands(cands);
+              let eliminated = false;
+              for (let r = 0; r < 9; r++)
+                for (let c = 0; c < 9; c++) {
+                  if ((r === rowEnd[0] && c === rowEnd[1]) || (r === colOther[0] && c === colOther[1])) continue;
+                  if ((r === shared[0] && c === shared[1]) || (r === colEnd[0] && c === colEnd[1])) continue;
+                  if (sees([r, c], rowEnd) && sees([r, c], colOther))
+                    if (copy[r][c].delete(num)) eliminated = true;
+                }
+              if (!eliminated) continue;
+
+              const single = findSingleInCands(copy);
+              if (single && single.val === solution[single.r][single.c]) {
+                const highlights = [
+                  { r: rp.r, c: rp.cols[0], type: 'eliminator' },
+                  { r: rp.r, c: rp.cols[1], type: 'eliminator' },
+                  { r: cp.rows[0], c: cp.c, type: 'eliminator' },
+                  { r: cp.rows[1], c: cp.c, type: 'eliminator' },
+                  { r: single.r, c: single.c, type: 'target' },
+                ];
+                return {
+                  type: 'two_string_kite', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+                  technique: {
+                    name: '2-strengs drage', icon: '\uD83E\uDE81',
+                    steps: [
+                      num + ' har præcis 2 pladser i række ' + (rp.r+1) + ' og kolonne ' + (cp.c+1) + '.',
+                      'En position fra hver deler boks — de er forbundet.',
+                      num + ' fjernes fra cellen der ser begge ender. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                    ],
+                  },
+                };
+              }
+            }
+        }
+    }
+    return null;
+  }
+
+  function findWWingHint() {
+    const cands = getAllCandidates();
+
+    function sees(a, b) {
+      return a[0] === b[0] || a[1] === b[1] ||
+        (Math.floor(a[0]/3) === Math.floor(b[0]/3) && Math.floor(a[1]/3) === Math.floor(b[1]/3));
+    }
+
+    // Find all bivalue cells
+    const bivalue = [];
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (cands[r][c].size === 2) bivalue.push([r, c, [...cands[r][c]]]);
+
+    for (let i = 0; i < bivalue.length; i++)
+      for (let j = i + 1; j < bivalue.length; j++) {
+        const [r1, c1, v1] = bivalue[i];
+        const [r2, c2, v2] = bivalue[j];
+        if (v1[0] !== v2[0] || v1[1] !== v2[1]) continue; // must be identical
+        if (sees([r1, c1], [r2, c2])) continue; // must NOT share a unit
+
+        // Try each candidate as the strong link value
+        for (let vi = 0; vi < 2; vi++) {
+          const linkVal = v1[vi];
+          const elimVal = v1[1 - vi];
+
+          // Find a strong link on linkVal that connects to both cells
+          // (a unit where linkVal appears exactly twice, with one end seeing cell1 and other seeing cell2)
+          // Check rows
+          for (let r = 0; r < 9; r++) {
+            const cols = [];
+            for (let c = 0; c < 9; c++) if (cands[r][c].has(linkVal)) cols.push(c);
+            if (cols.length !== 2) continue;
+            const endA = [r, cols[0]], endB = [r, cols[1]];
+            if ((sees(endA, [r1, c1]) && sees(endB, [r2, c2])) ||
+                (sees(endA, [r2, c2]) && sees(endB, [r1, c1]))) {
+              const copy = copyCands(cands);
+              let eliminated = false;
+              for (let rr = 0; rr < 9; rr++)
+                for (let cc = 0; cc < 9; cc++) {
+                  if (rr === r1 && cc === c1) continue;
+                  if (rr === r2 && cc === c2) continue;
+                  if (sees([rr, cc], [r1, c1]) && sees([rr, cc], [r2, c2]))
+                    if (copy[rr][cc].delete(elimVal)) eliminated = true;
+                }
+              if (!eliminated) continue;
+              const single = findSingleInCands(copy);
+              if (single && single.val === solution[single.r][single.c]) {
+                return {
+                  type: 'w_wing', cell: { r: single.r, c: single.c }, value: single.val,
+                  highlights: [
+                    { r: r1, c: c1, type: 'eliminator' }, { r: r2, c: c2, type: 'eliminator' },
+                    { r, c: cols[0], type: 'unit' }, { r, c: cols[1], type: 'unit' },
+                    { r: single.r, c: single.c, type: 'target' },
+                  ],
+                  technique: {
+                    name: 'W-Wing', icon: 'W',
+                    steps: [
+                      'Cellerne (' + (r1+1) + ',' + (c1+1) + ') og (' + (r2+1) + ',' + (c2+1) + ') har begge ' + v1.join(' og ') + '.',
+                      'De er forbundet via et stærkt link på ' + linkVal + ' i række ' + (r+1) + '.',
+                      elimVal + ' fjernes fra celler der ser dem begge. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                    ],
+                  },
+                };
+              }
+            }
+          }
+          // Check columns for strong link
+          for (let c = 0; c < 9; c++) {
+            const rows = [];
+            for (let r = 0; r < 9; r++) if (cands[r][c].has(linkVal)) rows.push(r);
+            if (rows.length !== 2) continue;
+            const endA = [rows[0], c], endB = [rows[1], c];
+            if ((sees(endA, [r1, c1]) && sees(endB, [r2, c2])) ||
+                (sees(endA, [r2, c2]) && sees(endB, [r1, c1]))) {
+              const copy = copyCands(cands);
+              let eliminated = false;
+              for (let rr = 0; rr < 9; rr++)
+                for (let cc = 0; cc < 9; cc++) {
+                  if (rr === r1 && cc === c1) continue;
+                  if (rr === r2 && cc === c2) continue;
+                  if (sees([rr, cc], [r1, c1]) && sees([rr, cc], [r2, c2]))
+                    if (copy[rr][cc].delete(elimVal)) eliminated = true;
+                }
+              if (!eliminated) continue;
+              const single = findSingleInCands(copy);
+              if (single && single.val === solution[single.r][single.c]) {
+                return {
+                  type: 'w_wing', cell: { r: single.r, c: single.c }, value: single.val,
+                  highlights: [
+                    { r: r1, c: c1, type: 'eliminator' }, { r: r2, c: c2, type: 'eliminator' },
+                    { r: rows[0], c, type: 'unit' }, { r: rows[1], c, type: 'unit' },
+                    { r: single.r, c: single.c, type: 'target' },
+                  ],
+                  technique: {
+                    name: 'W-Wing', icon: 'W',
+                    steps: [
+                      'Cellerne (' + (r1+1) + ',' + (c1+1) + ') og (' + (r2+1) + ',' + (c2+1) + ') har begge ' + v1.join(' og ') + '.',
+                      'De er forbundet via et stærkt link på ' + linkVal + ' i kolonne ' + (c+1) + '.',
+                      elimVal + ' fjernes fra celler der ser dem begge. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                    ],
+                  },
+                };
+              }
+            }
+          }
+        }
+      }
+    return null;
+  }
+
+  function findXYZWingHint() {
+    const cands = getAllCandidates();
+
+    function sees(a, b) {
+      return a[0] === b[0] || a[1] === b[1] ||
+        (Math.floor(a[0]/3) === Math.floor(b[0]/3) && Math.floor(a[1]/3) === Math.floor(b[1]/3));
+    }
+
+    // Pivot has 3 candidates (XYZ), pincers have 2 each (XZ, YZ)
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++) {
+        if (cands[r][c].size !== 3) continue;
+        const xyz = [...cands[r][c]];
+
+        // Find pairs of pincers
+        for (let pi = 0; pi < 3; pi++) {
+          const z = xyz[pi]; // the common candidate
+          const x = xyz[(pi+1) % 3], y = xyz[(pi+2) % 3];
+
+          // Find pincer1 with {x, z}
+          for (let r1 = 0; r1 < 9; r1++)
+            for (let c1 = 0; c1 < 9; c1++) {
+              if (r1 === r && c1 === c) continue;
+              if (!sees([r, c], [r1, c1])) continue;
+              if (cands[r1][c1].size !== 2 || !cands[r1][c1].has(x) || !cands[r1][c1].has(z)) continue;
+
+              // Find pincer2 with {y, z}
+              for (let r2 = 0; r2 < 9; r2++)
+                for (let c2 = 0; c2 < 9; c2++) {
+                  if ((r2 === r && c2 === c) || (r2 === r1 && c2 === c1)) continue;
+                  if (!sees([r, c], [r2, c2])) continue;
+                  if (cands[r2][c2].size !== 2 || !cands[r2][c2].has(y) || !cands[r2][c2].has(z)) continue;
+
+                  // Eliminate z from cells seeing all three
+                  const copy = copyCands(cands);
+                  let eliminated = false;
+                  for (let rr = 0; rr < 9; rr++)
+                    for (let cc = 0; cc < 9; cc++) {
+                      if ((rr === r && cc === c) || (rr === r1 && cc === c1) || (rr === r2 && cc === c2)) continue;
+                      if (sees([rr, cc], [r, c]) && sees([rr, cc], [r1, c1]) && sees([rr, cc], [r2, c2]))
+                        if (copy[rr][cc].delete(z)) eliminated = true;
+                    }
+                  if (!eliminated) continue;
+
+                  const single = findSingleInCands(copy);
+                  if (single && single.val === solution[single.r][single.c]) {
+                    return {
+                      type: 'xyz_wing', cell: { r: single.r, c: single.c }, value: single.val,
+                      highlights: [
+                        { r, c, type: 'eliminator' }, { r: r1, c: c1, type: 'eliminator' },
+                        { r: r2, c: c2, type: 'eliminator' }, { r: single.r, c: single.c, type: 'target' },
+                      ],
+                      technique: {
+                        name: 'XYZ-Wing', icon: '\uD83E\uDEB6',
+                        steps: [
+                          'Pivot (' + (r+1) + ',' + (c+1) + ') har ' + xyz.join(', ') + '.',
+                          'Vinger har ' + x + ',' + z + ' og ' + y + ',' + z + '. Fælles tal er ' + z + '.',
+                          z + ' fjernes fra celler der ser alle tre. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
+                        ],
+                      },
+                    };
+                  }
+                }
+            }
+        }
+      }
+    return null;
+  }
+
+  function findBugPlusOneHint() {
+    const cands = getAllCandidates();
+    // Check if all unsolved cells except one have exactly 2 candidates
+    let nonBivalue = null;
+    let count = 0;
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++) {
+        if (board[r][c] !== 0) continue;
+        if (cands[r][c].size === 2) continue;
+        if (cands[r][c].size > 2) {
+          count++;
+          nonBivalue = { r, c };
+        } else return null; // size 0 or 1, not a BUG state
+      }
+    if (count !== 1 || !nonBivalue) return null;
+
+    // The extra candidate (appearing 3 times in a unit) must be placed
+    const { r, c } = nonBivalue;
+    const cellCands = [...cands[r][c]];
+    for (const val of cellCands) {
+      // Count how many times val appears in this cell's row, col, and box
+      let rowCount = 0, colCount = 0, boxCount = 0;
+      const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+      for (let i = 0; i < 9; i++) {
+        if (cands[r][i].has(val)) rowCount++;
+        if (cands[i][c].has(val)) colCount++;
+      }
+      for (let dr = 0; dr < 3; dr++)
+        for (let dc = 0; dc < 3; dc++)
+          if (cands[br+dr][bc+dc].has(val)) boxCount++;
+
+      // In a BUG, each candidate appears exactly twice in each unit.
+      // The extra candidate appears 3 times in at least one unit.
+      if (rowCount === 3 || colCount === 3 || boxCount === 3) {
+        if (val === solution[r][c]) {
+          return {
+            type: 'bug_plus_one', cell: { r, c }, value: val,
+            highlights: [{ r, c, type: 'target' }],
+            technique: {
+              name: 'BUG+1', icon: '\uD83D\uDC1B',
+              steps: [
+                'Alle uløste celler har præcis 2 kandidater — undtagen denne.',
+                'Uden den ekstra kandidat ville puzzlet have flere løsninger.',
+                'Tallet ' + val + ' MÅ placeres her for at sikre én unik løsning!',
               ],
             },
           };
