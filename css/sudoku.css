@@ -52,8 +52,11 @@
 }
 
 .su-cell.user-filled {
-  color: var(--accent-sudoku, #4A90D9);
+  color: #1a1a1a;
   font-weight: 700;
+}
+.su-cell.active-num {
+  color: var(--accent-sudoku, #4A90D9);
 }
 .su-cell.hint-placed {
   color: #6aab7b;

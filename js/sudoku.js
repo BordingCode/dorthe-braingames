@@ -530,6 +530,9 @@
           btn.textContent = board[r][c];
         } else if (board[r][c] !== 0) {
           btn.classList.add(hinted[r][c] ? 'hint-placed' : 'user-filled');
+          if (activeNum && board[r][c] === activeNum && !hinted[r][c]) {
+            btn.classList.add('active-num');
+          }
           btn.textContent = board[r][c];
         } else if (pencil[r][c].size > 0) {
           const marks = document.createElement('div');
@@ -692,6 +695,24 @@
     } catch (e) { /* storage full */ }
   }
 
+  function autoAdvanceNumber() {
+    if (!numberFirstMode || !selectedNumber || selectedNumber === 'erase') return;
+    let count = 0;
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (board[r][c] === selectedNumber) count++;
+    if (count < 9) return;
+    for (let i = 1; i <= 9; i++) {
+      const next = ((selectedNumber - 1 + i) % 9) + 1;
+      let nc = 0;
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          if (board[r][c] === next) nc++;
+      if (nc < 9) { selectedNumber = next; return; }
+    }
+    selectedNumber = null;
+  }
+
   function handleNumberInput(num) {
     if (gameOver || !selectedCell) return;
     const { r, c } = selectedCell;
@@ -728,10 +749,10 @@
       hinted[r][c] = false;
       vibrate(10);
       clearPencilMarks(r, c, num);
+      autoAdvanceNumber();
       renderBoard();
       renderNumpad();
       renderToolbar();
-  
       flashCompletions(r, c);
       saveGame();
       checkWin();
