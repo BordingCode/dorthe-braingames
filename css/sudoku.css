@@ -204,7 +204,7 @@
 .su-cell .pencil-marks span.pm-active {
   background: #4A7EC2;
   color: #fff;
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 /* --- Action bar (below board, above numpad) --- */
@@ -223,7 +223,7 @@
   max-width: 90px;
   padding: 7px 2px;
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   background: #f0ece7;
   color: var(--text);
   font-size: 12px;
@@ -272,7 +272,7 @@
   max-width: 52px;
   aspect-ratio: 1;
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--accent-sudoku, #4A90D9);
   color: #fff;
   font-size: clamp(17px, 5vw, 26px);
@@ -351,7 +351,7 @@
 .su-hint-content {
   position: relative;
   background: #fff;
-  border-radius: 20px;
+  border-radius: 0;
   padding: 28px 24px;
   width: 100%;
   max-width: 380px;
@@ -403,7 +403,7 @@
   color: var(--accent-sudoku, #4A90D9);
   padding: 10px;
   background: #edf4fc;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 14px;
 }
 .su-hint-answer.hidden {
@@ -459,7 +459,7 @@
 }
 .su-technique-card {
   background: var(--surface);
-  border-radius: var(--radius);
+  border-radius: 0;
   padding: 18px;
   margin-bottom: 12px;
   box-shadow: var(--shadow-sm);
@@ -483,7 +483,7 @@
   color: var(--text-muted);
   background: var(--surface-alt);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 0;
   display: inline-block;
   margin-bottom: 8px;
 }
@@ -499,7 +499,7 @@
   font-style: italic;
   padding: 10px;
   background: var(--surface-alt);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   line-height: 1.4;
 }
 .su-technique-badge {
