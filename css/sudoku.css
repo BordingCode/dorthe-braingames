@@ -20,12 +20,11 @@
   --board-size: min(100vw, calc(100dvh - 155px));
   width: 100vw;
   max-width: 100vw;
-  background: #ccc;
+  background: #ddd;
   gap: 1px;
   border-radius: 0;
   overflow: hidden;
-  border-top: 3px solid #111;
-  border-bottom: 3px solid #111;
+  border: 2px solid #000;
 }
 
 .su-cell {
@@ -45,15 +44,15 @@
   line-height: 1;
 }
 
-/* 3x3 box borders — thick and dark for clear separation */
-.su-cell[data-col="2"],
-.su-cell[data-col="5"] {
-  border-right: 3px solid #111;
-}
-.su-cell[data-row="2"],
-.su-cell[data-row="5"] {
-  border-bottom: 3px solid #111;
-}
+/* 3x3 box borders — thick black lines */
+.su-cell[data-col="2"] { border-right: 2px solid #000; }
+.su-cell[data-col="3"] { border-left: 2px solid #000; }
+.su-cell[data-col="5"] { border-right: 2px solid #000; }
+.su-cell[data-col="6"] { border-left: 2px solid #000; }
+.su-cell[data-row="2"] { border-bottom: 2px solid #000; }
+.su-cell[data-row="3"] { border-top: 2px solid #000; }
+.su-cell[data-row="5"] { border-bottom: 2px solid #000; }
+.su-cell[data-row="6"] { border-top: 2px solid #000; }
 
 /* Cell states */
 .su-cell.given {
