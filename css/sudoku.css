@@ -19,7 +19,8 @@
 }
 #screen-sudoku .game-area {
   padding: 0 !important;
-  overflow: visible;
+  overflow: hidden;
+  justify-content: flex-start;
 }
 
 /* --- Pause button --- */
@@ -65,7 +66,7 @@
 #sudoku-board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  --board-size: min(100vw, calc(100dvh - 210px));
+  --board-size: min(100vw, calc(100svh - 240px));
   width: var(--board-size);
   max-width: 100vw;
   margin: 0 auto;
@@ -222,7 +223,7 @@
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin: 8px auto 2px;
+  margin: 4px auto 2px;
   max-width: var(--board-size);
   padding: 0 6px;
   width: 100%;
@@ -270,7 +271,7 @@
 #sudoku-numpad {
   display: flex;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: 4px;
   justify-content: center;
   max-width: var(--board-size);
   padding: 0 6px;
