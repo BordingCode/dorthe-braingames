@@ -1,5 +1,14 @@
 /* ===== Sudoku ===== */
 
+/* Override shared button border-radius — all sharp in Sudoku */
+#screen-sudoku button,
+#screen-sudoku .btn,
+#screen-sudoku .su-cell,
+#screen-sudoku .su-num-btn,
+#screen-sudoku .su-action-btn {
+  border-radius: 0 !important;
+}
+
 #screen-sudoku {
   padding-left: 0 !important;
   padding-right: 0 !important;
