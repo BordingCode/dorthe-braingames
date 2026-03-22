@@ -537,14 +537,32 @@
           marks.className = 'pencil-marks';
           for (let n = 1; n <= 9; n++) {
             const s = document.createElement('span');
-            s.textContent = pencil[r][c].has(n) ? n : '';
+            if (pencil[r][c].has(n)) {
+              s.textContent = n;
+              if (selectedNumber && selectedNumber === n) {
+                s.classList.add('pm-active');
+              }
+            }
             marks.appendChild(s);
           }
           btn.appendChild(marks);
         }
 
         // Selection highlights
-        if (selectedCell) {
+        if (selectedNumber) {
+          // Number-first mode: only highlight matching numbers and candidates
+          if (selectedNumber !== 'erase') {
+            if (board[r][c] === selectedNumber) {
+              btn.classList.add('same-num');
+            } else if (board[r][c] === 0 && !given[r][c] && getCandidates(r, c).has(selectedNumber)) {
+              btn.classList.add('num-candidate');
+            }
+          }
+          if (selectedCell && r === selectedCell.r && c === selectedCell.c) {
+            btn.classList.add('selected');
+          }
+        } else if (selectedCell) {
+          // Cell-first mode: highlight row/col/box and same number
           if (r === selectedCell.r && c === selectedCell.c) {
             btn.classList.add('selected');
           } else if (r === selectedCell.r || c === selectedCell.c ||
@@ -557,17 +575,6 @@
               !(r === selectedCell.r && c === selectedCell.c)) {
             btn.classList.add('same-num');
           }
-        }
-
-        // Number-first mode: highlight candidate cells
-        if (selectedNumber && board[r][c] === 0 && !given[r][c]) {
-          if (getCandidates(r, c).has(selectedNumber)) {
-            btn.classList.add('num-candidate');
-          }
-        }
-        // Highlight same number as selectedNumber
-        if (selectedNumber && board[r][c] === selectedNumber) {
-          btn.classList.add('same-num');
         }
 
         // Hint highlights
