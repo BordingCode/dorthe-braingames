@@ -62,7 +62,7 @@
   background: #fff;
   gap: 0;
   border-radius: 0;
-  border: 2px solid #000;
+  border: 3px solid #000;
 }
 
 .su-cell {
@@ -79,8 +79,8 @@
   padding: 0;
   position: relative;
   line-height: 1;
-  border-right: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 /* Remove borders on right edge and bottom edge (board border handles those) */
@@ -88,10 +88,10 @@
 .su-cell[data-row="8"] { border-bottom: none; }
 
 /* 3x3 box borders — thick black lines */
-.su-cell[data-col="2"] { border-right: 2px solid #000; }
-.su-cell[data-col="5"] { border-right: 2px solid #000; }
-.su-cell[data-row="2"] { border-bottom: 2px solid #000; }
-.su-cell[data-row="5"] { border-bottom: 2px solid #000; }
+.su-cell[data-col="2"] { border-right: 3px solid #000; }
+.su-cell[data-col="5"] { border-right: 3px solid #000; }
+.su-cell[data-row="2"] { border-bottom: 3px solid #000; }
+.su-cell[data-row="5"] { border-bottom: 3px solid #000; }
 
 /* Cell states */
 .su-cell.given {
@@ -100,7 +100,7 @@
 }
 
 .su-cell.user-filled {
-  color: #1a1a1a;
+  color: var(--accent-sudoku, #4A90D9);
   font-weight: 700;
 }
 .su-cell.active-num {
