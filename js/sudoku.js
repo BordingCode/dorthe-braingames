@@ -40,6 +40,30 @@
       example: 'Tallet 5 skal stå i denne række. Kig på alle tomme celler: kun én af dem kan indeholde 5!',
       level: 'Let øvet',
     },
+    {
+      id: 'naked_pair',
+      name: 'Nøgent par',
+      icon: '\uD83D\uDC6F',
+      desc: 'Når to celler i samme enhed kun kan indeholde de samme to tal, kan disse tal fjernes fra alle andre celler i enheden.',
+      example: 'To celler i en række kan kun være 3 eller 7. Så kan 3 og 7 fjernes fra resten af rækken — og det afslører svaret!',
+      level: 'Øvet',
+    },
+    {
+      id: 'pointing_pair',
+      name: 'Pegende par',
+      icon: '\u261D\uFE0F',
+      desc: 'Når et tal i en boks kun kan stå i én række eller kolonne, kan det fjernes fra resten af den række/kolonne.',
+      example: 'I en boks kan tallet 4 kun stå i række 3. Så kan 4 fjernes fra resten af række 3 — og det afslører svaret!',
+      level: 'Øvet',
+    },
+    {
+      id: 'box_line',
+      name: 'Boks-linje',
+      icon: '\u2194\uFE0F',
+      desc: 'Når et tal i en række/kolonne kun kan stå inden for én boks, kan det fjernes fra resten af den boks.',
+      example: 'I række 5 kan tallet 8 kun stå i boks 6. Så kan 8 fjernes fra resten af boks 6 — og det afslører svaret!',
+      level: 'Øvet',
+    },
   ];
 
   // --- State ---
@@ -261,7 +285,273 @@
     if (hint) return hint;
     hint = findHiddenSingle();
     if (hint) return hint;
+    hint = findNakedPairHint();
+    if (hint) return hint;
+    hint = findPointingPairHint();
+    if (hint) return hint;
+    hint = findBoxLineHint();
+    if (hint) return hint;
     return findFallback();
+  }
+
+  function getAllCandidates() {
+    const cands = [];
+    for (let r = 0; r < 9; r++) {
+      cands[r] = [];
+      for (let c = 0; c < 9; c++)
+        cands[r][c] = getCandidates(r, c);
+    }
+    return cands;
+  }
+
+  function copyCands(cands) {
+    return cands.map(r => r.map(c => new Set(c)));
+  }
+
+  // Find a naked single in a candidate grid
+  function findSingleInCands(cands) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (cands[r][c].size === 1)
+          return { r, c, val: cands[r][c].values().next().value };
+    return null;
+  }
+
+  function findNakedPairHint() {
+    const cands = getAllCandidates();
+
+    // Helper: check unit for naked pairs
+    function checkUnit(cells, unitName) {
+      // Find cells with exactly 2 candidates
+      const pairs = [];
+      for (const [r, c] of cells)
+        if (cands[r][c].size === 2) pairs.push([r, c]);
+
+      for (let i = 0; i < pairs.length; i++) {
+        for (let j = i + 1; j < pairs.length; j++) {
+          const [r1, c1] = pairs[i];
+          const [r2, c2] = pairs[j];
+          const s1 = cands[r1][c1];
+          const s2 = cands[r2][c2];
+          // Check same 2 candidates
+          if (s1.size !== 2 || s2.size !== 2) continue;
+          const vals = [...s1];
+          if (!s2.has(vals[0]) || !s2.has(vals[1])) continue;
+
+          // Try eliminating these values from other cells in the unit
+          const copy = copyCands(cands);
+          let eliminated = false;
+          for (const [r, c] of cells) {
+            if ((r === r1 && c === c1) || (r === r2 && c === c2)) continue;
+            for (const v of vals) {
+              if (copy[r][c].delete(v)) eliminated = true;
+            }
+          }
+          if (!eliminated) continue;
+
+          // Check if elimination created a single
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: r1, c: c1, type: 'eliminator' },
+              { r: r2, c: c2, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            for (const [r, c] of cells) highlights.push({ r, c, type: 'unit' });
+            return {
+              type: 'naked_pair', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'Nøgent par', icon: '\uD83D\uDC6F',
+                steps: [
+                  'Cellerne (' + (r1+1) + ',' + (c1+1) + ') og (' + (r2+1) + ',' + (c2+1) + ') kan kun indeholde ' + vals[0] + ' og ' + vals[1] + '.',
+                  'Derfor kan ' + vals[0] + ' og ' + vals[1] + ' fjernes fra andre celler i ' + unitName + '.',
+                  'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+      }
+      return null;
+    }
+
+    // Check all rows
+    for (let r = 0; r < 9; r++) {
+      const cells = [];
+      for (let c = 0; c < 9; c++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'række ' + (r+1));
+      if (result) return result;
+    }
+    // Check all columns
+    for (let c = 0; c < 9; c++) {
+      const cells = [];
+      for (let r = 0; r < 9; r++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'kolonne ' + (c+1));
+      if (result) return result;
+    }
+    // Check all boxes
+    for (let br = 0; br < 9; br += 3)
+      for (let bc = 0; bc < 9; bc += 3) {
+        const cells = [];
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++)
+            if (board[br+dr][bc+dc] === 0) cells.push([br+dr, bc+dc]);
+        const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
+        const result = checkUnit(cells, 'boks ' + boxNum);
+        if (result) return result;
+      }
+    return null;
+  }
+
+  function findPointingPairHint() {
+    const cands = getAllCandidates();
+
+    for (let br = 0; br < 9; br += 3) {
+      for (let bc = 0; bc < 9; bc += 3) {
+        for (let num = 1; num <= 9; num++) {
+          // Find where num can go in this box
+          const positions = [];
+          for (let dr = 0; dr < 3; dr++)
+            for (let dc = 0; dc < 3; dc++)
+              if (cands[br+dr][bc+dc].has(num)) positions.push([br+dr, bc+dc]);
+          if (positions.length < 2 || positions.length > 3) continue;
+
+          // Check if all in same row
+          const allSameRow = positions.every(p => p[0] === positions[0][0]);
+          // Check if all in same col
+          const allSameCol = positions.every(p => p[1] === positions[0][1]);
+
+          if (!allSameRow && !allSameCol) continue;
+
+          const copy = copyCands(cands);
+          let eliminated = false;
+
+          if (allSameRow) {
+            const row = positions[0][0];
+            for (let c = 0; c < 9; c++) {
+              if (c >= bc && c < bc + 3) continue; // skip the box
+              if (copy[row][c].delete(num)) eliminated = true;
+            }
+          } else {
+            const col = positions[0][1];
+            for (let r = 0; r < 9; r++) {
+              if (r >= br && r < br + 3) continue;
+              if (copy[r][col].delete(num)) eliminated = true;
+            }
+          }
+
+          if (!eliminated) continue;
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
+            const unitName = allSameRow ? 'række ' + (positions[0][0]+1) : 'kolonne ' + (positions[0][1]+1);
+            const highlights = [{ r: single.r, c: single.c, type: 'target' }];
+            for (const [r, c] of positions) highlights.push({ r, c, type: 'eliminator' });
+            return {
+              type: 'pointing_pair', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'Pegende par', icon: '\u261D\uFE0F',
+                steps: [
+                  'I boks ' + boxNum + ' kan ' + num + ' kun stå i ' + unitName + '.',
+                  'Derfor kan ' + num + ' fjernes fra resten af ' + unitName + '.',
+                  'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function findBoxLineHint() {
+    const cands = getAllCandidates();
+
+    // Check rows
+    for (let r = 0; r < 9; r++) {
+      for (let num = 1; num <= 9; num++) {
+        const positions = [];
+        for (let c = 0; c < 9; c++)
+          if (cands[r][c].has(num)) positions.push([r, c]);
+        if (positions.length < 2 || positions.length > 3) continue;
+
+        // Check if all in same box
+        const br = Math.floor(positions[0][0] / 3) * 3;
+        const bc = Math.floor(positions[0][1] / 3) * 3;
+        if (!positions.every(p => Math.floor(p[1]/3)*3 === bc)) continue;
+
+        const copy = copyCands(cands);
+        let eliminated = false;
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++) {
+            const rr = br + dr, cc = bc + dc;
+            if (rr === r) continue; // skip the row itself
+            if (copy[rr][cc].delete(num)) eliminated = true;
+          }
+
+        if (!eliminated) continue;
+        const single = findSingleInCands(copy);
+        if (single && single.val === solution[single.r][single.c]) {
+          const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
+          const highlights = [{ r: single.r, c: single.c, type: 'target' }];
+          for (const [pr, pc] of positions) highlights.push({ r: pr, c: pc, type: 'eliminator' });
+          return {
+            type: 'box_line', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+            technique: {
+              name: 'Boks-linje', icon: '\u2194\uFE0F',
+              steps: [
+                'I række ' + (r+1) + ' kan ' + num + ' kun stå i boks ' + boxNum + '.',
+                'Derfor kan ' + num + ' fjernes fra resten af boks ' + boxNum + '.',
+                'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+              ],
+            },
+          };
+        }
+      }
+    }
+    // Check columns
+    for (let c = 0; c < 9; c++) {
+      for (let num = 1; num <= 9; num++) {
+        const positions = [];
+        for (let r = 0; r < 9; r++)
+          if (cands[r][c].has(num)) positions.push([r, c]);
+        if (positions.length < 2 || positions.length > 3) continue;
+
+        const br = Math.floor(positions[0][0] / 3) * 3;
+        const bc = Math.floor(positions[0][1] / 3) * 3;
+        if (!positions.every(p => Math.floor(p[0]/3)*3 === br)) continue;
+
+        const copy = copyCands(cands);
+        let eliminated = false;
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++) {
+            const rr = br + dr, cc = bc + dc;
+            if (cc === c) continue;
+            if (copy[rr][cc].delete(num)) eliminated = true;
+          }
+
+        if (!eliminated) continue;
+        const single = findSingleInCands(copy);
+        if (single && single.val === solution[single.r][single.c]) {
+          const boxNum = Math.floor(br/3)*3 + Math.floor(bc/3) + 1;
+          const highlights = [{ r: single.r, c: single.c, type: 'target' }];
+          for (const [pr, pc] of positions) highlights.push({ r: pr, c: pc, type: 'eliminator' });
+          return {
+            type: 'box_line', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+            technique: {
+              name: 'Boks-linje', icon: '\u2194\uFE0F',
+              steps: [
+                'I kolonne ' + (c+1) + ' kan ' + num + ' kun stå i boks ' + boxNum + '.',
+                'Derfor kan ' + num + ' fjernes fra resten af boks ' + boxNum + '.',
+                'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+              ],
+            },
+          };
+        }
+      }
+    }
+    return null;
   }
 
   function findLastRemaining() {
