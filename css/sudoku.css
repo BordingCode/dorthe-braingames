@@ -10,11 +10,11 @@
   grid-template-columns: repeat(9, 1fr);
   --board-size: min(calc(100vw - 20px), calc(100dvh - 220px));
   width: var(--board-size);
-  background: #c8cdc9;
+  background: #d8d8d8;
   gap: 1px;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
-  border: 2px solid var(--text);
+  border: 3px solid #333;
 }
 
 .su-cell {
@@ -34,21 +34,20 @@
   line-height: 1;
 }
 
-/* 3x3 box borders — clean thick lines */
+/* 3x3 box borders — thick dark lines */
 .su-cell[data-col="2"],
 .su-cell[data-col="5"] {
-  border-right: 2px solid var(--text);
+  border-right: 3px solid #333;
 }
 .su-cell[data-row="2"],
 .su-cell[data-row="5"] {
-  border-bottom: 2px solid var(--text);
+  border-bottom: 3px solid #333;
 }
 
 /* Cell states */
 .su-cell.given {
   font-weight: 800;
-  color: var(--text);
-  background: #f4f1ed;
+  color: #1a1a1a;
 }
 
 .su-cell.user-filled {
@@ -62,27 +61,24 @@
 
 /* Selection & highlights */
 .su-cell.selected {
-  background: #c8dff0;
+  background: #d6e4f5;
 }
 .su-cell.same-num {
-  background: #dde9f4;
+  background: #d6e4f5;
 }
 .su-cell.row-col-highlight {
-  background: #edf2f7;
-}
-.su-cell.given.row-col-highlight {
-  background: #e8eae6;
+  background: #e8eef6;
 }
 .su-cell.selected.row-col-highlight {
-  background: #c8dff0;
+  background: #d6e4f5;
 }
 
 /* Number-first mode: highlight legal cells */
 .su-cell.num-candidate {
-  background: #e4f0fb;
+  background: #e8eef6;
 }
 .su-cell.num-candidate.selected {
-  background: #c8dff0;
+  background: #d6e4f5;
 }
 
 /* Error flash */
@@ -145,9 +141,9 @@
   pointer-events: none;
 }
 .su-cell .pencil-marks span {
-  font-size: clamp(8px, 2.2vw, 12px);
-  font-weight: 500;
-  color: #8ea0a8;
+  font-size: clamp(8px, 2.4vw, 13px);
+  font-weight: 600;
+  color: #5a7ec2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -523,6 +519,6 @@
     padding: 8px 4px;
   }
   .su-cell .pencil-marks span {
-    font-size: 12px;
+    font-size: 13px;
   }
 }
