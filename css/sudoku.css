@@ -1,27 +1,28 @@
 /* ===== Sudoku ===== */
 
 #screen-sudoku .game-area {
-  padding: 4px 4px;
+  padding: 2px 0;
 }
 
 /* --- Board --- */
 #sudoku-board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  --board-size: min(calc(100vw - 8px), calc(100dvh - 190px));
+  --board-size: min(100vw, calc(100dvh - 180px));
   width: var(--board-size);
-  background: #d8d8d8;
+  background: #e0e0e0;
   gap: 1px;
-  border-radius: 2px;
+  border-radius: 0;
   overflow: hidden;
-  border: 3px solid #333;
+  border-top: 2px solid #222;
+  border-bottom: 2px solid #222;
 }
 
 .su-cell {
   aspect-ratio: 1;
   border: none;
   background: #fff;
-  font-size: clamp(18px, 5vw, 30px);
+  font-size: clamp(20px, 5.5vw, 34px);
   font-weight: 600;
   color: var(--text);
   display: flex;
@@ -34,14 +35,14 @@
   line-height: 1;
 }
 
-/* 3x3 box borders — thick dark lines */
+/* 3x3 box borders */
 .su-cell[data-col="2"],
 .su-cell[data-col="5"] {
-  border-right: 3px solid #333;
+  border-right: 2px solid #222;
 }
 .su-cell[data-row="2"],
 .su-cell[data-row="5"] {
-  border-bottom: 3px solid #333;
+  border-bottom: 2px solid #222;
 }
 
 /* Cell states */
@@ -158,8 +159,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  width: var(--board-size);
-  margin: 0 auto 8px;
+  width: 100%;
+  max-width: var(--board-size);
+  margin: 0 auto 6px;
+  padding: 0 6px;
 }
 .su-progress-bar {
   flex: 1;
@@ -187,8 +190,9 @@
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin: 10px auto 2px;
+  margin: 8px auto 2px;
   max-width: var(--board-size);
+  padding: 0 6px;
   width: 100%;
 }
 
@@ -227,9 +231,10 @@
 #sudoku-numpad {
   display: flex;
   gap: 5px;
-  margin-top: 10px;
+  margin-top: 8px;
   justify-content: center;
   max-width: var(--board-size);
+  padding: 0 6px;
   width: 100%;
 }
 
@@ -505,7 +510,7 @@
 /* --- Desktop --- */
 @media (min-width: 768px) {
   #sudoku-board {
-    --board-size: min(calc(100vw - 32px), calc(100dvh - 200px), 580px);
+    --board-size: min(calc(100vw - 24px), calc(100dvh - 190px), 600px);
   }
   .su-cell {
     font-size: clamp(22px, 3.5vw, 32px);
