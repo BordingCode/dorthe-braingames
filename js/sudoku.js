@@ -201,6 +201,7 @@
   let selectedNumber = null;
   let numberFirstMode = false;
   let highlightCandidates = true;
+  let roundedCells = false;
 
   // Load persisted settings
   try {
@@ -211,6 +212,7 @@
   try {
     const s = JSON.parse(localStorage.getItem('bg_sudoku_settings') || '{}');
     if (s.highlightCandidates !== undefined) highlightCandidates = s.highlightCandidates;
+    if (s.roundedCells !== undefined) roundedCells = s.roundedCells;
   } catch (e) { /* ignore */ }
 
   // --- DOM ---
@@ -2139,6 +2141,7 @@
 
   function renderBoard() {
     boardEl.innerHTML = '';
+    boardEl.classList.toggle('rounded', roundedCells);
 
     // Determine which number to highlight across the board
     const activeNum = (selectedNumber && selectedNumber !== 'erase') ? selectedNumber
@@ -2316,7 +2319,7 @@
   function saveSettings() {
     try {
       localStorage.setItem('bg_sudoku_settings', JSON.stringify({
-        highlightCandidates,
+        highlightCandidates, roundedCells,
       }));
     } catch (e) { /* storage full */ }
   }
@@ -2903,10 +2906,12 @@
   const settingsModal = document.getElementById('sudoku-settings-modal');
   const setNumfirst = document.getElementById('su-set-numfirst');
   const setHighlights = document.getElementById('su-set-highlights');
+  const setRounded = document.getElementById('su-set-rounded');
 
   document.getElementById('sudoku-settings-btn').onclick = function () {
     setNumfirst.checked = numberFirstMode;
     setHighlights.checked = highlightCandidates;
+    setRounded.checked = roundedCells;
     settingsModal.classList.add('active');
   };
   settingsModal.onclick = function (e) {
@@ -2921,6 +2926,11 @@
   };
   setHighlights.onchange = function () {
     highlightCandidates = setHighlights.checked;
+    saveSettings();
+    renderBoard();
+  };
+  setRounded.onchange = function () {
+    roundedCells = setRounded.checked;
     saveSettings();
     renderBoard();
   };

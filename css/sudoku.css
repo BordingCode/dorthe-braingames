@@ -145,6 +145,17 @@
   100% { background: #fff; }
 }
 
+/* Rounded cells mode */
+#sudoku-board.rounded {
+  gap: 2px;
+  background: transparent;
+  border: none;
+}
+#sudoku-board.rounded .su-cell {
+  border-radius: 6px;
+  border: none !important;
+}
+
 /* Pencil marks */
 .su-cell .pencil-marks {
   display: grid;
