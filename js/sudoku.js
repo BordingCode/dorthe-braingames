@@ -60,7 +60,8 @@
   let milestoneShown = {};
   let techniquesLearned = {};
   let initialEmpty = 0;
-  let selectedNumber = null;  // number-first mode
+  let selectedNumber = null;
+  let numberFirstMode = false;
 
   try {
     techniquesLearned = JSON.parse(localStorage.getItem('bg_sudoku_techniques') || '{}');
@@ -79,6 +80,7 @@
   const undoBtn = document.getElementById('sudoku-undo-btn');
   const hintBtn = document.getElementById('sudoku-hint-btn');
   const autonoteBtn = document.getElementById('sudoku-autonote-btn');
+  const numfirstBtn = document.getElementById('sudoku-numfirst-btn');
   const learnBtn = document.getElementById('sudoku-learn-btn');
   const progressFill = document.getElementById('sudoku-progress-fill');
   const progressText = document.getElementById('sudoku-progress-text');
@@ -113,6 +115,8 @@
     pencilMode = false;
     selectedCell = null;
     selectedNumber = null;
+    numberFirstMode = false;
+    if (numfirstBtn) numfirstBtn.classList.remove('active');
     moveHistory = [];
     hintCount = 0;
     activeHint = null;
@@ -671,10 +675,10 @@
 
   function selectCell(r, c) {
     if (gameOver) return;
-    activeHint = null;  // Bug fix: clear hint highlights
+    activeHint = null;
 
     // Number-first mode: place selected number directly
-    if (selectedNumber && !given[r][c]) {
+    if (numberFirstMode && selectedNumber && !given[r][c]) {
       selectedCell = { r, c };
       if (selectedNumber === 'erase') {
         handleErase();
@@ -692,27 +696,32 @@
   function handleNumpadClick(n) {
     if (gameOver) return;
 
-    // Toggle number-first selection
-    if (selectedNumber === n) {
-      // Deselect
-      selectedNumber = null;
+    if (numberFirstMode) {
+      // In number-first mode: toggle the selected number
+      if (selectedNumber === n) {
+        selectedNumber = null;
+      } else {
+        selectedNumber = n;
+      }
       renderBoard();
       renderNumpad();
-      return;
-    }
-
-    // If a cell is selected and no number-first mode active, place directly (cell-first)
-    if (selectedCell && selectedNumber === null) {
+    } else {
+      // Cell-first mode: place directly into the selected cell
+      if (!selectedCell) return;
       if (n === 'erase') {
         handleErase();
       } else {
         handleNumberInput(n);
       }
-      return;
     }
+  }
 
-    // Enter or switch number-first mode
-    selectedNumber = n;
+  function toggleNumberFirstMode() {
+    numberFirstMode = !numberFirstMode;
+    numfirstBtn.classList.toggle('active', numberFirstMode);
+    if (!numberFirstMode) {
+      selectedNumber = null;
+    }
     renderBoard();
     renderNumpad();
   }
@@ -1278,6 +1287,7 @@
   undoBtn.onclick = undoMove;
   hintBtn.onclick = showHint;
   autonoteBtn.onclick = autoFillPencilMarks;
+  numfirstBtn.onclick = toggleNumberFirstMode;
   learnBtn.onclick = showTechniqueLibrary;
   document.getElementById('su-techniques-close').onclick = closeTechniqueLibrary;
 
@@ -1297,6 +1307,7 @@
   window.gameCleanups.sudoku = function () {
     gameOver = true;
     selectedNumber = null;
+    numberFirstMode = false;
     activeHint = null;
     if (timer) timer.reset();
     closeHintModal();

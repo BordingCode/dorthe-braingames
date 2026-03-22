@@ -218,6 +218,13 @@
   transform: scale(0.95);
   background: #e0dbd4;
 }
+.su-action-btn.active {
+  background: var(--accent-sudoku, #4A90D9);
+  color: #fff;
+}
+.su-action-btn.active:active {
+  background: #3a78bf;
+}
 .su-action-btn:disabled {
   opacity: 0.3;
   pointer-events: none;
