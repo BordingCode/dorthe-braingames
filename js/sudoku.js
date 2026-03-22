@@ -88,6 +88,30 @@
       example: 'Tallet 6 kan kun stå i kolonne 2 og 7 i både række 1 og række 5. Så kan 6 fjernes fra resten af kolonne 2 og 7!',
       level: 'Avanceret',
     },
+    {
+      id: 'hidden_triple',
+      name: 'Skjult triple',
+      icon: '\uD83D\uDD76\uFE0F',
+      desc: 'Tre tal kan kun stå i de samme tre celler i en enhed. Alle andre kandidater fjernes fra de tre celler.',
+      example: 'Tallene 1, 4 og 7 kan kun stå i tre bestemte celler. Fjern alt andet fra dem — og svaret afsløres!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'swordfish',
+      name: 'Swordfish',
+      icon: '\uD83D\uDC1F',
+      desc: 'Som X-Wing men med 3 rækker og 3 kolonner. Et tal danner et mønster der tillader eliminering.',
+      example: 'Tallet 5 danner et mønster over 3 rækker og 3 kolonner — så kan 5 fjernes fra resten af de kolonner!',
+      level: 'Ekspert',
+    },
+    {
+      id: 'xy_wing',
+      name: 'XY-Wing',
+      icon: '\uD83E\uDEB6',
+      desc: 'Tre celler med 2 kandidater hver danner en kæde (AB, AC, BC). Tallet de deler kan fjernes fra celler der ser begge "vinger".',
+      example: 'En celle har 3,7 — den ser en celle med 3,5 og en med 5,7. Tallet 5 kan fjernes fra celler der ser begge vinger!',
+      level: 'Ekspert',
+    },
   ];
 
   // --- State ---
@@ -320,6 +344,12 @@
     hint = findHiddenPairHint();
     if (hint) return hint;
     hint = findXWingHint();
+    if (hint) return hint;
+    hint = findHiddenTripleHint();
+    if (hint) return hint;
+    hint = findSwordfishHint();
+    if (hint) return hint;
+    hint = findXYWingHint();
     if (hint) return hint;
     return findFallback();
   }
@@ -1054,6 +1084,243 @@
                   num + ' kan kun stå i række ' + (r1+1) + ' og ' + (r2+1) + ' i både kolonne ' + (c1+1) + ' og ' + (c2+1) + '.',
                   'Derfor kan ' + num + ' fjernes fra resten af række ' + (r1+1) + ' og ' + (r2+1) + '.',
                   'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                ],
+              },
+            };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function findHiddenTripleHint() {
+    const cands = getAllCandidates();
+
+    function checkUnit(cells, unitName) {
+      if (cells.length < 3) return null;
+      for (let n1 = 1; n1 <= 7; n1++)
+        for (let n2 = n1 + 1; n2 <= 8; n2++)
+          for (let n3 = n2 + 1; n3 <= 9; n3++) {
+            const nums = [n1, n2, n3];
+            // Find cells that contain at least one of these numbers
+            const containing = cells.filter(([r, c]) =>
+              nums.some(n => cands[r][c].has(n)));
+            if (containing.length !== 3) continue;
+            // Each number must appear in at least one of the 3 cells
+            if (!nums.every(n => containing.some(([r, c]) => cands[r][c].has(n)))) continue;
+            // Only useful if at least one cell has candidates beyond the triple
+            const hasExtra = containing.some(([r, c]) => {
+              for (const v of cands[r][c]) if (!nums.includes(v)) return true;
+              return false;
+            });
+            if (!hasExtra) continue;
+
+            const copy = copyCands(cands);
+            for (const [r, c] of containing) {
+              for (const v of [...copy[r][c]])
+                if (!nums.includes(v)) copy[r][c].delete(v);
+            }
+
+            const single = findSingleInCands(copy);
+            if (single && single.val === solution[single.r][single.c]) {
+              const highlights = containing.map(([r, c]) => ({ r, c, type: 'eliminator' }));
+              highlights.push({ r: single.r, c: single.c, type: 'target' });
+              return {
+                type: 'hidden_triple', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+                technique: {
+                  name: 'Skjult triple', icon: '\uD83D\uDD76\uFE0F',
+                  steps: [
+                    'I ' + unitName + ' kan ' + nums.join(', ') + ' kun stå i tre bestemte celler.',
+                    'Alle andre kandidater fjernes fra disse celler.',
+                    'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                  ],
+                },
+              };
+            }
+          }
+      return null;
+    }
+
+    for (let r = 0; r < 9; r++) {
+      const cells = []; for (let c = 0; c < 9; c++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'række ' + (r+1)); if (result) return result;
+    }
+    for (let c = 0; c < 9; c++) {
+      const cells = []; for (let r = 0; r < 9; r++) if (board[r][c] === 0) cells.push([r, c]);
+      const result = checkUnit(cells, 'kolonne ' + (c+1)); if (result) return result;
+    }
+    for (let br = 0; br < 9; br += 3)
+      for (let bc = 0; bc < 9; bc += 3) {
+        const cells = [];
+        for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++)
+          if (board[br+dr][bc+dc] === 0) cells.push([br+dr, bc+dc]);
+        const result = checkUnit(cells, 'boks ' + (Math.floor(br/3)*3 + Math.floor(bc/3) + 1));
+        if (result) return result;
+      }
+    return null;
+  }
+
+  function findSwordfishHint() {
+    const cands = getAllCandidates();
+
+    for (let num = 1; num <= 9; num++) {
+      // Rows: find rows where num appears in 2-3 columns
+      const rowData = [];
+      for (let r = 0; r < 9; r++) {
+        const cols = [];
+        for (let c = 0; c < 9; c++) if (cands[r][c].has(num)) cols.push(c);
+        if (cols.length >= 2 && cols.length <= 3) rowData.push({ r, cols });
+      }
+
+      for (let i = 0; i < rowData.length; i++)
+        for (let j = i + 1; j < rowData.length; j++)
+          for (let k = j + 1; k < rowData.length; k++) {
+            const allCols = new Set([...rowData[i].cols, ...rowData[j].cols, ...rowData[k].cols]);
+            if (allCols.size !== 3) continue;
+            const targetCols = [...allCols];
+            const rows = [rowData[i].r, rowData[j].r, rowData[k].r];
+
+            const copy = copyCands(cands);
+            let eliminated = false;
+            for (const c of targetCols)
+              for (let r = 0; r < 9; r++) {
+                if (rows.includes(r)) continue;
+                if (copy[r][c].delete(num)) eliminated = true;
+              }
+            if (!eliminated) continue;
+
+            const single = findSingleInCands(copy);
+            if (single && single.val === solution[single.r][single.c]) {
+              const highlights = [{ r: single.r, c: single.c, type: 'target' }];
+              for (const r of rows) for (const c of targetCols)
+                if (cands[r][c].has(num)) highlights.push({ r, c, type: 'eliminator' });
+              return {
+                type: 'swordfish', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+                technique: {
+                  name: 'Swordfish', icon: '\uD83D\uDC1F',
+                  steps: [
+                    num + ' danner et mønster over række ' + rows.map(r => r+1).join(', ') + ' og kolonne ' + targetCols.map(c => c+1).join(', ') + '.',
+                    'Derfor kan ' + num + ' fjernes fra resten af disse kolonner.',
+                    'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                  ],
+                },
+              };
+            }
+          }
+
+      // Columns version
+      const colData = [];
+      for (let c = 0; c < 9; c++) {
+        const rows = [];
+        for (let r = 0; r < 9; r++) if (cands[r][c].has(num)) rows.push(r);
+        if (rows.length >= 2 && rows.length <= 3) colData.push({ c, rows });
+      }
+
+      for (let i = 0; i < colData.length; i++)
+        for (let j = i + 1; j < colData.length; j++)
+          for (let k = j + 1; k < colData.length; k++) {
+            const allRows = new Set([...colData[i].rows, ...colData[j].rows, ...colData[k].rows]);
+            if (allRows.size !== 3) continue;
+            const targetRows = [...allRows];
+            const cols = [colData[i].c, colData[j].c, colData[k].c];
+
+            const copy = copyCands(cands);
+            let eliminated = false;
+            for (const r of targetRows)
+              for (let c = 0; c < 9; c++) {
+                if (cols.includes(c)) continue;
+                if (copy[r][c].delete(num)) eliminated = true;
+              }
+            if (!eliminated) continue;
+
+            const single = findSingleInCands(copy);
+            if (single && single.val === solution[single.r][single.c]) {
+              const highlights = [{ r: single.r, c: single.c, type: 'target' }];
+              for (const c of cols) for (const r of targetRows)
+                if (cands[r][c].has(num)) highlights.push({ r, c, type: 'eliminator' });
+              return {
+                type: 'swordfish', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+                technique: {
+                  name: 'Swordfish', icon: '\uD83D\uDC1F',
+                  steps: [
+                    num + ' danner et mønster over kolonne ' + cols.map(c => c+1).join(', ') + ' og række ' + targetRows.map(r => r+1).join(', ') + '.',
+                    'Derfor kan ' + num + ' fjernes fra resten af disse rækker.',
+                    'Nu kan cellen (' + (single.r+1) + ',' + (single.c+1) + ') kun indeholde ' + single.val + '!',
+                  ],
+                },
+              };
+            }
+          }
+    }
+    return null;
+  }
+
+  function findXYWingHint() {
+    const cands = getAllCandidates();
+
+    // Find all cells with exactly 2 candidates
+    const bivalue = [];
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (cands[r][c].size === 2) bivalue.push({ r, c, vals: [...cands[r][c]] });
+
+    function sees(a, b) {
+      return a.r === b.r || a.c === b.c ||
+        (Math.floor(a.r/3) === Math.floor(b.r/3) && Math.floor(a.c/3) === Math.floor(b.c/3));
+    }
+
+    for (const pivot of bivalue) {
+      const [x, y] = pivot.vals;
+      // Find wing1 that shares one value with pivot and has a different second value
+      for (const w1 of bivalue) {
+        if (w1.r === pivot.r && w1.c === pivot.c) continue;
+        if (!sees(pivot, w1)) continue;
+        let shared1, other1;
+        if (w1.vals.includes(x) && !w1.vals.includes(y)) {
+          shared1 = x; other1 = w1.vals.find(v => v !== x);
+        } else if (w1.vals.includes(y) && !w1.vals.includes(x)) {
+          shared1 = y; other1 = w1.vals.find(v => v !== y);
+        } else continue;
+
+        const shared2 = (shared1 === x) ? y : x;
+
+        // Find wing2 that shares the other value with pivot and has other1 as second value
+        for (const w2 of bivalue) {
+          if (w2.r === w1.r && w2.c === w1.c) continue;
+          if (w2.r === pivot.r && w2.c === pivot.c) continue;
+          if (!sees(pivot, w2)) continue;
+          if (!w2.vals.includes(shared2) || !w2.vals.includes(other1)) continue;
+
+          // XY-Wing found! Eliminate other1 from cells that see both wings
+          const copy = copyCands(cands);
+          let eliminated = false;
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++) {
+              if (r === pivot.r && c === pivot.c) continue;
+              if (r === w1.r && c === w1.c) continue;
+              if (r === w2.r && c === w2.c) continue;
+              if (!sees({ r, c }, w1) || !sees({ r, c }, w2)) continue;
+              if (copy[r][c].delete(other1)) eliminated = true;
+            }
+          if (!eliminated) continue;
+
+          const single = findSingleInCands(copy);
+          if (single && single.val === solution[single.r][single.c]) {
+            const highlights = [
+              { r: pivot.r, c: pivot.c, type: 'eliminator' },
+              { r: w1.r, c: w1.c, type: 'eliminator' },
+              { r: w2.r, c: w2.c, type: 'eliminator' },
+              { r: single.r, c: single.c, type: 'target' },
+            ];
+            return {
+              type: 'xy_wing', cell: { r: single.r, c: single.c }, value: single.val, highlights,
+              technique: {
+                name: 'XY-Wing', icon: '\uD83E\uDEB6',
+                steps: [
+                  'Cellen (' + (pivot.r+1) + ',' + (pivot.c+1) + ') har ' + x + ' og ' + y + '.',
+                  'Den ser to "vinger" med ' + shared1 + '/' + other1 + ' og ' + shared2 + '/' + other1 + '.',
+                  other1 + ' kan fjernes fra celler der ser begge vinger. Nu kan (' + (single.r+1) + ',' + (single.c+1) + ') kun være ' + single.val + '!',
                 ],
               },
             };
