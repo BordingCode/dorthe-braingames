@@ -2,11 +2,11 @@
 
 (function () {
   const DIFFICULTIES = [
-    { label: 'Let (38 tal)', value: 'easy' },
-    { label: 'Medium (32 tal)', value: 'medium' },
-    { label: 'Svær (26 tal)', value: 'hard' },
-    { label: 'Ekspert (22 tal)', value: 'expert' },
-    { label: 'Ond (17 tal)', value: 'evil' },
+    { label: 'Let', value: 'easy' },
+    { label: 'Medium', value: 'medium' },
+    { label: 'Svær', value: 'hard' },
+    { label: 'Ekspert', value: 'expert' },
+    { label: 'Ond', value: 'evil' },
   ];
 
   const CONFIG = {
@@ -201,7 +201,7 @@
   let selectedNumber = null;
   let numberFirstMode = false;
   let highlightCandidates = true;
-  let roundedCells = false;
+  let paused = false;
 
   // Load persisted settings
   try {
@@ -212,7 +212,6 @@
   try {
     const s = JSON.parse(localStorage.getItem('bg_sudoku_settings') || '{}');
     if (s.highlightCandidates !== undefined) highlightCandidates = s.highlightCandidates;
-    if (s.roundedCells !== undefined) roundedCells = s.roundedCells;
   } catch (e) { /* ignore */ }
 
   // --- DOM ---
@@ -259,21 +258,39 @@
     moveHistory = [];
     hintCount = 0;
     activeHint = null;
+    paused = false;
 
     errorsEl.textContent = '0';
     maxErrorsEl.textContent = maxErrors;
     pencilBtn.classList.remove('active');
+    document.getElementById('sudoku-pause-btn').textContent = '\u23F8';
+    boardEl.classList.remove('su-paused');
+    document.getElementById('sudoku-pause-overlay').classList.remove('active');
+    numpadEl.style.pointerEvents = '';
+    numpadEl.style.opacity = '';
 
     if (timer) timer.reset();
     timer = new GameTimer(timerEl);
 
-    solution = generateSolved();
-    board = solution.map(r => r.slice());
-    given = Array.from({ length: 9 }, () => Array(9).fill(true));
-    pencil = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
-    hinted = Array.from({ length: 9 }, () => Array(9).fill(false));
+    // Generate puzzle with technique-based difficulty grading
+    const MAX_ATTEMPTS = 20;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      solution = generateSolved();
+      board = solution.map(r => r.slice());
+      given = Array.from({ length: 9 }, () => Array(9).fill(true));
+      pencil = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
+      hinted = Array.from({ length: 9 }, () => Array(9).fill(false));
 
-    removeCells(81 - config.givens);
+      removeCells(81 - config.givens);
+
+      const grade = gradePuzzle(board, solution);
+      // Accept if tier matches target difficulty, or if we ran out of attempts
+      if (grade.tier === diff || attempt === MAX_ATTEMPTS - 1) break;
+      // For easy: also accept if puzzle is easier than target
+      if (diff === 'easy' && TIER_ORDER.indexOf(grade.tier) <= TIER_ORDER.indexOf('easy')) break;
+      // For evil: accept anything that requires guessing or expert techniques
+      if (diff === 'evil' && TIER_ORDER.indexOf(grade.tier) >= TIER_ORDER.indexOf('expert')) break;
+    }
 
     renderBoard();
     renderNumpad();
@@ -350,14 +367,23 @@
     let count = 0;
     function solve() {
       if (count >= limit) return;
-      const empty = findEmpty(copy);
-      if (!empty) { count++; return; }
-      const [r, c] = empty;
+      // MCV: find empty cell with fewest valid candidates
+      let minCands = 10, bestR = -1, bestC = -1;
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          if (copy[r][c] === 0) {
+            let cnt = 0;
+            for (let n = 1; n <= 9; n++)
+              if (isValid(copy, r, c, n)) cnt++;
+            if (cnt === 0) return; // dead end
+            if (cnt < minCands) { minCands = cnt; bestR = r; bestC = c; }
+          }
+      if (bestR === -1) { count++; return; }
       for (let n = 1; n <= 9; n++) {
-        if (isValid(copy, r, c, n)) {
-          copy[r][c] = n;
+        if (isValid(copy, bestR, bestC, n)) {
+          copy[bestR][bestC] = n;
           solve();
-          copy[r][c] = 0;
+          copy[bestR][bestC] = 0;
         }
       }
     }
@@ -371,6 +397,71 @@
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
+  }
+
+  // ========================
+  //  Difficulty Grading
+  // ========================
+
+  const TECHNIQUE_TIERS = {
+    last_remaining: 'easy', naked_single: 'easy', hidden_single: 'easy',
+    naked_pair: 'medium', pointing_pair: 'medium', box_line: 'medium',
+    naked_triple: 'hard', hidden_pair: 'hard', x_wing: 'hard',
+    hidden_triple: 'expert', swordfish: 'expert', xy_wing: 'expert',
+    naked_quad: 'expert', skyscraper: 'expert', simple_coloring: 'expert',
+    unique_rectangle: 'expert', two_string_kite: 'expert', w_wing: 'expert',
+    xyz_wing: 'expert', bug_plus_one: 'expert',
+    fallback: 'evil',
+  };
+
+  const TIER_ORDER = ['easy', 'medium', 'hard', 'expert', 'evil'];
+
+  function gradePuzzle(puzzleBoard, solutionBoard) {
+    // Temporarily swap board/solution so findHint() works on our copy
+    const origBoard = board;
+    const origSolution = solution;
+    const origGiven = given;
+    const origPencil = pencil;
+    const origHinted = hinted;
+
+    board = puzzleBoard.map(r => r.slice());
+    solution = solutionBoard;
+    given = board.map(r => r.map(v => v !== 0));
+    pencil = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
+    hinted = Array.from({ length: 9 }, () => Array(9).fill(false));
+
+    let maxTier = 'easy';
+    let solved = false;
+    const maxSteps = 200;
+
+    for (let step = 0; step < maxSteps; step++) {
+      const hint = findHint();
+      if (!hint) break;
+
+      const tier = TECHNIQUE_TIERS[hint.type] || 'evil';
+      if (TIER_ORDER.indexOf(tier) > TIER_ORDER.indexOf(maxTier)) {
+        maxTier = tier;
+      }
+
+      // Place the value
+      board[hint.cell.r][hint.cell.c] = hint.value;
+
+      // Check if solved
+      let done = true;
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          if (board[r][c] !== solutionBoard[r][c]) done = false;
+      if (done) { solved = true; break; }
+    }
+
+    // Restore original state
+    board = origBoard;
+    solution = origSolution;
+    given = origGiven;
+    pencil = origPencil;
+    hinted = origHinted;
+
+    return { solved, tier: maxTier };
   }
 
   // ========================
@@ -2139,9 +2230,16 @@
   //  Rendering
   // ========================
 
+  function updateProgress() {
+    let filled = 0;
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (board[r][c] !== 0) filled++;
+    document.getElementById('sudoku-progress').textContent = filled;
+  }
+
   function renderBoard() {
     boardEl.innerHTML = '';
-    boardEl.classList.toggle('rounded', roundedCells);
 
     // Determine which number to highlight across the board
     const activeNum = (selectedNumber && selectedNumber !== 'erase') ? selectedNumber
@@ -2215,6 +2313,7 @@
         boardEl.appendChild(btn);
       }
     }
+    updateProgress();
   }
 
   function renderNumpad() {
@@ -2258,12 +2357,34 @@
     hintBtn.disabled = gameOver;
   }
 
+  function togglePause() {
+    if (gameOver) return;
+    paused = !paused;
+    const pauseBtn = document.getElementById('sudoku-pause-btn');
+    const overlay = document.getElementById('sudoku-pause-overlay');
+    if (paused) {
+      timer.stop();
+      pauseBtn.textContent = '\u25B6';
+      boardEl.classList.add('su-paused');
+      overlay.classList.add('active');
+      numpadEl.style.pointerEvents = 'none';
+      numpadEl.style.opacity = '0.3';
+    } else {
+      timer.start();
+      pauseBtn.textContent = '\u23F8';
+      boardEl.classList.remove('su-paused');
+      overlay.classList.remove('active');
+      numpadEl.style.pointerEvents = '';
+      numpadEl.style.opacity = '';
+    }
+  }
+
   // ========================
   //  Interaction
   // ========================
 
   function selectCell(r, c) {
-    if (gameOver) return;
+    if (gameOver || paused) return;
     activeHint = null;
 
     // Number-first mode: place selected number directly
@@ -2283,7 +2404,7 @@
   }
 
   function handleNumpadClick(n) {
-    if (gameOver) return;
+    if (gameOver || paused) return;
 
     if (numberFirstMode) {
       // In number-first mode: toggle the selected number
@@ -2319,7 +2440,7 @@
   function saveSettings() {
     try {
       localStorage.setItem('bg_sudoku_settings', JSON.stringify({
-        highlightCandidates, roundedCells,
+        highlightCandidates,
       }));
     } catch (e) { /* storage full */ }
   }
@@ -2513,7 +2634,7 @@
   // ========================
 
   function undoMove() {
-    if (gameOver || moveHistory.length === 0) return;
+    if (gameOver || paused || moveHistory.length === 0) return;
     const move = moveHistory.pop();
     board[move.r][move.c] = move.prevValue;
     pencil[move.r][move.c] = new Set(move.prevPencil);
@@ -2541,7 +2662,7 @@
   // ========================
 
   function showHint() {
-    if (gameOver) return;
+    if (gameOver || paused) return;
     activeHint = null;
 
     let hint = null;
@@ -2872,6 +2993,13 @@
       return;
     }
 
+    // P for pause
+    if (e.key === 'p' || e.key === 'P') {
+      togglePause();
+      e.preventDefault();
+      return;
+    }
+
     // H for hint
     if (e.key === 'h' || e.key === 'H') {
       showHint();
@@ -2899,6 +3027,7 @@
   };
 
   undoBtn.onclick = undoMove;
+  document.getElementById('sudoku-pause-btn').onclick = togglePause;
   hintBtn.onclick = showHint;
   document.getElementById('su-techniques-close').onclick = closeTechniqueLibrary;
 
@@ -2906,12 +3035,10 @@
   const settingsModal = document.getElementById('sudoku-settings-modal');
   const setNumfirst = document.getElementById('su-set-numfirst');
   const setHighlights = document.getElementById('su-set-highlights');
-  const setRounded = document.getElementById('su-set-rounded');
 
   document.getElementById('sudoku-settings-btn').onclick = function () {
     setNumfirst.checked = numberFirstMode;
     setHighlights.checked = highlightCandidates;
-    setRounded.checked = roundedCells;
     settingsModal.classList.add('active');
   };
   settingsModal.onclick = function (e) {
@@ -2926,11 +3053,6 @@
   };
   setHighlights.onchange = function () {
     highlightCandidates = setHighlights.checked;
-    saveSettings();
-    renderBoard();
-  };
-  setRounded.onchange = function () {
-    roundedCells = setRounded.checked;
     saveSettings();
     renderBoard();
   };

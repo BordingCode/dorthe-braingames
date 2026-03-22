@@ -10,16 +10,16 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-  <link rel="stylesheet" href="css/shared.css?v=20260322q">
-  <link rel="stylesheet" href="css/home.css?v=20260322q">
-  <link rel="stylesheet" href="css/lightsout.css?v=20260322q">
-  <link rel="stylesheet" href="css/memory.css?v=20260322q">
-  <link rel="stylesheet" href="css/minesweeper.css?v=20260322q">
-  <link rel="stylesheet" href="css/wordsearch.css?v=20260322q">
-  <link rel="stylesheet" href="css/nback.css?v=20260322q">
-  <link rel="stylesheet" href="css/solitaire.css?v=20260322q">
-  <link rel="stylesheet" href="css/sudoku.css?v=20260322q">
-  <link rel="stylesheet" href="css/stats.css?v=20260322q">
+  <link rel="stylesheet" href="css/shared.css?v=20260322r">
+  <link rel="stylesheet" href="css/home.css?v=20260322r">
+  <link rel="stylesheet" href="css/lightsout.css?v=20260322r">
+  <link rel="stylesheet" href="css/memory.css?v=20260322r">
+  <link rel="stylesheet" href="css/minesweeper.css?v=20260322r">
+  <link rel="stylesheet" href="css/wordsearch.css?v=20260322r">
+  <link rel="stylesheet" href="css/nback.css?v=20260322r">
+  <link rel="stylesheet" href="css/solitaire.css?v=20260322r">
+  <link rel="stylesheet" href="css/sudoku.css?v=20260322r">
+  <link rel="stylesheet" href="css/stats.css?v=20260322r">
 </head>
 <body>
 
@@ -148,11 +148,15 @@
     </div>
     <div class="game-info">
       <span>Fejl: <b id="sudoku-errors">0</b>/<b id="sudoku-max-errors">5</b></span>
-      <span>Tid: <b id="sudoku-timer">0:00</b></span>
+      <span>Fyldt: <b id="sudoku-progress">0</b>/81</span>
+      <span>Tid: <b id="sudoku-timer">0:00</b> <button id="sudoku-pause-btn" class="su-pause-btn">⏸</button></span>
       <button id="sudoku-pencil-btn" class="flag-mode-btn">✏️ Noter</button>
     </div>
     <div class="game-area">
-      <div id="sudoku-board"></div>
+      <div id="sudoku-board-wrap" style="position:relative">
+        <div id="sudoku-board"></div>
+        <div id="sudoku-pause-overlay" class="su-pause-overlay">⏸ Pause</div>
+      </div>
       <div id="sudoku-actions" class="su-actions">
         <button id="sudoku-hint-btn" class="su-action-btn" title="Få et tip">💡 Tip</button>
         <button id="sudoku-undo-btn" class="su-action-btn" disabled title="Fortryd">↩ Fortryd</button>
@@ -173,10 +177,6 @@
       <div class="su-setting-row">
         <span>🔵 Vis kandidater</span>
         <label class="su-toggle"><input type="checkbox" id="su-set-highlights" checked><span class="su-toggle-slider"></span></label>
-      </div>
-      <div class="su-setting-row">
-        <span>⬜ Runde celler</span>
-        <label class="su-toggle"><input type="checkbox" id="su-set-rounded"><span class="su-toggle-slider"></span></label>
       </div>
       <div class="su-setting-actions">
         <button class="btn btn-secondary" id="su-set-autonote">📝 Auto-noter</button>
@@ -254,13 +254,13 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/shared.js?v=20260322q"></script>
-  <script src="js/lightsout.js?v=20260322q"></script>
-  <script src="js/memory.js?v=20260322q"></script>
-  <script src="js/minesweeper.js?v=20260322q"></script>
-  <script src="js/wordsearch.js?v=20260322q"></script>
-  <script src="js/nback.js?v=20260322q"></script>
-  <script src="js/solitaire.js?v=20260322q"></script>
-  <script src="js/sudoku.js?v=20260322q"></script>
+  <script src="js/shared.js?v=20260322r"></script>
+  <script src="js/lightsout.js?v=20260322r"></script>
+  <script src="js/memory.js?v=20260322r"></script>
+  <script src="js/minesweeper.js?v=20260322r"></script>
+  <script src="js/wordsearch.js?v=20260322r"></script>
+  <script src="js/nback.js?v=20260322r"></script>
+  <script src="js/solitaire.js?v=20260322r"></script>
+  <script src="js/sudoku.js?v=20260322r"></script>
 </body>
 </html>

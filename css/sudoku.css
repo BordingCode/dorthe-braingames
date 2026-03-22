@@ -13,6 +13,45 @@
   overflow: visible;
 }
 
+/* --- Pause button --- */
+.su-pause-btn {
+  border: none;
+  background: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  color: var(--text-muted);
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.su-pause-btn:active {
+  opacity: 0.6;
+}
+
+/* --- Paused state --- */
+#sudoku-board.su-paused {
+  filter: blur(12px);
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+}
+.su-pause-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.5);
+  z-index: 5;
+  gap: 8px;
+}
+.su-pause-overlay.active {
+  display: flex;
+}
+
 /* --- Board --- */
 #sudoku-board {
   display: grid;
@@ -144,17 +183,6 @@
   100% { background: #fff; }
 }
 
-/* Rounded cells mode */
-#sudoku-board.rounded {
-  gap: 2px;
-  background: transparent;
-  border: none;
-}
-#sudoku-board.rounded .su-cell {
-  border-radius: 6px;
-  border: none !important;
-}
-
 /* Pencil marks */
 .su-cell .pencil-marks {
   display: grid;
@@ -195,7 +223,7 @@
   max-width: 90px;
   padding: 7px 2px;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   background: #f0ece7;
   color: var(--text);
   font-size: 12px;
@@ -244,7 +272,7 @@
   max-width: 52px;
   aspect-ratio: 1;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--accent-sudoku, #4A90D9);
   color: #fff;
   font-size: clamp(17px, 5vw, 26px);
