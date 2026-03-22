@@ -20,11 +20,10 @@
   --board-size: min(100vw, calc(100dvh - 155px));
   width: 100vw;
   max-width: 100vw;
-  background: #ddd;
+  background: #000;
   gap: 1px;
   border-radius: 0;
-  overflow: hidden;
-  border: 2px solid #000;
+  padding: 2px;
 }
 
 .su-cell {
@@ -44,15 +43,11 @@
   line-height: 1;
 }
 
-/* 3x3 box borders — thick black lines */
-.su-cell[data-col="2"] { border-right: 2px solid #000; }
-.su-cell[data-col="3"] { border-left: 2px solid #000; }
-.su-cell[data-col="5"] { border-right: 2px solid #000; }
-.su-cell[data-col="6"] { border-left: 2px solid #000; }
-.su-cell[data-row="2"] { border-bottom: 2px solid #000; }
-.su-cell[data-row="3"] { border-top: 2px solid #000; }
-.su-cell[data-row="5"] { border-bottom: 2px solid #000; }
-.su-cell[data-row="6"] { border-top: 2px solid #000; }
+/* 3x3 box borders — use margin to create thick gaps filled by black grid bg */
+.su-cell[data-col="2"] { margin-right: 2px; }
+.su-cell[data-col="5"] { margin-right: 2px; }
+.su-cell[data-row="2"] { margin-bottom: 2px; }
+.su-cell[data-row="5"] { margin-bottom: 2px; }
 
 /* Cell states */
 .su-cell.given {
