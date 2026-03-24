@@ -251,15 +251,18 @@
     }
     size = Math.max(size, 200);
 
-    // Set sizes directly as inline styles — bypasses all CSS
+    // Set sizes directly as inline styles with !important
     var px = size + 'px';
     screen.style.setProperty('--board-size', px);
-    boardEl.style.width = px;
-    boardEl.style.maxWidth = px;
-    numpadEl.style.maxWidth = px;
-    numpadEl.style.width = px;
+    boardEl.style.setProperty('width', px, 'important');
+    boardEl.style.setProperty('max-width', px, 'important');
+    numpadEl.style.setProperty('width', px, 'important');
+    numpadEl.style.setProperty('max-width', px, 'important');
     var actionsEl = document.getElementById('sudoku-actions');
-    if (actionsEl) { actionsEl.style.maxWidth = px; actionsEl.style.width = px; }
+    if (actionsEl) {
+      actionsEl.style.setProperty('width', px, 'important');
+      actionsEl.style.setProperty('max-width', px, 'important');
+    }
 
     // Force no horizontal overflow at every level
     document.documentElement.style.overflow = 'hidden';
@@ -355,6 +358,11 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
+    // Debug: show actual rendered widths after layout
+    requestAnimationFrame(function() {
+      var t = screen.querySelector('.title');
+      if (t) t.textContent += ' bw' + boardEl.offsetWidth + ' nw' + numpadEl.offsetWidth;
+    });
     timer.start();
     clearSave();
   }
