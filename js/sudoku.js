@@ -253,9 +253,19 @@
 
     screen.style.setProperty('--board-size', size + 'px');
 
-    // Force game-info to not overflow (in case CSS is stale)
+    // Force no horizontal overflow at every level
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    screen.style.overflow = 'hidden';
+    screen.style.maxWidth = '100vw';
+    gameArea.style.overflow = 'hidden';
     var info = screen.querySelector('.game-info');
-    if (info) info.style.cssText += ';gap:8px;font-size:13px;overflow:hidden;max-width:' + w + 'px';
+    if (info) {
+      info.style.gap = '8px';
+      info.style.fontSize = '13px';
+      info.style.overflow = 'hidden';
+      info.style.maxWidth = w + 'px';
+    }
 
     // Debug — remove once sizing works
     screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size + ' pw' + document.body.scrollWidth;
