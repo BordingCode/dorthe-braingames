@@ -2956,6 +2956,11 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
+    // Debug: show actual rendered widths after layout
+    requestAnimationFrame(function() {
+      var t = screen.querySelector('.title');
+      if (t) t.textContent += ' bw' + boardEl.offsetWidth + ' nw' + numpadEl.offsetWidth;
+    });
 
   }
 
