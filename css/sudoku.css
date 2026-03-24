@@ -64,7 +64,7 @@
 
 /* --- Board sizing — JS sets --board-size on #screen-sudoku --- */
 #screen-sudoku {
-  --board-size: min(100vw, 90svh);  /* CSS fallback before JS runs */
+  --board-size: min(calc(100vw - 16px), 65svh);  /* safe fallback before JS runs */
 }
 
 /* --- Board --- */

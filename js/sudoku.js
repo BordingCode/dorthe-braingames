@@ -296,6 +296,7 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
+    requestAnimationFrame(sizeSudokuBoard);
     timer.start();
     clearSave();
   }
@@ -2889,6 +2890,7 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
+    requestAnimationFrame(sizeSudokuBoard);
 
   }
 
@@ -3053,16 +3055,20 @@
     const header = screen.querySelector('.game-header');
     const info = screen.querySelector('.game-info');
 
-    const screenH = screen.clientHeight;
+    // clientHeight includes safe-area padding (box-sizing: border-box)
+    // Subtract it to get actual content area
+    const cs = getComputedStyle(screen);
+    const padTop = parseFloat(cs.paddingTop) || 0;
+    const padBottom = parseFloat(cs.paddingBottom) || 0;
+
+    const contentH = screen.clientHeight - padTop - padBottom;
     const usedH = header.offsetHeight + info.offsetHeight;
-    const availH = screenH - usedH;
-    const availW = screen.clientWidth;
+    const availH = contentH - usedH;
+    const availW = screen.clientWidth - 16;
 
     // Board + action bar (~40px) + numpad (≈ boardSize/10 + gaps)
-    // board + 40 + board/10 + 8 ≈ availH
-    // board * 1.1 ≈ availH - 48
     const boardFromH = Math.floor((availH - 48) / 1.1);
-    const boardSize = Math.max(200, Math.min(availW - 16, boardFromH));
+    const boardSize = Math.max(200, Math.min(availW, boardFromH));
 
     screen.style.setProperty('--board-size', boardSize + 'px');
   }
