@@ -3052,19 +3052,14 @@
     const screen = document.getElementById('screen-sudoku');
     if (!screen || !screen.classList.contains('active')) return;
 
-    const header = screen.querySelector('.game-header');
-    const info = screen.querySelector('.game-info');
+    const gameArea = screen.querySelector('.game-area');
 
-    // clientHeight includes safe-area padding (box-sizing: border-box)
-    // Subtract it to get actual content area
-    const cs = getComputedStyle(screen);
-    const padTop = parseFloat(cs.paddingTop) || 0;
-    const padBottom = parseFloat(cs.paddingBottom) || 0;
+    // Collapse board to measure actual available space in game-area
+    screen.style.setProperty('--board-size', '0px');
+    void screen.offsetHeight; // force reflow
 
-    const contentH = screen.clientHeight - padTop - padBottom;
-    const usedH = header.offsetHeight + info.offsetHeight;
-    const availH = contentH - usedH;
-    const availW = screen.clientWidth - 16;
+    const availH = gameArea.clientHeight;
+    const availW = gameArea.clientWidth - 16;
 
     // Board + action bar (~40px) + numpad (≈ boardSize/10 + gaps)
     const boardFromH = Math.floor((availH - 48) / 1.1);

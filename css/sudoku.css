@@ -12,6 +12,7 @@
 #screen-sudoku {
   padding-left: 0 !important;
   padding-right: 0 !important;
+  overflow: hidden !important;
 }
 #screen-sudoku .game-info {
   padding-left: 12px;
