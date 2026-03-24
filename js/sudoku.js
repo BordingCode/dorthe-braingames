@@ -231,12 +231,37 @@
   //  Init & Start
   // ========================
 
+  function sizeSudokuBoard() {
+    const screen = document.getElementById('screen-sudoku');
+    if (!screen || !screen.classList.contains('active')) return;
+    var gameArea = screen.querySelector('.game-area');
+
+    // Collapse everything to measure full available space
+    screen.style.setProperty('--board-size', '0px');
+    void screen.offsetHeight;
+
+    var h = gameArea.clientHeight;
+    var w = gameArea.clientWidth;
+
+    var size;
+    if (tabletMode) {
+      size = w - 16;
+    } else {
+      size = Math.min(w - 16, Math.floor((h - 48) / 1.1));
+    }
+    size = Math.max(size, 200);
+
+    screen.style.setProperty('--board-size', size + 'px');
+  }
+
   function applyTabletMode() {
     document.getElementById('screen-sudoku').classList.toggle('tablet-mode', tabletMode);
+    sizeSudokuBoard();
   }
 
   function initSudoku() {
-    applyTabletMode();
+    document.getElementById('screen-sudoku').classList.toggle('tablet-mode', tabletMode);
+    sizeSudokuBoard();
     const diff = getDifficulty('sudoku');
     diffBtn.textContent = LABEL_MAP[diff] || 'Let';
 
@@ -3054,6 +3079,9 @@
       startGame();
     });
   };
+
+  window.addEventListener('resize', sizeSudokuBoard);
+  window.addEventListener('orientationchange', sizeSudokuBoard);
 
   window.initSudoku = initSudoku;
   window.gameRestarters.sudoku = function () {

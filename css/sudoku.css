@@ -62,16 +62,12 @@
   display: flex;
 }
 
-/* --- Board sizing --- */
+/* --- Board sizing — JS sets --board-size via measurement --- */
 #screen-sudoku {
-  --board-size: min(
-    calc(100vw - 16px),
-    calc((100dvh - 170px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) / 1.1)
-  );
+  --board-size: 200px;
   overflow: hidden !important;
 }
 #screen-sudoku.tablet-mode {
-  --board-size: calc(100vw - 16px);
   overflow: auto !important;
 }
 
