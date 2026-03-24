@@ -236,7 +236,16 @@
     if (!screen || !screen.classList.contains('active')) return;
     var gameArea = screen.querySelector('.game-area');
 
-    // Collapse everything to measure full available space
+    // Reset all inline sizes before measuring
+    boardEl.style.setProperty('width', '0px', 'important');
+    boardEl.style.setProperty('max-width', '0px', 'important');
+    numpadEl.style.setProperty('width', '0px', 'important');
+    numpadEl.style.setProperty('max-width', '0px', 'important');
+    var actReset = document.getElementById('sudoku-actions');
+    if (actReset) {
+      actReset.style.setProperty('width', '0px', 'important');
+      actReset.style.setProperty('max-width', '0px', 'important');
+    }
     screen.style.setProperty('--board-size', '0px');
     void screen.offsetHeight;
 
