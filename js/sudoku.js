@@ -251,14 +251,23 @@
     }
     size = Math.max(size, 200);
 
-    screen.style.setProperty('--board-size', size + 'px');
+    // Set sizes directly as inline styles — bypasses all CSS
+    var px = size + 'px';
+    screen.style.setProperty('--board-size', px);
+    boardEl.style.width = px;
+    boardEl.style.maxWidth = px;
+    numpadEl.style.maxWidth = px;
+    numpadEl.style.width = px;
+    var actionsEl = document.getElementById('sudoku-actions');
+    if (actionsEl) { actionsEl.style.maxWidth = px; actionsEl.style.width = px; }
 
     // Force no horizontal overflow at every level
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     screen.style.overflow = 'hidden';
-    screen.style.maxWidth = '100vw';
+    screen.style.maxWidth = w + 'px';
     gameArea.style.overflow = 'hidden';
+    gameArea.style.maxWidth = w + 'px';
     var info = screen.querySelector('.game-info');
     if (info) {
       info.style.gap = '8px';
@@ -266,6 +275,8 @@
       info.style.overflow = 'hidden';
       info.style.maxWidth = w + 'px';
     }
+    var wrap = document.getElementById('sudoku-board-wrap');
+    if (wrap) { wrap.style.overflow = 'hidden'; wrap.style.maxWidth = w + 'px'; }
 
     // Debug — remove once sizing works
     screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size + ' pw' + document.body.scrollWidth;
