@@ -283,6 +283,10 @@
 
     // Debug — remove once sizing works
     screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size + ' pw' + document.body.scrollWidth;
+    setTimeout(function() {
+      var t = document.querySelector('#screen-sudoku .title');
+      if (t) t.textContent += ' bw' + boardEl.offsetWidth + ' nw' + numpadEl.offsetWidth;
+    }, 500);
   }
 
   function applyTabletMode() {
@@ -358,11 +362,6 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
-    // Debug: show actual rendered widths after layout
-    requestAnimationFrame(function() {
-      var t = screen.querySelector('.title');
-      if (t) t.textContent += ' bw' + boardEl.offsetWidth + ' nw' + numpadEl.offsetWidth;
-    });
     timer.start();
     clearSave();
   }
@@ -2956,11 +2955,6 @@
     renderBoard();
     renderNumpad();
     renderToolbar();
-    // Debug: show actual rendered widths after layout
-    requestAnimationFrame(function() {
-      var t = screen.querySelector('.title');
-      if (t) t.textContent += ' bw' + boardEl.offsetWidth + ' nw' + numpadEl.offsetWidth;
-    });
 
   }
 
