@@ -315,16 +315,6 @@
       wrap.style.setProperty('align-items', 'flex-start', 'important');
     }
 
-    // Debug — remove once sizing works
-    var vv = window.visualViewport;
-    var scale = vv ? vv.scale.toFixed(1) : '?';
-    var vw = vv ? Math.round(vv.width) : '?';
-    screen.querySelector('.title').textContent = 'S ' + w + 'x' + h + '>' + size + ' z' + scale + ' vw' + vw;
-    setTimeout(function() {
-      var t = document.querySelector('#screen-sudoku .title');
-      var wr = document.getElementById('sudoku-board-wrap');
-      if (t && wr) t.textContent += ' b' + boardEl.offsetWidth + ' wr' + wr.offsetWidth + 'x' + wr.offsetHeight;
-    }, 500);
   }
 
   function applyTabletMode() {
