@@ -271,6 +271,13 @@
     screen.style.maxWidth = w + 'px';
     gameArea.style.overflow = 'hidden';
     gameArea.style.maxWidth = w + 'px';
+
+    // Reset any stuck scroll position
+    window.scrollTo(0, 0);
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
+    screen.scrollLeft = 0;
+    gameArea.scrollLeft = 0;
     var info = screen.querySelector('.game-info');
     if (info) {
       info.style.gap = '8px';
