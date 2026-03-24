@@ -303,6 +303,11 @@
       wrap.style.setProperty('width', w + 'px', 'important');
       wrap.style.setProperty('max-width', w + 'px', 'important');
       wrap.style.setProperty('container-type', 'normal', 'important');
+      wrap.style.setProperty('flex', '1', 'important');
+      wrap.style.setProperty('min-height', '0', 'important');
+      wrap.style.setProperty('display', 'flex', 'important');
+      wrap.style.setProperty('justify-content', 'center', 'important');
+      wrap.style.setProperty('align-items', 'flex-start', 'important');
     }
 
     // Debug — remove once sizing works
