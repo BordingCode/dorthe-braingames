@@ -796,5 +796,25 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Name toggle on home screen title
+function initNameToggle() {
+  var names = ['Dorthe', 'Mette'];
+  var current = localStorage.getItem('bg_player_name') || 'Dorthe';
+  var title = document.getElementById('app-title');
+  if (!title) return;
+  title.textContent = current + "'s Brain Games";
+  document.title = current + "'s Brain Games";
+  title.style.cursor = 'pointer';
+  title.onclick = function () {
+    current = current === 'Dorthe' ? 'Mette' : 'Dorthe';
+    localStorage.setItem('bg_player_name', current);
+    title.textContent = current + "'s Brain Games";
+    document.title = current + "'s Brain Games";
+  };
+}
+
 // Initial home render
-document.addEventListener('DOMContentLoaded', renderHomeScreen);
+document.addEventListener('DOMContentLoaded', function () {
+  renderHomeScreen();
+  initNameToggle();
+});
