@@ -292,11 +292,9 @@
       if (diff === 'evil' && TIER_ORDER.indexOf(grade.tier) >= TIER_ORDER.indexOf('expert')) break;
     }
 
-    sizeSudokuBoard();
     renderBoard();
     renderNumpad();
     renderToolbar();
-    requestAnimationFrame(sizeSudokuBoard);
     timer.start();
     clearSave();
   }
@@ -2886,11 +2884,9 @@
     timer.elapsed = state.elapsed || 0;
     timer.start();
 
-    sizeSudokuBoard();
     renderBoard();
     renderNumpad();
     renderToolbar();
-    requestAnimationFrame(sizeSudokuBoard);
 
   }
 
@@ -3043,34 +3039,6 @@
       startGame();
     });
   };
-
-  // ========================
-  //  Dynamic board sizing
-  // ========================
-
-  function sizeSudokuBoard() {
-    const screen = document.getElementById('screen-sudoku');
-    if (!screen || !screen.classList.contains('active')) return;
-
-    const gameArea = screen.querySelector('.game-area');
-
-    // Collapse board to measure actual available space in game-area
-    screen.style.setProperty('--board-size', '0px');
-    void screen.offsetHeight; // force reflow
-
-    const availH = gameArea.clientHeight;
-    const availW = gameArea.clientWidth - 16;
-
-    // Board + action bar (~40px) + numpad (≈ boardSize/10 + gaps)
-    const boardFromH = Math.floor((availH - 48) / 1.1);
-    const boardSize = Math.max(200, Math.min(availW, boardFromH));
-
-    screen.style.setProperty('--board-size', boardSize + 'px');
-  }
-
-  function onResize() { sizeSudokuBoard(); }
-  window.addEventListener('resize', onResize);
-  window.addEventListener('orientationchange', onResize);
 
   window.initSudoku = initSudoku;
   window.gameRestarters.sudoku = function () {

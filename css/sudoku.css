@@ -63,9 +63,12 @@
   display: flex;
 }
 
-/* --- Board sizing — JS sets --board-size on #screen-sudoku --- */
+/* --- Board sizing --- */
 #screen-sudoku {
-  --board-size: min(calc(100vw - 16px), 65svh);  /* safe fallback before JS runs */
+  --board-size: min(
+    calc(100vw - 16px),
+    calc((100dvh - 170px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) / 1.1)
+  );
 }
 
 /* --- Board --- */
