@@ -64,11 +64,16 @@
 }
 
 /* --- Board sizing --- */
+/* Phone mode (default): accounts for safe-area insets */
 #screen-sudoku {
   --board-size: min(
     calc(100vw - 16px),
     calc((100dvh - 170px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) / 1.1)
   );
+}
+/* Tablet mode: ignores height constraint, just uses width */
+#screen-sudoku.tablet-mode {
+  --board-size: calc(100vw - 16px);
 }
 
 /* --- Board --- */

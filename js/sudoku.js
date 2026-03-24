@@ -201,6 +201,7 @@
   let selectedNumber = null;
   let numberFirstMode = false;
   let highlightCandidates = true;
+  let tabletMode = false;
   let paused = false;
 
   // Load persisted settings
@@ -212,6 +213,7 @@
   try {
     const s = JSON.parse(localStorage.getItem('bg_sudoku_settings') || '{}');
     if (s.highlightCandidates !== undefined) highlightCandidates = s.highlightCandidates;
+    if (s.tabletMode !== undefined) tabletMode = s.tabletMode;
   } catch (e) { /* ignore */ }
 
   // --- DOM ---
@@ -229,7 +231,12 @@
   //  Init & Start
   // ========================
 
+  function applyTabletMode() {
+    document.getElementById('screen-sudoku').classList.toggle('tablet-mode', tabletMode);
+  }
+
   function initSudoku() {
+    applyTabletMode();
     const diff = getDifficulty('sudoku');
     diffBtn.textContent = LABEL_MAP[diff] || 'Let';
 
@@ -2418,6 +2425,7 @@
     try {
       localStorage.setItem('bg_sudoku_settings', JSON.stringify({
         highlightCandidates,
+        tabletMode,
       }));
     } catch (e) { /* storage full */ }
   }
@@ -3002,10 +3010,12 @@
   const settingsModal = document.getElementById('sudoku-settings-modal');
   const setNumfirst = document.getElementById('su-set-numfirst');
   const setHighlights = document.getElementById('su-set-highlights');
+  const setTablet = document.getElementById('su-set-tablet');
 
   document.getElementById('sudoku-settings-btn').onclick = function () {
     setNumfirst.checked = numberFirstMode;
     setHighlights.checked = highlightCandidates;
+    setTablet.checked = tabletMode;
     settingsModal.classList.add('active');
   };
   settingsModal.onclick = function (e) {
@@ -3022,6 +3032,11 @@
     highlightCandidates = setHighlights.checked;
     saveSettings();
     renderBoard();
+  };
+  setTablet.onchange = function () {
+    tabletMode = setTablet.checked;
+    saveSettings();
+    applyTabletMode();
   };
   document.getElementById('su-set-autonote').onclick = function () {
     settingsModal.classList.remove('active');
