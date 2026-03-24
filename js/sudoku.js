@@ -282,10 +282,13 @@
     if (wrap) { wrap.style.overflow = 'hidden'; wrap.style.maxWidth = w + 'px'; }
 
     // Debug — remove once sizing works
-    screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size + ' pw' + document.body.scrollWidth;
+    var vv = window.visualViewport;
+    var scale = vv ? vv.scale.toFixed(1) : '?';
+    var vw = vv ? Math.round(vv.width) : '?';
+    screen.querySelector('.title').textContent = 'S ' + w + 'x' + h + '>' + size + ' z' + scale + ' vw' + vw;
     setTimeout(function() {
       var t = document.querySelector('#screen-sudoku .title');
-      if (t) t.textContent += ' bw' + boardEl.offsetWidth + ' nw' + numpadEl.offsetWidth;
+      if (t) t.textContent += ' b' + boardEl.offsetWidth;
     }, 500);
   }
 
