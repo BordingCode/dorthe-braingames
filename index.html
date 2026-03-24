@@ -26,7 +26,8 @@
     #screen-sudoku .game-info { gap: 8px !important; font-size: 13px !important; overflow: hidden !important; }
     #screen-sudoku .game-area { padding: 0 !important; overflow: hidden !important; justify-content: flex-start !important; }
     #sudoku-board-wrap { flex: 1 !important; min-height: 0 !important; width: 100% !important; overflow: hidden !important; container-type: normal !important; display: flex !important; justify-content: center !important; align-items: flex-start !important; }
-    #sudoku-board { max-width: calc(100vw - 16px) !important; }
+    #sudoku-board { max-width: calc(100vw - 16px) !important; grid-template-columns: repeat(9, minmax(0, 1fr)) !important; }
+    .su-cell { min-width: 0 !important; min-height: 0 !important; overflow: hidden !important; }
   </style>
 </head>
 <body>
@@ -272,6 +273,6 @@
   <script src="js/wordsearch.js?v=20260324a"></script>
   <script src="js/nback.js?v=20260324a"></script>
   <script src="js/solitaire.js?v=20260324a"></script>
-  <script src="js/sudoku.js?v=20260324n"></script>
+  <script src="js/sudoku.js?v=20260324p"></script>
 </body>
 </html>

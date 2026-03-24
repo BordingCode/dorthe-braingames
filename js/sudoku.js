@@ -265,6 +265,8 @@
     screen.style.setProperty('--board-size', px);
     boardEl.style.setProperty('width', px, 'important');
     boardEl.style.setProperty('max-width', px, 'important');
+    // Fix Safari grid+aspect-ratio overflow bug
+    boardEl.style.setProperty('grid-template-columns', 'repeat(9, minmax(0, 1fr))', 'important');
     numpadEl.style.setProperty('width', px, 'important');
     numpadEl.style.setProperty('max-width', px, 'important');
     var actionsEl = document.getElementById('sudoku-actions');
