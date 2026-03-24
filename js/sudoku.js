@@ -241,7 +241,7 @@
     void screen.offsetHeight;
 
     var h = gameArea.clientHeight;
-    var w = gameArea.clientWidth;
+    var w = window.innerWidth;
 
     var size;
     if (tabletMode) {
@@ -252,6 +252,9 @@
     size = Math.max(size, 200);
 
     screen.style.setProperty('--board-size', size + 'px');
+
+    // Debug — remove once sizing works
+    screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size;
   }
 
   function applyTabletMode() {

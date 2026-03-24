@@ -87,6 +87,7 @@
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   width: var(--board-size);
+  max-width: calc(100vw - 16px);
   margin: 0 auto;
   background: #fff;
   gap: 0;
