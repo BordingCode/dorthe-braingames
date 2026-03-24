@@ -278,8 +278,11 @@
     document.body.style.overflow = 'hidden';
     screen.style.overflow = 'hidden';
     screen.style.maxWidth = w + 'px';
-    gameArea.style.overflow = 'hidden';
-    gameArea.style.maxWidth = w + 'px';
+    gameArea.style.setProperty('overflow', 'hidden', 'important');
+    gameArea.style.setProperty('max-width', w + 'px', 'important');
+    gameArea.style.setProperty('padding', '0', 'important');
+    gameArea.style.setProperty('justify-content', 'flex-start', 'important');
+    gameArea.style.setProperty('align-items', 'center', 'important');
 
     // Reset any stuck scroll position
     window.scrollTo(0, 0);
