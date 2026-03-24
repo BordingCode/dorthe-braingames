@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v67';
+const CACHE_NAME = 'brain-games-v68';
 const ASSETS = [
   './',
   './index.html',
@@ -44,13 +44,26 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Strip query params for cache matching (HTML uses ?v= but cache stores without)
+  const url = new URL(e.request.url);
+  url.search = '';
+  const cleanUrl = url.toString();
+
   e.respondWith(
-    fetch(e.request)
+    // Bypass Safari's HTTP cache with { cache: 'no-cache' }
+    fetch(e.request, { cache: 'no-cache' })
       .then((response) => {
         const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(e.request, clone);
+          // Also store under clean URL for fallback matching
+          cache.put(cleanUrl, response.clone());
+        });
         return response;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() =>
+        caches.match(e.request)
+          .then((r) => r || caches.match(cleanUrl))
+      )
   );
 });
