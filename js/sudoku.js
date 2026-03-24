@@ -253,8 +253,12 @@
 
     screen.style.setProperty('--board-size', size + 'px');
 
+    // Force game-info to not overflow (in case CSS is stale)
+    var info = screen.querySelector('.game-info');
+    if (info) info.style.cssText += ';gap:8px;font-size:13px;overflow:hidden;max-width:' + w + 'px';
+
     // Debug — remove once sizing works
-    screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size;
+    screen.querySelector('.title').textContent = 'S ' + w + '\u00D7' + h + '\u2192' + size + ' pw' + document.body.scrollWidth;
   }
 
   function applyTabletMode() {
