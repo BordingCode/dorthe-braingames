@@ -3062,7 +3062,7 @@
     // board + 40 + board/10 + 8 ≈ availH
     // board * 1.1 ≈ availH - 48
     const boardFromH = Math.floor((availH - 48) / 1.1);
-    const boardSize = Math.max(200, Math.min(availW, boardFromH));
+    const boardSize = Math.max(200, Math.min(availW - 16, boardFromH));
 
     screen.style.setProperty('--board-size', boardSize + 'px');
   }
