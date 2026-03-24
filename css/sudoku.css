@@ -12,7 +12,6 @@
 #screen-sudoku {
   padding-left: 0 !important;
   padding-right: 0 !important;
-  overflow: hidden !important;
 }
 #screen-sudoku .game-info {
   padding-left: 12px;
@@ -63,30 +62,38 @@
   display: flex;
 }
 
-/* --- Board sizing --- */
-/* Phone mode (default): accounts for safe-area insets */
+/* --- Board sizing via container queries --- */
 #screen-sudoku {
-  --board-size: min(
-    calc(100vw - 16px),
-    calc((100dvh - 170px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) / 1.1)
-  );
+  overflow: hidden !important;
 }
-/* Tablet mode: ignores height constraint, just uses width */
 #screen-sudoku.tablet-mode {
-  --board-size: calc(100vw - 16px);
+  overflow: auto !important;
+}
+
+#sudoku-board-wrap {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
 }
 
 /* --- Board --- */
 #sudoku-board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  width: var(--board-size);
-  max-width: 100vw;
+  width: min(calc(100cqw - 16px), 100cqh);
   margin: 0 auto;
   background: #fff;
   gap: 0;
   border-radius: 0;
   border: 3px solid #000;
+}
+/* Tablet mode: ignore height, use full width */
+#screen-sudoku.tablet-mode #sudoku-board {
+  width: calc(100cqw - 16px);
 }
 
 .su-cell {
@@ -239,7 +246,6 @@
   justify-content: center;
   gap: 6px;
   margin: 4px auto 2px;
-  max-width: var(--board-size);
   padding: 0 6px;
   width: 100%;
 }
@@ -288,7 +294,6 @@
   gap: 5px;
   margin-top: 4px;
   justify-content: center;
-  max-width: var(--board-size);
   padding: 0 6px;
   width: 100%;
 }
