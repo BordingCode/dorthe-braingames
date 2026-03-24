@@ -295,7 +295,12 @@
       info.style.maxWidth = w + 'px';
     }
     var wrap = document.getElementById('sudoku-board-wrap');
-    if (wrap) { wrap.style.overflow = 'hidden'; wrap.style.maxWidth = w + 'px'; }
+    if (wrap) {
+      wrap.style.setProperty('overflow', 'hidden', 'important');
+      wrap.style.setProperty('width', w + 'px', 'important');
+      wrap.style.setProperty('max-width', w + 'px', 'important');
+      wrap.style.setProperty('container-type', 'normal', 'important');
+    }
 
     // Debug — remove once sizing works
     var vv = window.visualViewport;
@@ -304,7 +309,8 @@
     screen.querySelector('.title').textContent = 'S ' + w + 'x' + h + '>' + size + ' z' + scale + ' vw' + vw;
     setTimeout(function() {
       var t = document.querySelector('#screen-sudoku .title');
-      if (t) t.textContent += ' b' + boardEl.offsetWidth;
+      var wr = document.getElementById('sudoku-board-wrap');
+      if (t && wr) t.textContent += ' b' + boardEl.offsetWidth + ' wr' + wr.offsetWidth + 'x' + wr.offsetHeight;
     }, 500);
   }
 
