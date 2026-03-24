@@ -278,6 +278,9 @@
     document.body.style.overflow = 'hidden';
     screen.style.overflow = 'hidden';
     screen.style.maxWidth = w + 'px';
+    gameArea.style.setProperty('display', 'flex', 'important');
+    gameArea.style.setProperty('flex-direction', 'column', 'important');
+    gameArea.style.setProperty('flex', '1', 'important');
     gameArea.style.setProperty('overflow', 'hidden', 'important');
     gameArea.style.setProperty('max-width', w + 'px', 'important');
     gameArea.style.setProperty('padding', '0', 'important');
