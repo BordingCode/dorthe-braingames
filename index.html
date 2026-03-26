@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/nback.css?v=20260324a">
   <link rel="stylesheet" href="css/solitaire.css?v=20260324a">
   <link rel="stylesheet" href="css/sudoku.css?v=20260324a">
+  <link rel="stylesheet" href="css/yatzy.css?v=20260326a">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -266,8 +267,14 @@
     </div>
   </div>
 
+  <!-- ===== Yatzy (iframe) ===== -->
+  <div id="screen-yatzy" class="screen">
+    <button class="yatzy-back-btn" onclick="document.getElementById('yatzy-frame').src='about:blank'; goHome();">← Hjem</button>
+    <iframe id="yatzy-frame" class="yatzy-iframe" src="about:blank" allow="autoplay"></iframe>
+  </div>
+
   <!-- Scripts -->
-  <script src="js/shared.js?v=20260324b"></script>
+  <script src="js/shared.js?v=20260326a"></script>
   <script src="js/lightsout.js?v=20260324a"></script>
   <script src="js/memory.js?v=20260324a"></script>
   <script src="js/minesweeper.js?v=20260324a"></script>
@@ -275,5 +282,10 @@
   <script src="js/nback.js?v=20260324a"></script>
   <script src="js/solitaire.js?v=20260324a"></script>
   <script src="js/sudoku.js?v=20260324r"></script>
+  <script>
+    function initYatzy() {
+      document.getElementById('yatzy-frame').src = 'yatzy/index.html';
+    }
+  </script>
 </body>
 </html>

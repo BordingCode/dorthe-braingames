@@ -53,7 +53,7 @@ function showDifficultyModal(game, options, onSelect) {
 
 /* ----- Stats ----- */
 
-const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire', 'sudoku'];
+const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire', 'sudoku', 'yatzy'];
 
 const Stats = {
   get(game) {
@@ -501,6 +501,7 @@ const GAME_DEFS = [
   { id: 'nback', icon: '🧠', name: 'N-Back', desc: 'Træn din hukommelse', init: 'initNBack' },
   { id: 'solitaire', icon: '♠️', name: 'Kabale', desc: 'Klassisk kortspil', init: 'initSolitaire' },
   { id: 'sudoku', icon: '🔢', name: 'Sudoku', desc: 'Udfyld tallene', init: 'initSudoku' },
+  { id: 'yatzy', icon: '🎲', name: 'Yatzy', desc: 'Klassisk terningspil', init: 'initYatzy' },
 ];
 
 function formatTimeAgo(ts) {

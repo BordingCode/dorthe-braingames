@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v73';
+const CACHE_NAME = 'brain-games-v74';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './css/nback.css',
   './css/solitaire.css',
   './css/sudoku.css',
+  './css/yatzy.css',
   './css/stats.css',
   './js/shared.js',
   './js/lightsout.js',
