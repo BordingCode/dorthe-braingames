@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/solitaire.css?v=20260324a">
   <link rel="stylesheet" href="css/sudoku.css?v=20260324a">
   <link rel="stylesheet" href="css/yatzy.css?v=20260326a">
-  <link rel="stylesheet" href="css/taptempo.css?v=20260526a">
+  <link rel="stylesheet" href="css/taptempo.css?v=20260526b">
   <link rel="stylesheet" href="css/notequiz.css?v=20260526a">
   <link rel="stylesheet" href="css/moreless.css?v=20260526a">
   <link rel="stylesheet" href="css/guessnumber.css?v=20260526a">
@@ -239,12 +239,13 @@
     </div>
     <div class="game-area">
       <div class="tt-target">
-        <span class="tt-target-label">Mål</span>
-        <span class="tt-target-bpm" id="taptempo-target">90</span>
+        <span class="tt-target-label">Tap takten til</span>
+        <span class="tt-song" id="taptempo-song"></span>
+        <span class="tt-target-bpm" id="taptempo-target">104</span>
         <span class="tt-target-unit">slag i minuttet</span>
       </div>
       <button id="taptempo-pad" class="tt-pad">TRYK</button>
-      <p class="tt-hint" id="taptempo-hint">Tryk 10 gange i den takt du tror passer</p>
+      <p class="tt-hint" id="taptempo-hint">Nynn melodien og tryk takten 10 gange</p>
     </div>
   </div>
 
@@ -372,10 +373,10 @@
   <script src="js/nback.js?v=20260324a"></script>
   <script src="js/solitaire.js?v=20260324a"></script>
   <script src="js/sudoku.js?v=20260324r"></script>
-  <script src="js/taptempo.js?v=20260526a"></script>
+  <script src="js/taptempo.js?v=20260526b"></script>
   <script src="js/notequiz.js?v=20260526a"></script>
-  <script src="js/moreless.js?v=20260526a"></script>
-  <script src="js/guessnumber.js?v=20260526a"></script>
+  <script src="js/moreless.js?v=20260526b"></script>
+  <script src="js/guessnumber.js?v=20260526b"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';

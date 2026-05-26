@@ -90,9 +90,10 @@
     const best = Stats.get('guessnumber').bestGuesses;
     bestEl.textContent = best ? '🏆 ' + best : '🏆 –';
     feedbackEl.className = 'gn-feedback';
-    feedbackEl.textContent = 'Jeg tænker på et tal mellem 1 og ' + MAX + '…';
+    feedbackEl.textContent = 'Jeg tænker på et tal mellem 1 og ' + MAX + '. Her er en ledetråd:';
     hintsEl.innerHTML = '';
     renderDisplay();
+    revealNextHint(); // start the player off with one hint
   }
 
   function renderDisplay() {
