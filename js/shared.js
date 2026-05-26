@@ -53,7 +53,7 @@ function showDifficultyModal(game, options, onSelect) {
 
 /* ----- Stats ----- */
 
-const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire', 'sudoku', 'yatzy'];
+const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire', 'sudoku', 'yatzy', 'taptempo', 'notequiz', 'moreless', 'guessnumber'];
 
 const Stats = {
   get(game) {
@@ -227,6 +227,38 @@ class GameTimer {
 
 function vibrate(ms) {
   if (navigator.vibrate) navigator.vibrate(ms);
+}
+
+/* ----- Audio (Web Audio API) ----- */
+/* Lazily created and resumed on a user gesture, as iOS requires. */
+
+let _audioCtx = null;
+
+function getAudioCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!_audioCtx) _audioCtx = new AC();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+function playTone(freq, durationMs, type) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const dur = (durationMs || 1000) / 1000;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  // soft attack/release so notes don't click
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.22, now + 0.02);
+  gain.gain.setValueAtTime(0.22, now + Math.max(0.04, dur - 0.08));
+  gain.gain.linearRampToValueAtTime(0, now + dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + dur + 0.02);
 }
 
 /* ----- Confetti System ----- */
@@ -502,6 +534,10 @@ const GAME_DEFS = [
   { id: 'solitaire', icon: '♠️', name: 'Kabale', desc: 'Klassisk kortspil', init: 'initSolitaire' },
   { id: 'sudoku', icon: '🔢', name: 'Sudoku', desc: 'Udfyld tallene', init: 'initSudoku' },
   { id: 'yatzy', icon: '🎲', name: 'Yatzy', desc: 'Klassisk terningspil', init: 'initYatzy' },
+  { id: 'taptempo', icon: '🥁', name: 'Tap tempoet', desc: 'Ram det rigtige tempo', init: 'initTapTempo' },
+  { id: 'notequiz', icon: '🎵', name: 'Gæt tonen', desc: 'Hør tonen og gæt', init: 'initNoteQuiz' },
+  { id: 'moreless', icon: '⚖️', name: 'Mere eller mindre', desc: 'Hvad er størst?', init: 'initMoreLess' },
+  { id: 'guessnumber', icon: '🎯', name: 'Gæt tallet', desc: 'Find tallet med ledetråde', init: 'initGuessNumber' },
 ];
 
 function formatTimeAgo(ts) {

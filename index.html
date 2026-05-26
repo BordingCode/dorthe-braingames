@@ -20,6 +20,10 @@
   <link rel="stylesheet" href="css/solitaire.css?v=20260324a">
   <link rel="stylesheet" href="css/sudoku.css?v=20260324a">
   <link rel="stylesheet" href="css/yatzy.css?v=20260326a">
+  <link rel="stylesheet" href="css/taptempo.css?v=20260526a">
+  <link rel="stylesheet" href="css/notequiz.css?v=20260526a">
+  <link rel="stylesheet" href="css/moreless.css?v=20260526a">
+  <link rel="stylesheet" href="css/guessnumber.css?v=20260526a">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -223,6 +227,92 @@
     </div>
   </div>
 
+  <!-- ===== Tap tempoet ===== -->
+  <div id="screen-taptempo" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Tap tempoet</span>
+      <button class="difficulty-btn" id="taptempo-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Tryk: <b id="taptempo-count">0/10</b></span>
+    </div>
+    <div class="game-area">
+      <div class="tt-target">
+        <span class="tt-target-label">Mål</span>
+        <span class="tt-target-bpm" id="taptempo-target">90</span>
+        <span class="tt-target-unit">slag i minuttet</span>
+      </div>
+      <button id="taptempo-pad" class="tt-pad">TRYK</button>
+      <p class="tt-hint" id="taptempo-hint">Tryk 10 gange i den takt du tror passer</p>
+    </div>
+  </div>
+
+  <!-- ===== Gæt tonen ===== -->
+  <div id="screen-notequiz" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Gæt tonen</span>
+      <button class="difficulty-btn" id="notequiz-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Spørgsmål: <b id="notequiz-progress">0/10</b></span>
+      <span>Rigtige: <b id="notequiz-score">0</b></span>
+    </div>
+    <div class="game-area">
+      <button id="notequiz-replay" class="nq-replay">🔊 Hør tonen</button>
+      <div id="notequiz-options" class="nq-options"></div>
+      <button id="notequiz-start" class="btn btn-primary nq-start">Start</button>
+    </div>
+  </div>
+
+  <!-- ===== Mere eller mindre ===== -->
+  <div id="screen-moreless" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Mere eller mindre</span>
+      <span></span>
+    </div>
+    <div class="game-info">
+      <span>Stime: <b id="moreless-streak">0</b></span>
+      <span>Rekord: <b id="moreless-record">0</b></span>
+    </div>
+    <div class="game-area">
+      <div class="ml-card ml-top">
+        <div class="ml-label" id="moreless-a-label"></div>
+        <div class="ml-value" id="moreless-a-value"></div>
+      </div>
+      <div class="ml-mid">kontra</div>
+      <div class="ml-card ml-bottom">
+        <div class="ml-label" id="moreless-b-label"></div>
+        <div class="ml-value" id="moreless-b-value">?</div>
+        <div class="ml-buttons" id="moreless-buttons">
+          <button class="ml-btn ml-higher" id="moreless-higher">Højere ⬆</button>
+          <button class="ml-btn ml-lower" id="moreless-lower">Lavere ⬇</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Gæt tallet ===== -->
+  <div id="screen-guessnumber" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Gæt tallet</span>
+      <span class="difficulty-btn" id="guessnumber-best">🏆 –</span>
+    </div>
+    <div class="game-info">
+      <span>Gæt: <b id="guessnumber-count">0</b></span>
+      <span>1 – 1000</span>
+    </div>
+    <div class="game-area">
+      <div class="gn-feedback" id="guessnumber-feedback">Jeg tænker på et tal mellem 1 og 1000…</div>
+      <div class="gn-hints" id="guessnumber-hints"></div>
+      <div class="gn-display empty" id="guessnumber-display">–</div>
+      <div class="gn-pad" id="guessnumber-pad"></div>
+    </div>
+  </div>
+
   <!-- ===== Stats / Results ===== -->
   <div id="screen-stats" class="screen">
     <div class="game-header">
@@ -274,7 +364,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/shared.js?v=20260326a"></script>
+  <script src="js/shared.js?v=20260526a"></script>
   <script src="js/lightsout.js?v=20260324a"></script>
   <script src="js/memory.js?v=20260324a"></script>
   <script src="js/minesweeper.js?v=20260324a"></script>
@@ -282,6 +372,10 @@
   <script src="js/nback.js?v=20260324a"></script>
   <script src="js/solitaire.js?v=20260324a"></script>
   <script src="js/sudoku.js?v=20260324r"></script>
+  <script src="js/taptempo.js?v=20260526a"></script>
+  <script src="js/notequiz.js?v=20260526a"></script>
+  <script src="js/moreless.js?v=20260526a"></script>
+  <script src="js/guessnumber.js?v=20260526a"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';

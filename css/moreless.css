@@ -1,0 +1,100 @@
+/* ===== Mere eller mindre ===== */
+
+#screen-moreless .game-area {
+  gap: 14px;
+  justify-content: center;
+}
+
+.ml-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 22px 20px;
+  text-align: center;
+}
+
+.ml-card .ml-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 8px;
+  min-height: 2.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ml-card .ml-value {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  line-height: 1.1;
+}
+
+.ml-bottom .ml-value {
+  color: var(--text-muted);
+}
+
+.ml-bottom .ml-value.revealed.correct {
+  color: var(--success);
+}
+
+.ml-bottom .ml-value.revealed.wrong {
+  color: var(--danger);
+}
+
+.ml-mid {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ml-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ml-buttons.hidden {
+  visibility: hidden;
+}
+
+.ml-btn {
+  flex: 1;
+  padding: 16px 12px;
+  font-size: 19px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text-on-primary);
+  transition: transform 0.1s, filter 0.15s;
+}
+
+.ml-btn:active {
+  transform: scale(0.96);
+}
+
+.ml-higher {
+  background: var(--primary);
+}
+
+.ml-lower {
+  background: var(--accent-memory);
+}
+
+.ml-btn:disabled {
+  filter: grayscale(0.4) opacity(0.6);
+  cursor: default;
+}
+
+@media (min-width: 768px) {
+  .ml-card .ml-value { font-size: 46px; }
+  .ml-card .ml-label { font-size: 20px; }
+}

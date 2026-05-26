@@ -53,6 +53,11 @@
 .game-card:nth-child(5) { border-left-color: var(--accent-nback); }
 .game-card:nth-child(6) { border-left-color: var(--accent-solitaire); }
 .game-card:nth-child(7) { border-left-color: var(--accent-sudoku); }
+.game-card:nth-child(8) { border-left-color: var(--accent-yatzy); }
+.game-card:nth-child(9) { border-left-color: var(--accent-taptempo); }
+.game-card:nth-child(10) { border-left-color: var(--accent-notequiz); }
+.game-card:nth-child(11) { border-left-color: var(--accent-moreless); }
+.game-card:nth-child(12) { border-left-color: var(--accent-guessnumber); }
 
 .game-card:nth-child(1) { animation-delay: 0.05s; }
 .game-card:nth-child(2) { animation-delay: 0.1s; }
@@ -60,6 +65,12 @@
 .game-card:nth-child(4) { animation-delay: 0.2s; }
 .game-card:nth-child(5) { animation-delay: 0.25s; }
 .game-card:nth-child(6) { animation-delay: 0.3s; }
+.game-card:nth-child(7) { animation-delay: 0.35s; }
+.game-card:nth-child(8) { animation-delay: 0.4s; }
+.game-card:nth-child(9) { animation-delay: 0.45s; }
+.game-card:nth-child(10) { animation-delay: 0.5s; }
+.game-card:nth-child(11) { animation-delay: 0.55s; }
+.game-card:nth-child(12) { animation-delay: 0.6s; }
 
 @keyframes cardEnter {
   from { opacity: 0; transform: translateY(16px) scale(0.95); }

@@ -1,0 +1,100 @@
+/* ===== Gæt tonen ===== */
+
+#screen-notequiz .game-area {
+  gap: 20px;
+}
+
+.nq-replay {
+  display: none;
+  background: var(--surface);
+  color: var(--primary-dark);
+  border: 2px solid var(--primary-light);
+  font-size: 20px;
+  font-weight: 700;
+  padding: 18px 32px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
+}
+
+.nq-replay.active {
+  display: inline-flex;
+}
+
+.nq-replay:active {
+  transform: scale(0.96);
+  background: var(--surface-alt);
+}
+
+.nq-options {
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.nq-options.active {
+  display: grid;
+}
+
+.nq-option {
+  min-height: 64px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--surface-alt);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, background 0.15s, border-color 0.15s;
+}
+
+.nq-option:active {
+  transform: scale(0.95);
+}
+
+.nq-option.correct {
+  background: #d4edda;
+  border-color: var(--success);
+  color: var(--primary-dark);
+}
+
+.nq-option.wrong {
+  background: #f8d7da;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.nq-option:disabled {
+  cursor: default;
+}
+
+.nq-start {
+  width: min(220px, 60vw);
+  font-size: 20px;
+  padding: 18px 32px;
+}
+
+.nq-start.hidden {
+  display: none;
+}
+
+/* When the answer set is large (chromatic), tighten cells */
+.nq-options:has(.nq-option:nth-child(10)) {
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 360px;
+}
+
+.nq-options:has(.nq-option:nth-child(10)) .nq-option {
+  min-height: 56px;
+  font-size: 22px;
+}
+
+@media (min-width: 768px) {
+  .nq-options { max-width: 400px; }
+  .nq-option { min-height: 72px; font-size: 32px; }
+}

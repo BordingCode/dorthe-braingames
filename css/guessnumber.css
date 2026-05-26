@@ -1,0 +1,126 @@
+/* ===== Gæt tallet ===== */
+
+#screen-guessnumber .game-area {
+  gap: 12px;
+  justify-content: flex-start;
+  padding-top: 16px;
+}
+
+.gn-feedback {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  min-height: 2.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  max-width: 360px;
+}
+
+.gn-feedback.too-low { color: var(--info); }
+.gn-feedback.too-high { color: var(--accent-minesweeper); }
+.gn-feedback.correct { color: var(--success); font-weight: 700; }
+
+.gn-feedback.shake {
+  animation: gnShake 0.4s;
+}
+
+@keyframes gnShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.gn-hints {
+  width: 100%;
+  max-width: 360px;
+  max-height: 22vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gn-hint {
+  background: #fdf6e3;
+  border: 1px solid #ecdca8;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 15px;
+  color: var(--text);
+  animation: gnHintIn 0.3s ease-out;
+}
+
+@keyframes gnHintIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gn-display {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  letter-spacing: 2px;
+  min-height: 1.2em;
+  line-height: 1.2;
+}
+
+.gn-display.empty { color: var(--text-muted); }
+
+.gn-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.gn-key {
+  min-height: 60px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--surface-alt);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.08s, background 0.15s;
+}
+
+.gn-key:active {
+  transform: scale(0.94);
+  background: var(--surface-alt);
+}
+
+.gn-key-del {
+  color: var(--danger);
+  font-size: 24px;
+}
+
+.gn-key-ok {
+  background: var(--primary);
+  color: var(--text-on-primary);
+  border-color: var(--primary);
+  font-size: 20px;
+}
+
+.gn-key-ok:active {
+  background: var(--primary-dark);
+}
+
+#guessnumber-best {
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+@media (min-width: 768px) {
+  .gn-display { font-size: 56px; }
+  .gn-key { min-height: 68px; font-size: 28px; }
+}

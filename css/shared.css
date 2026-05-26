@@ -35,6 +35,11 @@
   --accent-nback: #E88A4F;
   --accent-solitaire: #527D5C;
   --accent-sudoku: #4A90D9;
+  --accent-yatzy: #C4A35A;
+  --accent-taptempo: #E07A5F;
+  --accent-notequiz: #5AA9A3;
+  --accent-moreless: #9C7CB8;
+  --accent-guessnumber: #4A90D9;
 
   /* Spacing & Radii */
   --radius: 14px;

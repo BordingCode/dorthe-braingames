@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v74';
+const CACHE_NAME = 'brain-games-v75';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,10 @@ const ASSETS = [
   './css/solitaire.css',
   './css/sudoku.css',
   './css/yatzy.css',
+  './css/taptempo.css',
+  './css/notequiz.css',
+  './css/moreless.css',
+  './css/guessnumber.css',
   './css/stats.css',
   './js/shared.js',
   './js/lightsout.js',
@@ -23,6 +27,10 @@ const ASSETS = [
   './js/nback.js',
   './js/solitaire.js',
   './js/sudoku.js',
+  './js/taptempo.js',
+  './js/notequiz.js',
+  './js/moreless.js',
+  './js/guessnumber.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/favicon.svg'
