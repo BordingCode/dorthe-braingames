@@ -28,21 +28,31 @@
     return String(n).split('').reduce((s, d) => s + Number(d), 0);
   }
 
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
   function buildHints(n) {
-    const hints = [];
     const digits = String(n).length;
-    hints.push('Tallet har ' + digits + ' cifre.');
-    hints.push('Tallet er et ' + (n % 2 === 0 ? 'lige' : 'ulige') + ' tal.');
-    if (n > 500) hints.push('Tallet er større end 500.');
-    else if (n < 500) hints.push('Tallet er mindre end 500.');
-    else hints.push('Tallet er præcis 500.');
+
+    // Broad clues — shuffled so the order differs every game
+    const broad = [
+      'Tallet har ' + digits + ' cifre.',
+      'Tallet er et ' + (n % 2 === 0 ? 'lige' : 'ulige') + ' tal.',
+      n > 500 ? 'Tallet er større end 500.' : (n < 500 ? 'Tallet er mindre end 500.' : 'Tallet er præcis 500.'),
+      'Tallets cifre giver tilsammen ' + digitSum(n) + '.',
+    ];
 
     if (n >= 100) {
       const lo = Math.floor(n / 100) * 100;
-      hints.push('Tallet ligger mellem ' + lo + ' og ' + (lo + 100) + '.');
+      broad.push('Tallet ligger mellem ' + lo + ' og ' + (lo + 100) + '.');
     } else {
       const lo = Math.floor(n / 10) * 10;
-      hints.push('Tallet ligger mellem ' + lo + ' og ' + (lo + 10) + '.');
+      broad.push('Tallet ligger mellem ' + lo + ' og ' + (lo + 10) + '.');
     }
 
     let divHint = null;
@@ -50,11 +60,13 @@
       if (n % d === 0) { divHint = 'Tallet kan deles med ' + d + ' (det går op).'; break; }
     }
     if (!divHint) divHint = isPrime(n) ? 'Tallet er et primtal.' : 'Tallet kan hverken deles med 3 eller 7.';
-    hints.push(divHint);
+    broad.push(divHint);
 
-    hints.push('Tallets cifre giver tilsammen ' + digitSum(n) + '.');
-    hints.push('Tallet ender på ' + (n % 10) + '.');
-    return hints;
+    // Pinpoint clues — kept until last so the answer isn't given away too early
+    const specific = ['Tallet ender på ' + (n % 10) + '.'];
+    if (digits >= 2) specific.push('Det første ciffer er ' + String(n)[0] + '.');
+
+    return [...shuffle(broad), ...shuffle(specific)];
   }
 
   function buildPad() {
