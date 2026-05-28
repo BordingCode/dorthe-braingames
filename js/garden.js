@@ -120,8 +120,25 @@
   /* ---------- tasks (the water faucet) ---------- */
   function openTask() {
     if (stopped) return;
-    const which = Math.random() < 0.5 ? taskFindPair : taskRemember;
-    which();
+    const pool = [taskFindPair, taskRemember, taskCount, taskOdd, taskMissing];
+    pool[Math.floor(Math.random() * pool.length)]();
+  }
+
+  // shared: wire single-answer buttons (correct one carries data-correct)
+  function wireAnswers(selector) {
+    overlayEl.querySelectorAll(selector).forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.done) return;
+      if (b.dataset.correct) {
+        b.dataset.done = '1';
+        b.classList.add('right'); playTone(659.25, 120, 'sine');
+        later(finishTask, 420);
+      } else {
+        b.classList.add('wrong'); playTone(196, 160, 'sine'); vibrate(20);
+        later(() => b.classList.remove('wrong'), 500);
+      }
+    }));
+    const c = overlayEl.querySelector('.gd-cancel');
+    if (c) c.addEventListener('click', closeOverlay);
   }
 
   function showOverlay(html) {
@@ -214,6 +231,64 @@
       }
     }));
     play();
+  }
+
+  // Task C: count how many of one flower are in the patch
+  function taskCount() {
+    const target = pickN(G.FLOWERS, 1)[0];
+    const others = G.FLOWERS.filter((f) => f !== target);
+    const count = 2 + Math.floor(Math.random() * 5);   // 2..6 of the target
+    const noise = 3 + Math.floor(Math.random() * 4);   // 3..6 distractors
+    const items = [];
+    for (let i = 0; i < count; i++) items.push(target);
+    for (let i = 0; i < noise; i++) items.push(others[Math.floor(Math.random() * others.length)]);
+    const scene = pickN(items, items.length); // shuffle
+    const opts = new Set([count]);
+    while (opts.size < 4) { const d = count + (Math.floor(Math.random() * 5) - 2); if (d >= 1 && d !== count) opts.add(d); }
+    const optArr = pickN([...opts], opts.size);
+    showOverlay(
+      '<div class="gd-task"><h3>Tæl blomsterne 🌼</h3><p>Hvor mange ' + target + ' kan du se?</p>' +
+      '<div class="gd-show">' + scene.map((f) => '<span>' + f + '</span>').join('') + '</div>' +
+      '<div class="gd-nums">' + optArr.map((o) => '<button class="gd-num"' + (o === count ? ' data-correct="1"' : '') + '>' + o + '</button>').join('') + '</div>' +
+      '<button class="btn btn-secondary gd-cancel">Senere</button></div>'
+    );
+    wireAnswers('.gd-num');
+  }
+
+  // Task D: spot the one flower that is different
+  function taskOdd() {
+    const [base, odd] = pickN(G.FLOWERS, 2);
+    const n = 9;
+    const pos = Math.floor(Math.random() * n);
+    const cells = [];
+    for (let i = 0; i < n; i++) cells.push(i === pos ? odd : base);
+    showOverlay(
+      '<div class="gd-task"><h3>Find den anderledes 🔍</h3><p>Tryk på den blomst der er anderledes.</p>' +
+      '<div class="gd-grid">' + cells.map((f, i) => '<button class="gd-cell"' + (i === pos ? ' data-correct="1"' : '') + '>' + f + '</button>').join('') + '</div>' +
+      '<button class="btn btn-secondary gd-cancel">Senere</button></div>'
+    );
+    wireAnswers('.gd-cell');
+  }
+
+  // Task E: memorise a small set, then say which flower disappeared
+  function taskMissing() {
+    const set = pickN(G.FLOWERS, 4);
+    const missing = set[Math.floor(Math.random() * set.length)];
+    showOverlay(
+      '<div class="gd-task"><h3>Hvad mangler? 🧠</h3><p id="gd-miss-status">Kig godt efter…</p>' +
+      '<div class="gd-show" id="gd-miss-show">' + set.map((f) => '<span>' + f + '</span>').join('') + '</div>' +
+      '<div class="gd-nums gd-hidden" id="gd-miss-opts">' + pickN(set, 4).map((f) => '<button class="gd-pad"' + (f === missing ? ' data-correct="1"' : '') + '>' + f + '</button>').join('') + '</div>' +
+      '<button class="btn btn-secondary gd-cancel">Senere</button></div>'
+    );
+    const showRow = overlayEl.querySelector('#gd-miss-show');
+    const opts = overlayEl.querySelector('#gd-miss-opts');
+    const status = overlayEl.querySelector('#gd-miss-status');
+    later(() => {
+      showRow.innerHTML = set.filter((f) => f !== missing).map((f) => '<span>' + f + '</span>').join('') + '<span class="gd-miss-gap">❔</span>';
+      status.textContent = 'Hvilken blomst er væk?';
+      opts.classList.remove('gd-hidden');
+    }, 2600);
+    wireAnswers('#gd-miss-opts .gd-pad');
   }
 
   /* ---------- Havelog (collection) ---------- */

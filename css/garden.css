@@ -148,8 +148,27 @@
 .gd-coll.got { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
 .gd-task .gd-cancel { margin-top: 4px; }
 
+/* count / odd-one-out / what's-missing tasks */
+.gd-show { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 32px; min-height: 44px; margin-bottom: 14px; }
+.gd-miss-gap { opacity: 0.6; }
+.gd-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.gd-cell {
+  aspect-ratio: 1; min-width: 0; border: none; border-radius: var(--radius);
+  background: var(--surface-alt); font-size: clamp(24px, 8vw, 40px); cursor: pointer; touch-action: manipulation;
+  transition: box-shadow 0.15s;
+}
+.gd-nums { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 14px; }
+.gd-nums.gd-hidden { display: none; }
+.gd-num {
+  min-width: 56px; min-height: 56px; border: none; border-radius: var(--radius);
+  background: var(--surface-alt); font-size: 24px; font-weight: 700; cursor: pointer; touch-action: manipulation;
+}
+.gd-cell.right, .gd-num.right, .gd-pad.right { box-shadow: 0 0 0 3px var(--success) inset; background: #eaf6ea; }
+.gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: gdNudge 0.4s ease; }
+
 @media (prefers-reduced-motion: reduce) {
-  .gd-plot.pop, .gd-plot.wiggle, .gd-task-btn.nudge, .gd-critter, .gd-toast { animation: none; }
+  .gd-plot.pop, .gd-plot.wiggle, .gd-task-btn.nudge, .gd-critter, .gd-toast,
+  .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: none; }
   .gd-critter { display: none; }
 }
 
