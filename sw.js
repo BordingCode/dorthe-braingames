@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v82';
+const CACHE_NAME = 'brain-games-v83';
 const ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const ASSETS = [
   './css/rhythm.css',
   './css/tictactoe.css',
   './css/slidepuzzle.css',
+  './css/garden.css',
   './css/stats.css',
   './js/shared.js',
   './js/lightsout.js',
@@ -40,6 +41,8 @@ const ASSETS = [
   './js/tictactoe.js',
   './js/slidepuzzle-logic.js',
   './js/slidepuzzle.js',
+  './js/garden-logic.js',
+  './js/garden.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/favicon.svg'

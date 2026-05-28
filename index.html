@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="css/rhythm.css?v=20260528b">
   <link rel="stylesheet" href="css/tictactoe.css?v=20260528d">
   <link rel="stylesheet" href="css/slidepuzzle.css?v=20260528f">
+  <link rel="stylesheet" href="css/garden.css?v=20260528g">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -391,6 +392,25 @@
     </div>
   </div>
 
+  <!-- ===== Dorthes have ===== -->
+  <div id="screen-garden" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Dorthes have</span>
+      <button class="difficulty-btn" id="garden-log-btn">📖 Havelog</button>
+    </div>
+    <div class="game-info">
+      <span>💧 <b id="garden-water">0</b></span>
+      <span id="garden-progress">🌸 0/6 · 🦋 0/4</span>
+    </div>
+    <div class="game-area">
+      <div class="gd-sky"><div class="gd-scene" id="garden-scene"></div></div>
+      <p class="gd-hint" id="garden-hint">Velkommen i haven!</p>
+      <button class="btn btn-primary gd-task-btn" id="garden-task-btn">🧠 Lav en opgave (+💧)</button>
+      <div class="gd-overlay" id="garden-overlay"></div>
+    </div>
+  </div>
+
   <!-- ===== Stats / Results ===== -->
   <div id="screen-stats" class="screen">
     <div class="game-header">
@@ -459,6 +479,8 @@
   <script src="js/tictactoe.js?v=20260528e"></script>
   <script src="js/slidepuzzle-logic.js?v=20260528f"></script>
   <script src="js/slidepuzzle.js?v=20260528f"></script>
+  <script src="js/garden-logic.js?v=20260528g"></script>
+  <script src="js/garden.js?v=20260528g"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';
