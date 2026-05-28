@@ -131,4 +131,43 @@ test('save → load round-trips; corrupt / old-version load → fresh', () => {
   assert.deepStrictEqual(G.load(G.save(s)), s);
   assert.deepStrictEqual(G.load('not json {{'), G.newState());
   assert.deepStrictEqual(G.load('{"v":2}'), G.newState());
+  assert.deepStrictEqual(G.load('{"v":3}'), G.newState()); // pre-M5 save (no timeOfDay) is replaced
+});
+
+test('timeOfDay: starts at dawn, advances and wraps; survives load', () => {
+  const s = G.newState();
+  assert.strictEqual(s.timeOfDay, 0);
+  for (let k = 1; k <= G.TIMES.length; k++) G.advanceTime(s);
+  assert.strictEqual(s.timeOfDay, 0);                 // wrapped full circle
+  G.advanceTime(s); assert.strictEqual(s.timeOfDay, 1);
+  assert.strictEqual(G.load(G.save(s)).timeOfDay, 1); // persisted
+  const bad = G.load('{"v":4,"timeOfDay":99}');        // out-of-range clamps to 0 via fresh state
+  assert.strictEqual(bad.timeOfDay, 0);
+});
+
+test('season is derived from how big the world has grown', () => {
+  const s = G.newState();
+  assert.strictEqual(G.currentSeason(s), 0);          // bed → spring
+  s.stage = 3; assert.strictEqual(G.currentSeason(s), 3); // forest → winter
+  s.stage = 4; assert.strictEqual(G.currentSeason(s), 0); // wild → renewal (spring)
+});
+
+test('new guests: a 2nd tree brings a squirrel; pond + many blooms brings a duck', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 999, froe: 99 };
+  G.build(s, 'tree', 0);
+  assert.ok(!s.wildlifeSeen['🐿️']);                   // one tree is not enough
+  G.build(s, 'tree', 1);
+  assert.ok(s.wildlifeSeen['🐿️']);                    // two trees → squirrel
+  const s2 = G.newState(); s2.resources = { sol: 99, vand: 999, froe: 99 };
+  G.build(s2, 'pond', 0);
+  assert.ok(!s2.wildlifeSeen['🦆']);                   // pond alone is not enough
+  for (let i = 1; i <= 6; i++) bloom(s2, i);            // 6 blooms + a pond
+  assert.ok(s2.wildlifeSeen['🦆']);                    // → duck
+});
+
+test('the world reaches the wild 5th region near the finale', () => {
+  assert.strictEqual(G.STAGES.length, 5);
+  assert.strictEqual(G.stageForQuest(9), 4);           // last quest unlocks Vildmarken
+  assert.ok(G.QUESTS[G.QUESTS.length - 1].finale);     // grand finale is the last quest
+  assert.strictEqual(G.QUESTS.find((q) => q.id === 'thrive').finale, undefined); // thrive is now a milestone
 });

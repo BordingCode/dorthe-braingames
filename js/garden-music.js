@@ -18,6 +18,8 @@
 
   let ctx = null, master = null, running = false, chordTimer = 0, natureTimer = 0, chordI = 0, noiseBuf = null;
   let muted = false;
+  // diegetic ambience follows what's actually in the garden
+  let scene = { pond: false, birds: false, bees: false };
   try { muted = localStorage.getItem(KEY) === '1'; } catch {}
 
   function setup() {
@@ -59,9 +61,40 @@
     });
   }
 
+  // a soft low root, an octave under the chord — gives the pads warmth & weight
+  function bass(f) {
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.10, now + 1.8);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 5.4);
+    o.connect(g).connect(master); o.start(now); o.stop(now + 5.6);
+  }
+  // a gentle music-box arpeggio from the current chord (variation + event flourishes)
+  function motif(big, ch) {
+    if (!ctx || muted) return;
+    const c = ch || CHORDS[(chordI + CHORDS.length - 1) % CHORDS.length];
+    const notes = [c[0] * 2, c[1] * 2, c[2] * 2, c[1] * 4];
+    const seq = big ? notes.concat([c[2] * 4, c[0] * 4]) : notes.slice(0, 3);
+    const now = ctx.currentTime;
+    seq.forEach((f, k) => {
+      const t = now + 0.12 + k * (big ? 0.16 : 0.2);
+      const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.06, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g).connect(master); o.start(t); o.stop(t + 0.55);
+    });
+  }
+
   function chordTick() {
     if (!running) return;
-    pad(CHORDS[chordI % CHORDS.length]); chordI++;
+    const ch = CHORDS[chordI % CHORDS.length];
+    pad(ch); bass(ch[0] / 2);
+    if (Math.random() < 0.4) motif(false, ch); // sparse melodic variation
+    chordI++;
     chordTimer = setTimeout(chordTick, 5200);
   }
 
@@ -89,10 +122,36 @@
     src.connect(lp).connect(g).connect(master); src.start(now); src.stop(now + 1.25);
   }
 
+  // a soft little water plip (only when there's a pond)
+  function water() {
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(900, now); o.frequency.exponentialRampToValueAtTime(420, now + 0.18);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(0.045, now + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    o.connect(g).connect(master); o.start(now); o.stop(now + 0.24);
+  }
+  // a faint, slow bee hum (only when there's a beehouse)
+  function beeHum() {
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 110;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 7;
+    const lg = ctx.createGain(); lg.gain.value = 8; lfo.connect(lg).connect(o.frequency);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(0.03, now + 0.3); g.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+    o.connect(lp).connect(g).connect(master); o.start(now); lfo.start(now); o.stop(now + 1.7); lfo.stop(now + 1.7);
+  }
+
   function natureTick() {
     if (!running) return;
-    if (Math.random() < 0.6) bird(); else breeze();
-    natureTimer = setTimeout(natureTick, 3500 + Math.random() * 4500);
+    const r = Math.random();
+    if (scene.pond && r < 0.3) water();
+    else if (scene.bees && r < 0.5) beeHum();
+    else if (Math.random() < (scene.birds ? 0.75 : 0.55)) bird();
+    else breeze();
+    const base = (scene.birds || scene.pond) ? 2600 : 3500;
+    natureTimer = setTimeout(natureTick, base + Math.random() * 4000);
   }
 
   function start() {
@@ -112,5 +171,10 @@
     return muted;
   }
 
-  root.GardenMusic = { start, stop, toggle, isMuted: () => muted, isRunning: () => running };
+  function setScene(s) { scene = Object.assign(scene, s || {}); }
+  // a gentle musical flourish on garden events (bloom/quest/arrival/grow); the SFX in
+  // garden.js cover the moment when music is muted, so this just adds warmth when on.
+  function event(name) { if (running && !muted && ctx) motif(name === 'grow'); }
+
+  root.GardenMusic = { start, stop, toggle, setScene, event, isMuted: () => muted, isRunning: () => running };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="css/rhythm.css?v=20260528b">
   <link rel="stylesheet" href="css/tictactoe.css?v=20260528d">
   <link rel="stylesheet" href="css/slidepuzzle.css?v=20260528f">
-  <link rel="stylesheet" href="css/garden.css?v=20260528m">
+  <link rel="stylesheet" href="css/garden.css?v=20260528n">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -394,6 +394,45 @@
 
   <!-- ===== Dorthes have ===== -->
   <div id="screen-garden" class="screen">
+    <!-- shared storybook art palette: gradients + soft shadow, referenced by every tile -->
+    <svg width="0" height="0" class="gd-defs" aria-hidden="true" focusable="false"><defs>
+      <radialGradient id="gd-leaf" cx="38%" cy="30%" r="78%">
+        <stop offset="0%" stop-color="#a6e08a"/><stop offset="58%" stop-color="#6cbf5e"/><stop offset="100%" stop-color="#4a8a44"/>
+      </radialGradient>
+      <radialGradient id="gd-leaf-deep" cx="38%" cy="30%" r="78%">
+        <stop offset="0%" stop-color="#7cc96a"/><stop offset="60%" stop-color="#4f9a48"/><stop offset="100%" stop-color="#356b32"/>
+      </radialGradient>
+      <linearGradient id="gd-bark" x1="0" y1="0" x2="1" y2="0.2">
+        <stop offset="0%" stop-color="#a87644"/><stop offset="48%" stop-color="#85572f"/><stop offset="100%" stop-color="#5d3b21"/>
+      </linearGradient>
+      <radialGradient id="gd-water" cx="48%" cy="36%" r="72%">
+        <stop offset="0%" stop-color="#d2f1fb"/><stop offset="52%" stop-color="#86cfe9"/><stop offset="100%" stop-color="#4ba6cf"/>
+      </radialGradient>
+      <linearGradient id="gd-soil" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#bd8757"/><stop offset="100%" stop-color="#7d4f2c"/>
+      </linearGradient>
+      <radialGradient id="gd-skep" cx="42%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#f4d27a"/><stop offset="60%" stop-color="#e0ad44"/><stop offset="100%" stop-color="#b9882f"/>
+      </radialGradient>
+      <radialGradient id="gd-cap" cx="42%" cy="32%" r="78%">
+        <stop offset="0%" stop-color="#f2776f"/><stop offset="60%" stop-color="#df4640"/><stop offset="100%" stop-color="#b53029"/>
+      </radialGradient>
+      <radialGradient id="gd-rock" cx="40%" cy="32%" r="80%">
+        <stop offset="0%" stop-color="#c7ccd1"/><stop offset="60%" stop-color="#a3a9af"/><stop offset="100%" stop-color="#7f868c"/>
+      </radialGradient>
+      <radialGradient id="gd-shine" cx="34%" cy="26%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+      <radialGradient id="gd-ground" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(38,46,30,0.30)"/><stop offset="100%" stop-color="rgba(38,46,30,0)"/>
+      </radialGradient>
+      <radialGradient id="gd-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(255,214,107,0.95)"/><stop offset="70%" stop-color="rgba(255,196,84,0.35)"/><stop offset="100%" stop-color="rgba(255,196,84,0)"/>
+      </radialGradient>
+      <filter id="gd-soft" x="-20%" y="-20%" width="140%" height="150%">
+        <feDropShadow dx="0" dy="1.4" stdDeviation="1.1" flood-color="#2a3320" flood-opacity="0.34"/>
+      </filter>
+    </defs></svg>
     <div class="game-header">
       <button class="back-btn" onclick="goHome();">← Hjem</button>
       <span class="title">Dorthes have</span>
@@ -482,11 +521,11 @@
   <script src="js/tictactoe.js?v=20260528e"></script>
   <script src="js/slidepuzzle-logic.js?v=20260528f"></script>
   <script src="js/slidepuzzle.js?v=20260528f"></script>
-  <script src="js/garden-logic.js?v=20260528m"></script>
-  <script src="js/garden-art.js?v=20260528l"></script>
-  <script src="js/garden-tasks.js?v=20260528l"></script>
-  <script src="js/garden-music.js?v=20260528l"></script>
-  <script src="js/garden.js?v=20260528m"></script>
+  <script src="js/garden-logic.js?v=20260528n"></script>
+  <script src="js/garden-art.js?v=20260528n"></script>
+  <script src="js/garden-tasks.js?v=20260528n"></script>
+  <script src="js/garden-music.js?v=20260528n"></script>
+  <script src="js/garden.js?v=20260528n"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';

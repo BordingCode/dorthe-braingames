@@ -9,16 +9,22 @@
 (function (root) {
   'use strict';
 
-  const VERSION = 3;
-  // the world grows through these stages (the "small bed → huge park" arc)
+  const VERSION = 4;
+  // the world grows through these stages (the "small bed → huge wild park" arc)
   const STAGES = [
     { id: 'bed', name: 'Lille bed', cols: 3, rows: 3 },
     { id: 'garden', name: 'Haven', cols: 5, rows: 4 },
     { id: 'meadow', name: 'Engen', cols: 6, rows: 5 },
     { id: 'forest', name: 'Skovparken', cols: 7, rows: 6 },
+    { id: 'wild', name: 'Vildmarken', cols: 8, rows: 6 },
   ];
+  // cosmetic gentle cycle — applied as a warm light tint (never dark; dusk = lanterns glow)
+  const TIMES = ['dawn', 'day', 'golden', 'dusk'];
+  // cosmetic season derived from how big the world has grown (renewal as it reaches the wild)
+  const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+  const SEASON_FOR_STAGE = [0, 1, 2, 3, 0];
   const FLOWERS = ['🌷', '🌻', '🌹', '🌼', '🌸', '🪻'];
-  const WILDLIFE = ['🦋', '🐝', '🐞', '🐦', '🐸', '🦔'];
+  const WILDLIFE = ['🦋', '🐝', '🐞', '🐦', '🐸', '🦔', '🐿️', '🦆'];
   const BUILDABLE = ['tree', 'pond', 'feeder', 'beehouse'];
   const BUILD_COST = {
     tree: { froe: 3, vand: 2 }, pond: { vand: 4, sol: 1 },
@@ -26,12 +32,12 @@
   };
   const BUILD_EMOJI = { soil: '', tree: '🌳', pond: '🪷', feeder: '🛁', beehouse: '🐝' };
   // purely cosmetic decorations (no wildlife effect) — free self-expression, cheap
-  const DECOR = ['stone', 'mushroom', 'hedge', 'path', 'lantern'];
+  const DECOR = ['stone', 'mushroom', 'hedge', 'path', 'lantern', 'bench', 'birdhouse'];
   const DECOR_COST = {
     stone: { sol: 1 }, mushroom: { froe: 1 }, hedge: { froe: 2 },
-    path: { sol: 1 }, lantern: { vand: 2 },
+    path: { sol: 1 }, lantern: { vand: 2 }, bench: { sol: 2 }, birdhouse: { froe: 2 },
   };
-  const DECOR_EMOJI = { stone: '🪨', mushroom: '🍄', hedge: '🌿', path: '🟫', lantern: '🏮' };
+  const DECOR_EMOJI = { stone: '🪨', mushroom: '🍄', hedge: '🌿', path: '🟫', lantern: '🏮', bench: '🪑', birdhouse: '🏠' };
   const PLANT_COST = { froe: 1 };
   const WATER_COST = { vand: 1 };
 
@@ -45,6 +51,8 @@
     pond: 'En lille dam gør haven helt levende. 🪷',
     frog: 'Hvor der er vand, flytter frøerne ind. Lyt efter dem om aftenen! 🐸',
     thrive: 'Nu skal haven bare fyldes helt op. Du er der næsten! 🌸',
+    squirrel: 'Plant et træ mere — så kommer egernet springende. 🐿️',
+    wildpark: 'Sidste skridt: gør haven helt vild og fri, fuld af liv! 🌳🦋',
   };
   // "vidste du?" facts shown in the Havelog for each collected guest
   const FACTS = {
@@ -54,6 +62,8 @@
     '🐦': 'Fugle spreder blomsterfrø rundt i hele naturen.',
     '🐸': 'Frøer ånder både gennem huden og lungerne.',
     '🦔': 'Pindsvin ruller sig sammen til en pigget kugle, når de er bange.',
+    '🐿️': 'Egern gemmer nødder og glemmer nogle — så vokser der nye træer.',
+    '🦆': 'Ænder har vandtætte fjer og fryser aldrig om fødderne.',
   };
   const CHEERS = ['Hvor er du dygtig! 🐾', 'Se lige den have! 🌿', 'Naturen takker dig! 💚', 'Sikke et flot arbejde! ✨'];
 
@@ -66,7 +76,7 @@
       v: VERSION, stage: 0, cols: s0.cols, rows: s0.rows, chapter: 1,
       grid: makeGrid(s0.cols * s0.rows),
       resources: { sol: 1, vand: 3, froe: 3 },
-      questIndex: 0, wildlifeSeen: {}, picked: 0,
+      questIndex: 0, wildlifeSeen: {}, picked: 0, timeOfDay: 0,
     };
   }
 
@@ -130,6 +140,8 @@
     if (hasType(s, 'beehouse')) add('🐝');
     if (hasType(s, 'pond')) add('🐸');
     if (hasType(s, 'tree') && hasType(s, 'pond')) add('🦔');
+    if (countType(s, 'tree') >= 2) add('🐿️');
+    if (hasType(s, 'pond') && blooms >= 6) add('🦆');
     return news;
   }
 
@@ -142,7 +154,9 @@
     { id: 'tree', icon: '🌳', title: 'Plant et træ', goal: (s) => ({ done: hasType(s, 'tree'), text: hasType(s, 'tree') ? 'klaret!' : 'byg et træ fra menuen' }), reward: { vand: 3, froe: 2 } },
     { id: 'pond', icon: '🪷', title: 'Byg en dam', goal: (s) => ({ done: hasType(s, 'pond'), text: hasType(s, 'pond') ? 'klaret!' : 'byg en dam fra menuen' }), reward: { sol: 3, froe: 1 } },
     { id: 'frog', icon: '🐸', title: 'Tiltræk en frø', goal: (s) => ({ done: !!s.wildlifeSeen['🐸'], text: s.wildlifeSeen['🐸'] ? 'klaret!' : 'frøer flytter ind ved en dam' }), reward: { vand: 4, froe: 2 } },
-    { id: 'thrive', icon: '🌸', title: 'Få haven til at trives', finale: true, goal: (s) => { const ok = bloomCount(s) >= 6 && hasType(s, 'tree') && hasType(s, 'pond') && hasType(s, 'feeder'); return { done: ok, text: 'fyld haven: 6 blomster + træ + dam + fuglebad' }; }, reward: { sol: 5, vand: 5, froe: 5 } },
+    { id: 'thrive', icon: '🌸', title: 'Få haven til at trives', goal: (s) => { const ok = bloomCount(s) >= 6 && hasType(s, 'tree') && hasType(s, 'pond') && hasType(s, 'feeder'); return { done: ok, text: 'fyld haven: 6 blomster + træ + dam + fuglebad' }; }, reward: { sol: 5, vand: 5, froe: 5 } },
+    { id: 'squirrel', icon: '🐿️', title: 'Tiltræk et egern', goal: (s) => ({ done: !!s.wildlifeSeen['🐿️'], text: s.wildlifeSeen['🐿️'] ? 'klaret!' : 'egern kommer hvor der står mindst to træer' }), reward: { froe: 4, sol: 2 } },
+    { id: 'wildpark', icon: '🌳', title: 'Gør haven helt vild', finale: true, goal: (s) => { const ok = bloomCount(s) >= 8 && Object.keys(s.wildlifeSeen).length >= 7; return { done: ok, text: '8 blomster + 7 forskellige dyr i haven' }; }, reward: { sol: 6, vand: 6, froe: 6 } },
   ];
   function currentQuest(s) { return QUESTS[s.questIndex] || null; }
   function tryAdvance(s) {
@@ -155,7 +169,9 @@
   }
 
   /* ---------- the world grows with progress ---------- */
-  function stageForQuest(qi) { return qi >= 7 ? 3 : qi >= 5 ? 2 : qi >= 2 ? 1 : 0; }
+  function stageForQuest(qi) { return qi >= 9 ? 4 : qi >= 7 ? 3 : qi >= 5 ? 2 : qi >= 2 ? 1 : 0; }
+  function currentSeason(s) { return SEASON_FOR_STAGE[s.stage] || 0; }
+  function advanceTime(s) { s.timeOfDay = ((s.timeOfDay | 0) + 1) % TIMES.length; return s.timeOfDay; }
   function currentStage(s) { return STAGES[s.stage]; }
   // expand the grid to the bigger stage, keeping existing tiles anchored top-left
   function growTo(s, ns) {
@@ -201,16 +217,17 @@
       if (typeof s.chapter !== 'number' || s.chapter < 1) s.chapter = 1;
       if (typeof s.stage !== 'number' || s.stage < 0 || s.stage >= STAGES.length) s.stage = 0;
       s.picked = s.picked || 0;
+      if (typeof s.timeOfDay !== 'number' || s.timeOfDay < 0 || s.timeOfDay >= TIMES.length) s.timeOfDay = 0;
       return s;
     } catch { return newState(); }
   }
 
   const api = {
-    VERSION, STAGES, FLOWERS, WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI,
+    VERSION, STAGES, TIMES, SEASONS, SEASON_FOR_STAGE, FLOWERS, WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI,
     DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
-    difficultyParams, progress, save, load,
+    currentSeason, advanceTime, difficultyParams, progress, save, load,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.GardenLogic = api;

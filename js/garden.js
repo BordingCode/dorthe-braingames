@@ -6,7 +6,10 @@
   const NAME = {
     tree: 'Træ', pond: 'Dam', feeder: 'Fuglebad', beehouse: 'Bistade',
     stone: 'Sten', mushroom: 'Svamp', hedge: 'Hæk', path: 'Sti', lantern: 'Lanterne',
+    bench: 'Bænk', birdhouse: 'Fuglehus',
   };
+  const reduce = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const mEvent = (n) => { if (typeof GardenMusic !== 'undefined' && GardenMusic.event) GardenMusic.event(n); };
   const EMOJI_OF = (type) => L.BUILD_EMOJI[type] || L.DECOR_EMOJI[type] || '';
   const COST_OF = (type) => L.BUILD_COST[type] || L.DECOR_COST[type];
   const RES_ICON = { sol: '☀️', vand: '💧', froe: '🌱' };
@@ -40,20 +43,65 @@
   }
   function pop(el) { if (!el) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
   function wiggle(el) { if (!el) return; el.classList.remove('wiggle'); void el.offsetWidth; el.classList.add('wiggle'); }
+  function sparkle(tileEl, n) {
+    if (reduce() || !tileEl) return;
+    for (let k = 0; k < (n || 6); k++) {
+      const s = document.createElement('div'); s.className = 'gd-spark';
+      const ang = Math.random() * Math.PI * 2, dist = 14 + Math.random() * 18;
+      s.style.left = '50%'; s.style.top = '44%';
+      s.style.setProperty('--dx', Math.round(Math.cos(ang) * dist) + 'px');
+      s.style.setProperty('--dy', Math.round(Math.sin(ang) * dist - 8) + 'px');
+      tileEl.appendChild(s); later(() => s.remove(), 720);
+    }
+  }
+  function popNumber(text, x, y) {
+    if (reduce()) return;
+    const el = document.createElement('div'); el.className = 'gd-pop-num'; el.textContent = text;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    document.body.appendChild(el); later(() => el.remove(), 1100);
+  }
+  function popAtHud(text) { const r = hudEl.getBoundingClientRect(); popNumber(text, r.left + r.width / 2 - 18, r.top + r.height / 2); }
+  function pickCheer() { return L.CHEERS[Math.floor(Math.random() * L.CHEERS.length)]; }
+  function updateScene() {
+    if (typeof GardenMusic !== 'undefined' && GardenMusic.setScene) {
+      GardenMusic.setScene({ pond: L.hasType(S, 'pond'), birds: L.hasType(S, 'tree') || L.hasType(S, 'feeder') || L.hasType(S, 'birdhouse'), bees: L.hasType(S, 'beehouse') });
+    }
+  }
 
   /* ---------- render ---------- */
+  function ensureLayers() {
+    if (!worldEl) return {};
+    let weather = worldEl.querySelector('.gd-weather');
+    if (!worldEl.querySelector('.gd-daylight')) { const d = document.createElement('div'); d.className = 'gd-daylight'; worldEl.appendChild(d); }
+    if (!weather) { weather = document.createElement('div'); weather.className = 'gd-weather'; worldEl.appendChild(weather); }
+    return { weather };
+  }
   function applyStageTheme() {
     if (!worldEl) return;
-    worldEl.className = 'gd-world stage-' + L.currentStage(S).id;
-    // refresh a few drifting pollen motes
+    const timeName = L.TIMES[S.timeOfDay | 0] || 'day';
+    const seasonName = L.SEASONS[L.currentSeason(S)] || 'spring';
+    worldEl.className = 'gd-world stage-' + L.currentStage(S).id + ' time-' + timeName + ' season-' + seasonName;
+    const { weather } = ensureLayers();
+    // drifting pollen motes (ambient)
     worldEl.querySelectorAll('.gd-mote').forEach((m) => m.remove());
-    for (let k = 0; k < 4; k++) {
-      const m = document.createElement('div');
-      m.className = 'gd-mote';
-      m.style.left = (12 + Math.random() * 70) + '%';
+    if (!reduce()) for (let k = 0; k < 5; k++) {
+      const m = document.createElement('div'); m.className = 'gd-mote';
+      m.style.left = (10 + Math.random() * 78) + '%';
       m.style.animationDuration = (7 + Math.random() * 6) + 's';
       m.style.animationDelay = (-Math.random() * 8) + 's';
       worldEl.appendChild(m);
+    }
+    // season weather: cherry petals in spring, falling leaves in autumn
+    if (weather) {
+      weather.innerHTML = '';
+      const fall = seasonName === 'spring' ? '🌸' : seasonName === 'autumn' ? '🍂' : null;
+      if (fall && !reduce()) for (let k = 0; k < 5; k++) {
+        const f = document.createElement('div'); f.className = 'gd-fall'; f.textContent = fall;
+        f.style.left = (Math.random() * 92) + '%';
+        f.style.animationDuration = (8 + Math.random() * 6) + 's';
+        f.style.animationDelay = (-Math.random() * 12) + 's';
+        weather.appendChild(f);
+      }
     }
   }
   function renderHUD() {
@@ -83,8 +131,11 @@
     const placing = pendingBuild || pendingMove !== null;
     S.grid.forEach((t, i) => {
       const b = document.createElement('button');
-      b.className = 'gd-tile t-' + t.type + (t.type === 'flower' ? ' s-' + t.stage : '') + (placing && t.type === 'soil' ? ' placeable' : '');
-      b.innerHTML = GardenArt.tile(t);
+      const placeable = placing && t.type === 'soil';
+      b.className = 'gd-tile t-' + t.type + (t.type === 'flower' ? ' s-' + t.stage : '') + (placeable ? ' placeable' : '');
+      // show a translucent ghost of what's about to be placed
+      if (placeable && pendingBuild) b.innerHTML = '<div class="gd-ghost">' + GardenArt.tile({ type: pendingBuild }) + '</div>';
+      else b.innerHTML = GardenArt.tile(t);
       b.setAttribute('aria-label', 'Bed ' + (i + 1) + ' (' + t.type + ')');
       b.addEventListener('click', () => onTile(i));
       gridEl.appendChild(b);
@@ -109,24 +160,40 @@
     if (pendingBuild) {
       if (t.type === 'soil') {
         const r = L.place(S, pendingBuild, i);
-        if (r.ok) { playTone(330, 140, 'sine'); pop(gridEl.children[i]); const b = pendingBuild; pendingBuild = null; afterAction('Du placerede ' + NAME[b].toLowerCase() + '! 🌿'); celebrateWildlife(r.wildlife); }
-        else { pendingBuild = null; setHint('Ikke nok ressourcer til det — lav en opgave.'); renderGrid(); }
+        if (r.ok) {
+          playTone(330, 140, 'sine'); const b = pendingBuild; pendingBuild = null;
+          afterAction('Du placerede ' + NAME[b].toLowerCase() + '! 🌿');
+          const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); sparkle(cell, 5); later(() => cell.classList.remove('gd-grown'), 500); }
+          mEvent('build'); updateScene(); celebrateWildlife(r.wildlife);
+        } else { pendingBuild = null; setHint('Ikke nok ressourcer til det — lav en opgave.'); renderGrid(); }
       } else { pendingBuild = null; setHint('Vælg et tomt bed at bygge på.'); renderGrid(); }
       return;
     }
     if (t.type === 'soil') {
-      if (L.plant(S, i)) { playTone(294, 120, 'sine'); pop(gridEl.children[i]); afterAction('Du plantede et frø! 🌱 Vand det for at få det til at gro.'); }
-      else setHint('Du mangler frø 🌱 — lav en opgave for at få flere.');
+      if (L.plant(S, i)) {
+        playTone(294, 120, 'sine'); afterAction('Du plantede et frø! 🌱 Vand det for at få det til at gro.');
+        const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); later(() => cell.classList.remove('gd-grown'), 500); }
+      } else setHint('Du mangler frø 🌱 — lav en opgave for at få flere.');
     } else if (t.type === 'flower') {
       if (t.stage < 3) {
         const r = L.water(S, i, Math.random);
         if (!r.ok) { setHint('Du mangler vand 💧 — lav en opgave for at få mere.'); return; }
-        playTone([329.63, 392.00, 523.25][Math.min(t.stage - 1, 2)], 150, 'sine'); pop(gridEl.children[i]);
-        if (r.bloomed) { playTone(659.25, 200, 'sine'); later(() => playTone(783.99, 240, 'sine'), 130); afterAction('Den sprang ud! ' + r.flower); celebrateWildlife(r.wildlife); }
-        else afterAction('Godt — den vokser! 💧 Vand igen.');
+        playTone([329.63, 392.00, 523.25][Math.min(t.stage - 1, 2)], 150, 'sine');
+        if (r.bloomed) {
+          playTone(659.25, 200, 'sine'); later(() => playTone(783.99, 240, 'sine'), 130);
+          afterAction('Den sprang ud! ' + r.flower);
+          const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-bloomed'); sparkle(cell, 8); later(() => cell.classList.remove('gd-bloomed'), 850); }
+          mEvent('bloom');
+          if (Math.random() < 0.6) { renderGuide(pickCheer()); later(() => { if (!stopped) renderGuide(); }, 2600); }
+          celebrateWildlife(r.wildlife);
+        } else {
+          afterAction('Godt — den vokser! 💧 Vand igen.');
+          const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); later(() => cell.classList.remove('gd-grown'), 500); }
+        }
       } else {
-        const f = L.harvest(S, i); playTone(523.25, 130, 'sine'); pop(gridEl.children[i]);
+        const f = L.harvest(S, i); playTone(523.25, 130, 'sine');
         afterAction('Du plukkede ' + f + ' 🧺 — nu er der plads igen.');
+        const cell = gridEl.children[i]; if (cell) sparkle(cell, 4);
       }
     } else {
       wiggle(gridEl.children[i]); openTileMenu(i);
@@ -152,7 +219,16 @@
 
   function celebrateWildlife(list) {
     if (!list || !list.length) return;
-    list.forEach((w, k) => later(() => { toast('Ny gæst i haven: ' + w + ' 🎉'); }, k * 700));
+    list.forEach((w, k) => later(() => {
+      mEvent('arrival');
+      if (!reduce() && worldEl) {
+        const el = document.createElement('div'); el.className = 'gd-arrival'; el.textContent = w;
+        worldEl.appendChild(el); later(() => el.remove(), 1700);
+        later(() => toast('Ny gæst i haven: ' + w + ' 🎉'), 850);
+      } else {
+        toast('Ny gæst i haven: ' + w + ' 🎉');
+      }
+    }, k * 1000));
   }
 
   function checkQuests() {
@@ -160,13 +236,18 @@
     if (!res.completed.length) return;
     save(); renderHUD();
     res.completed.forEach((q, k) => later(() => {
+      const grand = res.finale && k === res.completed.length - 1;
       toast('✅ ' + q.title + '!');
       playTone(523.25, 140, 'sine'); later(() => playTone(659.25, 160, 'sine'), 120); later(() => playTone(783.99, 200, 'sine'), 240);
       renderQuest();
-      renderGuide(L.CHEERS[Math.floor(Math.random() * L.CHEERS.length)]);
-      if (res.finale && k === res.completed.length - 1) {
-        launchConfetti(3000);
-        setHint('🎉 Du har genoprettet et helt lille stykke natur!');
+      mEvent(grand ? 'grow' : 'quest');
+      if (grand) {
+        launchConfetti(3200);
+        renderGuide('Haven er blevet helt vild og fri. Tak fordi du passede den! 💚');
+        setHint('🎉 Du har skabt et helt lille stykke vild natur!');
+      } else {
+        launchConfetti(1100);
+        renderGuide(pickCheer());
       }
     }, 300 + k * 1100));
     // after the quest fanfare, see if the world should grow — then settle Amigo back to the next story line
@@ -179,9 +260,15 @@
     if (!g.grew) return;
     save();
     launchConfetti(2800);
+    mEvent('grow');
     [392, 523.25, 659.25, 783.99].forEach((f, i) => later(() => playTone(f, 240, 'sine'), i * 150));
     renderAll();
     if (worldEl) { worldEl.classList.remove('grow'); void worldEl.offsetWidth; worldEl.classList.add('grow'); }
+    // the new, bigger world unfurls tile by tile
+    if (!reduce()) [...gridEl.children].forEach((c, i) => {
+      c.classList.add('gd-unfurl'); c.style.animationDelay = (i * 16) + 'ms';
+      later(() => { c.classList.remove('gd-unfurl'); c.style.animationDelay = ''; }, 520 + i * 16);
+    });
     toast('🌱→🌳 Haven vokser til ' + g.stage.name + '!');
     setHint('Din have er vokset til ' + g.stage.name + '! Mere plads, mere natur. 🌿');
   }
@@ -228,9 +315,10 @@
   }
   function grantTaskReward() {
     const bundle = TASK_REWARDS[Math.floor(Math.random() * TASK_REWARDS.length)];
-    L.earn(S, bundle); save(); renderHUD();
+    L.earn(S, bundle); L.advanceTime(S); save(); renderHUD(); applyStageTheme();
     playTone(523.25, 150, 'sine'); later(() => playTone(659.25, 190, 'sine'), 130);
-    toast(Object.keys(bundle).map((k) => '+' + bundle[k] + RES_ICON[k]).join('  '));
+    const txt = Object.keys(bundle).map((k) => '+' + bundle[k] + RES_ICON[k]).join('  ');
+    toast(txt); popAtHud(txt);
     setHint('Godt klaret! Brug ressourcerne i haven.');
     checkQuests();
   }
@@ -264,8 +352,44 @@
     Stats.increment('garden', 'played');
     updateMusicBtn();
     renderAll();
+    updateScene();
     const q = L.currentQuest(S);
     setHint(q ? 'Velkommen i haven! Lav en opgave for ressourcer, og byg haven op. 🌱' : 'Haven trives — nyd den, eller dyrk videre. 🌳');
+    maybeStartTutorial();
+  }
+
+  /* ---------- first-time tutorial (gentle, skippable, once) ---------- */
+  const INTRO_KEY = 'bg_garden_seen_intro';
+  function clearTutorial() {
+    document.querySelectorAll('.gd-coach-target').forEach((e) => e.classList.remove('gd-coach-target'));
+    const c = document.getElementById('gd-coach'); if (c) c.remove();
+  }
+  function endTutorial() { try { localStorage.setItem(INTRO_KEY, '1'); } catch {} clearTutorial(); }
+  function maybeStartTutorial() {
+    let seen = false; try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch {}
+    if (seen) return;
+    if (S.questIndex > 0 || L.bloomCount(S) > 0) { try { localStorage.setItem(INTRO_KEY, '1'); } catch {} return; }
+    const steps = [
+      { say: 'Hej, jeg er Amigo! 🐕 Velkommen i din have. Skal vi gøre den smuk sammen?', btn: 'Ja tak!', target: null },
+      { say: 'Først: tryk på <b>🧠 Lav en opgave</b> for at tjene sol, vand og frø. ☀️💧🌱', btn: 'Forstået', target: 'garden-task-btn' },
+      { say: 'Tryk så på et brunt bed for at <b>plante</b> — og igen for at <b>vande</b>, til blomsten springer ud. 🌸', btn: 'Forstået', target: null },
+      { say: 'I <b>📖 Havelog</b> ser du alle de dyr, du lokker til haven. God fornøjelse! 💚', btn: 'Lad os gå i gang', target: 'garden-log-btn' },
+    ];
+    let i = 0;
+    const coach = document.createElement('div'); coach.className = 'gd-coach'; coach.id = 'gd-coach';
+    document.getElementById('screen-garden').appendChild(coach);
+    function show() {
+      document.querySelectorAll('.gd-coach-target').forEach((e) => e.classList.remove('gd-coach-target'));
+      const st = steps[i];
+      coach.innerHTML = '<div class="gd-coach-card"><div class="gd-cf">🐕</div>' +
+        '<p class="gd-coach-say">' + st.say + '</p>' +
+        '<button class="btn btn-primary" id="gd-coach-next">' + st.btn + '</button>' +
+        '<button class="gd-coach-skip" id="gd-coach-skip">Spring introen over</button></div>';
+      if (st.target) { const t = document.getElementById(st.target); if (t) t.classList.add('gd-coach-target'); }
+      coach.querySelector('#gd-coach-next').addEventListener('click', () => { i++; if (i >= steps.length) endTutorial(); else show(); });
+      coach.querySelector('#gd-coach-skip').addEventListener('click', endTutorial);
+    }
+    show();
   }
 
   document.getElementById('garden-task-btn').addEventListener('click', openTask);
@@ -275,5 +399,5 @@
 
   window.initGarden = initGarden;
   window.gameRestarters.garden = function () { closeOverlay(); pendingBuild = null; pendingMove = null; renderAll(); };
-  window.gameCleanups.garden = function () { stopped = true; clearTimers(); if (typeof GardenMusic !== 'undefined') GardenMusic.stop(); musicStarted = false; save(); };
+  window.gameCleanups.garden = function () { stopped = true; clearTimers(); clearTutorial(); if (typeof GardenMusic !== 'undefined') GardenMusic.stop(); musicStarted = false; save(); };
 })();
