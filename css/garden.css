@@ -27,7 +27,27 @@
   background: linear-gradient(180deg, #bfe3f5 0%, #d8eede 42%, #c6e3b6 43%, #b6d79f 100%);
   box-shadow: var(--shadow-sm); overflow: hidden;
 }
-.gd-world::before { content: '☀️'; position: absolute; top: 6px; right: 12px; font-size: 26px; }
+.gd-world::before { content: '☀️'; position: absolute; top: 6px; right: 12px; font-size: 26px; z-index: 2; }
+.gd-world.grow { animation: gdGrow 0.6s ease-out; }
+@keyframes gdGrow { 0% { transform: scale(0.96); } 60% { transform: scale(1.015); } 100% { transform: scale(1); } }
+
+/* stage skies/grounds — the world's look shifts as it grows bigger */
+.gd-world.stage-bed    { background: linear-gradient(180deg, #cdeaf7 0%, #e6f3e6 46%, #cfe7bd 47%, #bfdca6 100%); }
+.gd-world.stage-garden { background: linear-gradient(180deg, #bfe3f5 0%, #d8eede 42%, #c6e3b6 43%, #b6d79f 100%); }
+.gd-world.stage-meadow { background: linear-gradient(180deg, #b6def5 0%, #d2efcf 40%, #aedd92 41%, #93cd72 100%); }
+.gd-world.stage-forest { background: linear-gradient(180deg, #aed7ee 0%, #bfe0b0 34%, #7bb96a 35%, #4f8f49 100%); }
+
+/* drifting pollen motes (charm) */
+.gd-mote {
+  position: absolute; bottom: 10%; width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255, 250, 205, 0.7); box-shadow: 0 0 6px rgba(255, 250, 205, 0.5);
+  pointer-events: none; animation: gdDrift linear infinite;
+}
+@keyframes gdDrift {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.9; }
+  100% { transform: translate(26px, -150px); opacity: 0; }
+}
 
 #garden-grid {
   display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 6px; margin-top: 12px;
@@ -42,6 +62,9 @@
   box-shadow: inset 0 -3px 6px rgba(0,0,0,0.22);
 }
 .gd-tile:active { transform: scale(0.94); }
+.gd-svg { width: 100%; height: 100%; display: block; }
+.gd-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: gdSway 4.5s ease-in-out infinite; }
+@keyframes gdSway { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
 .gd-tile.t-soil::after { content: '+'; color: rgba(255,255,255,0.45); font-size: 22px; font-weight: 700; }
 .gd-tile.t-flower.s-3 { background: linear-gradient(180deg, #cdeabf, #aada93); }
 .gd-tile.t-tree { background: linear-gradient(180deg, #bfe0a8, #8fc46f); }
@@ -136,7 +159,9 @@
 .gd-task .gd-cancel { margin-top: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .gd-tile.pop, .gd-tile.wiggle, .gd-toast, .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: none; }
+  .gd-tile.pop, .gd-tile.wiggle, .gd-toast, .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong,
+  .gd-sway, .gd-world.grow { animation: none; }
+  .gd-mote { display: none; }
 }
 @media (min-width: 768px) {
   .gd-world, #garden-quest { max-width: 540px; }

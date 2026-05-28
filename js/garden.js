@@ -15,6 +15,7 @@
   const hintEl = document.getElementById('garden-hint');
   const overlayEl = document.getElementById('garden-overlay');
   const musicBtn = document.getElementById('garden-music-btn');
+  const worldEl = document.querySelector('#screen-garden .gd-world');
 
   const later = (fn, ms) => { const id = setTimeout(() => { if (!stopped) fn(); }, Math.max(0, ms)); timers.push(id); return id; };
   const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
@@ -34,16 +35,25 @@
   function wiggle(el) { if (!el) return; el.classList.remove('wiggle'); void el.offsetWidth; el.classList.add('wiggle'); }
 
   /* ---------- render ---------- */
-  function tileContent(t) {
-    if (t.type === 'soil') return '';
-    if (t.type === 'flower') return ['', '🌱', '🌿', t.flower][t.stage] || '🌱';
-    return L.BUILD_EMOJI[t.type] || '';
+  function applyStageTheme() {
+    if (!worldEl) return;
+    worldEl.className = 'gd-world stage-' + L.currentStage(S).id;
+    // refresh a few drifting pollen motes
+    worldEl.querySelectorAll('.gd-mote').forEach((m) => m.remove());
+    for (let k = 0; k < 4; k++) {
+      const m = document.createElement('div');
+      m.className = 'gd-mote';
+      m.style.left = (12 + Math.random() * 70) + '%';
+      m.style.animationDuration = (7 + Math.random() * 6) + 's';
+      m.style.animationDelay = (-Math.random() * 8) + 's';
+      worldEl.appendChild(m);
+    }
   }
   function renderHUD() {
     const r = S.resources, p = L.progress(S);
     hudEl.innerHTML =
       '<span>☀️ <b>' + r.sol + '</b></span><span>💧 <b>' + r.vand + '</b></span><span>🌱 <b>' + r.froe + '</b></span>' +
-      '<span class="gd-prog">🦋 ' + p.wildlife + '/' + p.wildlifeTotal + ' · 📜 ' + p.quests + '/' + p.questsTotal + '</span>';
+      '<span class="gd-prog">🦋 ' + p.wildlife + '/' + p.wildlifeTotal + ' · 📜 ' + p.quests + '/' + p.questsTotal + ' · 🌿 ' + p.stageName + '</span>';
   }
   function renderQuest() {
     const q = L.currentQuest(S);
@@ -53,17 +63,17 @@
   }
   function renderGrid() {
     gridEl.innerHTML = '';
-    gridEl.style.setProperty('--cols', L.COLS);
+    gridEl.style.setProperty('--cols', S.cols);
     S.grid.forEach((t, i) => {
       const b = document.createElement('button');
       b.className = 'gd-tile t-' + t.type + (t.type === 'flower' ? ' s-' + t.stage : '') + (pendingBuild && t.type === 'soil' ? ' placeable' : '');
-      b.textContent = tileContent(t);
+      b.innerHTML = GardenArt.tile(t);
       b.setAttribute('aria-label', 'Bed ' + (i + 1) + ' (' + t.type + ')');
       b.addEventListener('click', () => onTile(i));
       gridEl.appendChild(b);
     });
   }
-  function renderAll() { renderHUD(); renderQuest(); renderGrid(); }
+  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderGrid(); }
 
   /* ---------- actions ---------- */
   function afterAction(hint) { save(); renderHUD(); renderGrid(); if (hint) setHint(hint); checkQuests(); }
@@ -114,9 +124,23 @@
       renderQuest();
       if (res.finale && k === res.completed.length - 1) {
         launchConfetti(3000);
-        setHint('🎉 Haven trives! Du har genoprettet den lille have. En ny eng venter snart…');
+        setHint('🎉 Du har genoprettet et helt lille stykke natur!');
       }
     }, 300 + k * 1100));
+    // after the quest fanfare, see if the world should grow to a bigger stage
+    later(growIfReady, 300 + res.completed.length * 1100 + 200);
+  }
+
+  function growIfReady() {
+    const g = L.maybeGrow(S);
+    if (!g.grew) return;
+    save();
+    launchConfetti(2800);
+    [392, 523.25, 659.25, 783.99].forEach((f, i) => later(() => playTone(f, 240, 'sine'), i * 150));
+    renderAll();
+    if (worldEl) { worldEl.classList.remove('grow'); void worldEl.offsetWidth; worldEl.classList.add('grow'); }
+    toast('🌱→🌳 Haven vokser til ' + g.stage.name + '!');
+    setHint('Din have er vokset til ' + g.stage.name + '! Mere plads, mere natur. 🌿');
   }
 
   /* ---------- overlay: build menu / mini-games / havelog ---------- */

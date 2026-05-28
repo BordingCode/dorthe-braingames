@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v86';
+const CACHE_NAME = 'brain-games-v87';
 const ASSETS = [
   './',
   './index.html',
@@ -42,6 +42,7 @@ const ASSETS = [
   './js/slidepuzzle-logic.js',
   './js/slidepuzzle.js',
   './js/garden-logic.js',
+  './js/garden-art.js',
   './js/garden-tasks.js',
   './js/garden-music.js',
   './js/garden.js',
