@@ -48,10 +48,12 @@ test('build costs resources (soil only) and attracts wildlife', () => {
   assert.ok(!G.build(s, 'tree', 5).ok);
 });
 
-test('wildlife is declarative: blooms attract pollinators', () => {
+test('wildlife is declarative: blooms attract pollinators; bees need a beehouse', () => {
   const s = G.newState(); s.resources = { sol: 9, vand: 99, froe: 9 };
-  bloom(s, 0); bloom(s, 1); assert.ok(s.wildlifeSeen['🦋']);
-  bloom(s, 2); assert.ok(s.wildlifeSeen['🐝']);
+  bloom(s, 0); bloom(s, 1); assert.ok(s.wildlifeSeen['🦋']);   // 2 blooms → butterfly
+  bloom(s, 2); bloom(s, 3); assert.ok(s.wildlifeSeen['🐞']);   // 4 blooms → ladybug
+  assert.ok(!s.wildlifeSeen['🐝']);                            // bee is NOT free from blooms anymore
+  G.build(s, 'beehouse', 8); assert.ok(s.wildlifeSeen['🐝']);  // a beehouse brings the bee
 });
 
 test('harvest frees a bloomed tile', () => {
@@ -63,14 +65,19 @@ test('harvest frees a bloomed tile', () => {
   assert.strictEqual(G.harvest(s, 0), null);
 });
 
-test('quests: tryAdvance only when met; grants reward; raises chapter', () => {
+test('quests do NOT auto-chain: each one needs its own action', () => {
   const s = G.newState();
   assert.strictEqual(G.currentQuest(s).id, 'plant3');
   assert.deepStrictEqual(G.tryAdvance(s).completed, []);
   s.resources = { sol: 9, vand: 99, froe: 9 };
   bloom(s, 0); bloom(s, 1); bloom(s, 2);
-  const adv = G.tryAdvance(s);
-  assert.ok(adv.completed.length >= 2 && s.questIndex >= 2 && s.chapter >= 2);
+  let adv = G.tryAdvance(s);
+  assert.strictEqual(adv.completed.length, 1);            // ONLY plant3 — no free auto-completes
+  assert.strictEqual(G.currentQuest(s).id, 'beehouse');   // next quest needs a real build
+  G.build(s, 'beehouse', 3);                              // so do it
+  adv = G.tryAdvance(s);
+  assert.strictEqual(adv.completed[0].id, 'beehouse');
+  assert.ok(s.questIndex >= 2 && s.chapter >= 2);
 });
 
 test('the world GROWS: crossing quest thresholds expands the grid, keeping tiles', () => {
@@ -80,9 +87,11 @@ test('the world GROWS: crossing quest thresholds expands the grid, keeping tiles
   const flowerAt0 = s.grid[0].flower;
   assert.strictEqual(G.maybeGrow(s).grew, false);      // still stage 0 (bed)
   bloom(s, 1); bloom(s, 2);                             // 3 blooms
-  G.tryAdvance(s);                                      // plant3 + bee → questIndex ≥ 2
+  G.tryAdvance(s);                                      // plant3 done → questIndex 1 (beehouse)
+  assert.strictEqual(G.maybeGrow(s).grew, false);      // still bed — beehouse not built yet
+  G.build(s, 'beehouse', 3); G.tryAdvance(s);           // beehouse done → questIndex 2 (feeder)
   const grew = G.maybeGrow(s);
-  assert.ok(grew.grew && s.stage === 1);               // bed → garden
+  assert.ok(grew.grew && s.stage === 1);               // bed → garden at questIndex 2
   assert.strictEqual(s.cols, G.STAGES[1].cols);
   assert.strictEqual(s.grid.length, G.STAGES[1].cols * G.STAGES[1].rows);
   assert.strictEqual(s.grid[0].flower, flowerAt0);     // existing tile preserved (top-left anchored)

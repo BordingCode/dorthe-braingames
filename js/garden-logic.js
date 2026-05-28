@@ -65,15 +65,15 @@
   // light story: Amigo the dog guides you, one warm line per quest
   const STORY = {
     plant3: 'Lad os fylde haven med blomster! Plant tre, og vand dem til de springer ud. 🌱',
-    bee: 'Når haven står i fuldt flor, kommer bierne helt af sig selv. 🐝',
-    feeder: 'Byg et fuglebad — så får de små fugle et sted at soppe. 🛁',
-    bird: 'Fugle elsker bade og træer. Hold øje med den første gæst! 🐦',
+    beehouse: 'Byg et lille bistade — så summer bierne snart mellem blomsterne. 🐝',
+    feeder: 'Et fuglebad giver de små fugle et sted at soppe og drikke. 🛁',
     tree: 'Et træ giver skygge og ly til mange dyr. Plant et stort et. 🌳',
-    pond: 'En lille dam gør haven helt levende. 🪷',
-    frog: 'Hvor der er vand, flytter frøerne ind. Lyt efter dem om aftenen! 🐸',
-    thrive: 'Nu skal haven bare fyldes helt op. Du er der næsten! 🌸',
-    squirrel: 'Plant et træ mere — så kommer egernet springende. 🐿️',
-    wildpark: 'Sidste skridt: gør haven helt vild og fri, fuld af liv! 🌳🦋',
+    pond: 'En lille dam gør haven helt levende — og frøerne flytter ind. 🐸',
+    bloom6: 'Flere blomster, mere liv! Få seks i fuldt flor. 🌼',
+    tree2: 'Plant et træ mere — så kommer egernet springende. 🐿️',
+    decorate: 'Nu gør vi haven til din egen: sæt lidt pynt — en sten, en bænk, en lanterne. 🎀',
+    thrive: 'Haven er ved at blomstre helt op. Du er der næsten! 🌸',
+    wildpark: 'Sidste ønske: pynt og fyld haven, til den bliver en hel drømmehave. 💚',
   };
   // "vidste du?" facts shown in the Havelog for each collected guest
   const FACTS = {
@@ -116,6 +116,7 @@
   function bloomCount(s) { return s.grid.filter((t) => t.type === 'flower' && t.stage === 3).length; }
   function hasType(s, type) { return s.grid.some((t) => t.type === type); }
   function countType(s, type) { return s.grid.filter((t) => t.type === type).length; }
+  function decorCount(s) { return s.grid.filter((t) => DECOR.includes(t.type)).length; }
 
   // choice: a specific flower emoji to grow, or null/undefined for "mixed seeds" (random at bloom)
   function plant(s, i, choice) {
@@ -171,10 +172,9 @@
     const blooms = bloomCount(s); const news = [];
     const add = (w) => { if (!s.wildlifeSeen[w]) { s.wildlifeSeen[w] = true; news.push(w); } };
     if (blooms >= 2) add('🦋');
-    if (blooms >= 3) add('🐝');
     if (blooms >= 4) add('🐞');
-    if (hasType(s, 'tree') || hasType(s, 'feeder') || hasType(s, 'beehouse')) add('🐦');
-    if (hasType(s, 'beehouse')) add('🐝');
+    if (hasType(s, 'tree') || hasType(s, 'feeder')) add('🐦');
+    if (hasType(s, 'beehouse')) add('🐝'); // bees come from a beehouse, not free from blooms
     if (hasType(s, 'pond')) add('🐸');
     if (hasType(s, 'tree') && hasType(s, 'pond')) add('🦔');
     if (countType(s, 'tree') >= 2) add('🐿️');
@@ -183,18 +183,20 @@
   }
 
   /* ---------- quests (region 1 arc) ---------- */
+  // Every quest is a thing you DO (grow / build / decorate); the animals arrive as the
+  // reward of that action, not as separate "attract X" quests that complete for free.
   // Rewards are a modest bonus — the main income is playing brain games (gentle, earned).
   const QUESTS = [
     { id: 'plant3', icon: '🌱', title: 'Plant og dyrk 3 blomster', goal: (s) => { const n = bloomCount(s); return { done: n >= 3, text: n + '/3 blomster i blomst' }; }, reward: { sol: 1, froe: 1 } },
-    { id: 'bee', icon: '🐝', title: 'Tiltræk en bi', goal: (s) => ({ done: !!s.wildlifeSeen['🐝'], text: s.wildlifeSeen['🐝'] ? 'klaret!' : 'bier kommer til en have fuld af blomster' }), reward: { vand: 2 } },
-    { id: 'feeder', icon: '🛁', title: 'Byg et fuglebad', goal: (s) => ({ done: hasType(s, 'feeder'), text: hasType(s, 'feeder') ? 'klaret!' : 'byg et fuglebad fra menuen' }), reward: { froe: 2 } },
-    { id: 'bird', icon: '🐦', title: 'Tiltræk en fugl', goal: (s) => ({ done: !!s.wildlifeSeen['🐦'], text: s.wildlifeSeen['🐦'] ? 'klaret!' : 'fugle elsker fuglebade og træer' }), reward: { vand: 2 } },
-    { id: 'tree', icon: '🌳', title: 'Plant et træ', goal: (s) => ({ done: hasType(s, 'tree'), text: hasType(s, 'tree') ? 'klaret!' : 'byg et træ fra menuen' }), reward: { froe: 2 } },
-    { id: 'pond', icon: '🪷', title: 'Byg en dam', goal: (s) => ({ done: hasType(s, 'pond'), text: hasType(s, 'pond') ? 'klaret!' : 'byg en dam fra menuen' }), reward: { sol: 2 } },
-    { id: 'frog', icon: '🐸', title: 'Tiltræk en frø', goal: (s) => ({ done: !!s.wildlifeSeen['🐸'], text: s.wildlifeSeen['🐸'] ? 'klaret!' : 'frøer flytter ind ved en dam' }), reward: { vand: 2 } },
-    { id: 'thrive', icon: '🌸', title: 'Få haven til at trives', goal: (s) => { const ok = bloomCount(s) >= 6 && hasType(s, 'tree') && hasType(s, 'pond') && hasType(s, 'feeder'); return { done: ok, text: 'fyld haven: 6 blomster + træ + dam + fuglebad' }; }, reward: { sol: 2, vand: 2, froe: 2 } },
-    { id: 'squirrel', icon: '🐿️', title: 'Tiltræk et egern', goal: (s) => ({ done: !!s.wildlifeSeen['🐿️'], text: s.wildlifeSeen['🐿️'] ? 'klaret!' : 'egern kommer hvor der står mindst to træer' }), reward: { froe: 2 } },
-    { id: 'wildpark', icon: '🌳', title: 'Gør haven helt vild', finale: true, goal: (s) => { const ok = bloomCount(s) >= 8 && Object.keys(s.wildlifeSeen).length >= 7; return { done: ok, text: '8 blomster + 7 forskellige dyr i haven' }; }, reward: { sol: 3, vand: 3, froe: 3 } },
+    { id: 'beehouse', icon: '🐝', title: 'Byg et bistade til bierne', goal: (s) => ({ done: hasType(s, 'beehouse'), text: hasType(s, 'beehouse') ? 'klaret — hør bierne summe!' : 'byg et bistade fra menuen' }), reward: { vand: 2 } },
+    { id: 'feeder', icon: '🛁', title: 'Byg et fuglebad', goal: (s) => ({ done: hasType(s, 'feeder'), text: hasType(s, 'feeder') ? 'klaret — fuglene kommer!' : 'byg et fuglebad fra menuen' }), reward: { froe: 2 } },
+    { id: 'tree', icon: '🌳', title: 'Plant et stort træ', goal: (s) => ({ done: hasType(s, 'tree'), text: hasType(s, 'tree') ? 'klaret!' : 'byg et træ fra menuen' }), reward: { froe: 2 } },
+    { id: 'pond', icon: '🪷', title: 'Grav en lille dam', goal: (s) => ({ done: hasType(s, 'pond'), text: hasType(s, 'pond') ? 'klaret — frøen flytter ind!' : 'byg en dam fra menuen' }), reward: { sol: 2 } },
+    { id: 'bloom6', icon: '🌼', title: 'Få seks blomster i fuldt flor', goal: (s) => { const n = bloomCount(s); return { done: n >= 6, text: n + '/6 blomster i blomst' }; }, reward: { vand: 2, froe: 1 } },
+    { id: 'tree2', icon: '🐿️', title: 'Plant endnu et træ til egernet', goal: (s) => { const n = countType(s, 'tree'); return { done: n >= 2, text: n + '/2 træer — egern elsker træer' }; }, reward: { froe: 2 } },
+    { id: 'decorate', icon: '🎀', title: 'Pynt haven med tre ting', goal: (s) => { const n = decorCount(s); return { done: n >= 3, text: n + '/3 pyntede ting (sten, bænk, lanterne...)' }; }, reward: { sol: 2, vand: 1 } },
+    { id: 'thrive', icon: '🌸', title: 'Få haven til at trives', goal: (s) => { const ok = bloomCount(s) >= 8 && hasType(s, 'beehouse') && hasType(s, 'feeder') && hasType(s, 'tree') && hasType(s, 'pond'); return { done: ok, text: '8 blomster + bistade + fuglebad + træ + dam' }; }, reward: { sol: 2, vand: 2, froe: 2 } },
+    { id: 'wildpark', icon: '🌳', title: 'Skab din drømmehave', finale: true, goal: (s) => { const sc = hyggeScore(s); return { done: sc >= 50, text: 'pynt og fyld haven til en drømmehave (' + sc + '/50 hygge)' }; }, reward: { sol: 3, vand: 3, froe: 3 } },
   ];
   function currentQuest(s) { return QUESTS[s.questIndex] || null; }
   function tryAdvance(s) {
