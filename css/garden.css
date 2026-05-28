@@ -1,128 +1,98 @@
-/* ===== Dorthes have ===== */
+/* ===== Dorthes have — garden world ===== */
 
 #screen-garden .game-area {
-  gap: 14px;
-  justify-content: flex-start;
-  padding-top: 8px;
-}
-
-/* sky + ground scene */
-.gd-sky {
-  position: relative;
-  width: 100%;
-  max-width: 460px;
-  margin: 0 auto;
-  border-radius: var(--radius-lg);
-  padding: 18px 14px 14px;
-  background: linear-gradient(180deg, #bfe3f5 0%, #dff0e6 55%, #cde6c0 56%, #cde6c0 100%);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-.gd-sky::before { /* a friendly sun */
-  content: '☀️';
-  position: absolute;
-  top: 8px; right: 12px;
-  font-size: 28px;
-}
-
-.gd-scene {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 14px;
+  justify-content: flex-start;
+  padding-top: 6px;
 }
 
-.gd-plot {
-  position: relative;
-  min-width: 0;
-  aspect-ratio: 1;
-  border: none;
-  border-radius: var(--radius);
-  background: linear-gradient(180deg, #b07a4e, #8a5a34); /* soil */
-  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.25), inset 0 2px 3px rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(30px, 12vw, 56px);
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 0.1s ease, filter 0.15s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  user-select: none;
+/* resource HUD */
+#garden-hud {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center;
+  font-size: 16px;
 }
-.gd-plot.stage-0 { background: linear-gradient(180deg, #a06f46, #7d502e); }
-.gd-plot.stage-0::after { content: '+'; color: rgba(255,255,255,0.5); font-size: 26px; font-weight: 700; }
-.gd-plot.stage-3 { background: linear-gradient(180deg, #cde6c0, #add99a); } /* bloomed = grassy */
-.gd-plot:active { transform: scale(0.95); }
+#garden-hud .gd-prog { color: var(--text-muted); }
 
-.gd-plot.pop { animation: gdPop 0.32s ease-out; }
-@keyframes gdPop { 0% { transform: scale(0.7); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
-.gd-plot.wiggle { animation: gdWiggle 0.4s ease; }
+/* quest objective panel */
+#garden-quest {
+  width: 100%; max-width: 480px; margin: 0 auto;
+  background: var(--surface); border-radius: var(--radius); padding: 8px 12px;
+  font-size: 15px; text-align: center; box-shadow: var(--shadow-sm);
+}
+
+/* the gridded world */
+.gd-world {
+  position: relative; width: 100%; max-width: 480px; margin: 0 auto;
+  border-radius: var(--radius-lg); padding: 16px 12px 12px;
+  background: linear-gradient(180deg, #bfe3f5 0%, #d8eede 42%, #c6e3b6 43%, #b6d79f 100%);
+  box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.gd-world::before { content: '☀️'; position: absolute; top: 6px; right: 12px; font-size: 26px; }
+
+#garden-grid {
+  display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 6px; margin-top: 12px;
+}
+.gd-tile {
+  position: relative; min-width: 0; aspect-ratio: 1; border: none; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(20px, 8vw, 40px); line-height: 1; cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none;
+  background: linear-gradient(180deg, #a06f46, #7d502e); /* soil */
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.22);
+}
+.gd-tile:active { transform: scale(0.94); }
+.gd-tile.t-soil::after { content: '+'; color: rgba(255,255,255,0.45); font-size: 22px; font-weight: 700; }
+.gd-tile.t-flower.s-3 { background: linear-gradient(180deg, #cdeabf, #aada93); }
+.gd-tile.t-tree { background: linear-gradient(180deg, #bfe0a8, #8fc46f); }
+.gd-tile.t-pond { background: linear-gradient(180deg, #bfe6f2, #8fcfe6); }
+.gd-tile.t-feeder { background: linear-gradient(180deg, #e7e0cf, #cfc3a6); }
+.gd-tile.t-beehouse { background: linear-gradient(180deg, #f0deb0, #e0c074); }
+.gd-tile.placeable { box-shadow: 0 0 0 3px var(--gold), 0 0 12px rgba(196,163,90,0.6); }
+.gd-tile.pop { animation: gdPop 0.32s ease-out; }
+@keyframes gdPop { 0%{transform:scale(0.7)} 55%{transform:scale(1.18)} 100%{transform:scale(1)} }
+.gd-tile.wiggle { animation: gdWiggle 0.4s ease; }
 @keyframes gdWiggle { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-7deg)} 75%{transform:rotate(7deg)} }
 
-.gd-critter {
-  position: absolute;
-  top: 0; left: 50%;
-  font-size: 24px;
-  pointer-events: none;
-  animation: gdFlutter 2.1s ease-out forwards;
-}
-@keyframes gdFlutter {
-  0% { transform: translate(-50%, 10px) scale(0.6); opacity: 0; }
-  20% { opacity: 1; }
-  100% { transform: translate(-10%, -70px) scale(1) rotate(15deg); opacity: 0; }
-}
+.gd-hint { font-size: 16px; text-align: center; color: var(--text); min-height: 2.2em; max-width: 440px; }
 
-.gd-hint {
-  font-size: 17px;
-  text-align: center;
-  color: var(--text);
-  min-height: 2.2em;
-  max-width: 420px;
-}
+/* action buttons */
+.gd-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.gd-actions .btn { min-width: 130px; }
 
-.gd-task-btn { align-self: center; min-width: 220px; }
-.gd-task-btn.nudge { animation: gdNudge 0.4s ease; }
-@keyframes gdNudge { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
-
+/* toast */
 .gd-toast {
-  position: fixed;
-  left: 50%; top: 30%;
-  transform: translateX(-50%);
-  background: var(--primary);
-  color: #fff;
-  font-weight: 700;
-  padding: 10px 18px;
-  border-radius: 20px;
-  box-shadow: var(--shadow-lg);
-  z-index: 60;
-  animation: gdToast 1.6s ease forwards;
+  position: fixed; left: 50%; top: 26%; transform: translateX(-50%);
+  background: var(--primary); color: #fff; font-weight: 700; padding: 10px 18px;
+  border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 60; animation: gdToast 1.7s ease forwards;
 }
 @keyframes gdToast { 0%{opacity:0;transform:translate(-50%,8px)} 15%,75%{opacity:1;transform:translate(-50%,0)} 100%{opacity:0;transform:translate(-50%,-10px)} }
 
-/* overlay panels (task / havelog) */
+/* overlay (build menu / mini-games / havelog) */
 .gd-overlay {
-  position: fixed; inset: 0;
-  display: none;
-  align-items: center; justify-content: center;
-  background: rgba(45, 59, 46, 0.55);
-  z-index: 50;
-  padding: 16px;
+  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(45,59,46,0.55); z-index: 50; padding: 16px;
 }
 .gd-overlay.active { display: flex; }
 .gd-task {
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: 20px 18px;
-  width: 100%; max-width: 380px;
-  text-align: center;
-  box-shadow: var(--shadow-lg);
+  background: var(--surface); border-radius: var(--radius-lg); padding: 20px 18px;
+  width: 100%; max-width: 380px; text-align: center; box-shadow: var(--shadow-lg);
 }
 .gd-task h3 { margin: 0 0 4px; color: var(--primary); }
 .gd-task p { margin: 0 0 14px; color: var(--text-muted); }
 
+/* build menu */
+.gd-build-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+.gd-build-opt {
+  border: 2px solid var(--surface-alt); border-radius: var(--radius); background: var(--surface);
+  padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;
+}
+.gd-build-opt:disabled { opacity: 0.45; }
+.gd-build-emoji { font-size: 34px; }
+.gd-build-name { font-weight: 700; }
+.gd-build-cost { font-size: 13px; color: var(--text-muted); }
+
+/* mini-game task elements (shared) */
 .gd-pairs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
 .gd-card {
   aspect-ratio: 1; min-width: 0; border: none; border-radius: var(--radius);
@@ -134,7 +104,6 @@
 .gd-card.open, .gd-card.done { background: var(--surface-alt); }
 .gd-card.open span, .gd-card.done span { opacity: 1; }
 .gd-card.done { box-shadow: 0 0 0 3px var(--success) inset; }
-
 .gd-pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .gd-pad {
   aspect-ratio: 1; min-width: 0; border: none; border-radius: var(--radius);
@@ -142,13 +111,6 @@
   transition: transform 0.08s, box-shadow 0.15s;
 }
 .gd-pad.lit { box-shadow: 0 0 0 3px var(--gold) inset, 0 0 18px rgba(196,163,90,0.6); transform: scale(1.06); }
-
-.gd-log .gd-coll-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
-.gd-coll { font-size: 30px; opacity: 0.85; }
-.gd-coll.got { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
-.gd-task .gd-cancel { margin-top: 4px; }
-
-/* count / odd-one-out / what's-missing tasks */
 .gd-show { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 32px; min-height: 44px; margin-bottom: 14px; }
 .gd-miss-gap { opacity: 0.6; }
 .gd-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
@@ -164,15 +126,18 @@
   background: var(--surface-alt); font-size: 24px; font-weight: 700; cursor: pointer; touch-action: manipulation;
 }
 .gd-cell.right, .gd-num.right, .gd-pad.right { box-shadow: 0 0 0 3px var(--success) inset; background: #eaf6ea; }
-.gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: gdNudge 0.4s ease; }
+.gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: gdWiggle 0.4s ease; }
+
+/* havelog */
+.gd-log .gd-coll-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.gd-coll { font-size: 30px; opacity: 0.85; }
+.gd-coll.got { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
 .gd-complete { color: var(--success); font-weight: 700; margin-top: 8px; }
+.gd-task .gd-cancel { margin-top: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .gd-plot.pop, .gd-plot.wiggle, .gd-task-btn.nudge, .gd-critter, .gd-toast,
-  .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: none; }
-  .gd-critter { display: none; }
+  .gd-tile.pop, .gd-tile.wiggle, .gd-toast, .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: none; }
 }
-
 @media (min-width: 768px) {
-  .gd-sky { max-width: 520px; }
+  .gd-world, #garden-quest { max-width: 540px; }
 }
