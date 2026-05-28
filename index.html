@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="css/guessnumber.css?v=20260528c">
   <link rel="stylesheet" href="css/sequence.css?v=20260528b">
   <link rel="stylesheet" href="css/rhythm.css?v=20260528b">
+  <link rel="stylesheet" href="css/tictactoe.css?v=20260528d">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -358,6 +359,19 @@
     </div>
   </div>
 
+  <!-- ===== Kryds og bolle ===== -->
+  <div id="screen-tictactoe" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Kryds og bolle</span>
+      <button class="difficulty-btn" id="tictactoe-diff-btn">Let</button>
+    </div>
+    <div class="game-area">
+      <div class="ttt-status" id="tictactoe-status">Din tur ❌</div>
+      <div id="tictactoe-board"></div>
+    </div>
+  </div>
+
   <!-- ===== Stats / Results ===== -->
   <div id="screen-stats" class="screen">
     <div class="game-header">
@@ -423,6 +437,7 @@
   <script src="js/guessnumber.js?v=20260528c"></script>
   <script src="js/sequence.js?v=20260528b"></script>
   <script src="js/rhythm.js?v=20260528b"></script>
+  <script src="js/tictactoe.js?v=20260528e"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';
