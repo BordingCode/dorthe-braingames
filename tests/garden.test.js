@@ -144,6 +144,16 @@ test('flowers are collected; rares still belong to FLOWERS; blooming records the
   assert.strictEqual(typeof r.newFlower, 'boolean');
 });
 
+test('you can choose which flower to plant; mixed seeds stay random', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 99, froe: 9 };
+  G.plant(s, 0, '🌹'); s.resources.vand += 2; G.water(s, 0); const r = G.water(s, 0);
+  assert.strictEqual(r.flower, '🌹');           // a chosen flower blooms as chosen
+  assert.ok(s.flowersSeen['🌹']);
+  const s2 = G.newState(); s2.resources = { sol: 9, vand: 99, froe: 9 };
+  G.plant(s2, 0); s2.resources.vand += 2; G.water(s2, 0); const r2 = G.water(s2, 0);
+  assert.ok(G.FLOWERS.includes(r2.flower));      // mixed seed (no choice) → some valid flower
+});
+
 test('placing something records it in the build collection (once)', () => {
   const s = G.newState(); s.resources = { sol: 9, vand: 9, froe: 9 };
   const r = G.place(s, 'lantern', 0);

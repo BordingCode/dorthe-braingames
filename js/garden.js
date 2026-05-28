@@ -180,10 +180,10 @@
       return;
     }
     if (t.type === 'soil') {
-      if (L.plant(S, i)) {
-        playTone(294, 120, 'sine'); afterAction('Du plantede et frø! 🌱 Vand det for at få det til at gro.');
-        const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); later(() => cell.classList.remove('gd-grown'), 500); }
-      } else setHint('Du mangler frø 🌱 — lav en opgave for at få flere.');
+      if (!L.canAfford(S, L.PLANT_COST)) { setHint('Du mangler frø 🌱 — lav en opgave for at få flere.'); return; }
+      // once you've discovered a couple of flowers, you get to choose what to plant
+      if (Object.keys(S.flowersSeen || {}).length >= 2) openSeedPicker(i);
+      else plantSeed(i, null);
     } else if (t.type === 'flower') {
       if (t.stage < 3) {
         const r = L.water(S, i, Math.random);
@@ -309,6 +309,31 @@
       pendingBuild = b.dataset.type; closeOverlay();
       setHint('Tryk på et tomt bed for at placere ' + EMOJI_OF(pendingBuild)); renderGrid();
     }));
+    overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
+  }
+
+  function plantSeed(i, choice) {
+    if (!L.plant(S, i, choice)) { setHint('Du mangler frø 🌱 — lav en opgave for at få flere.'); return; }
+    playTone(294, 120, 'sine');
+    const what = choice ? ('en ' + (L.FLOWER_NAMES[choice] || 'blomst').toLowerCase()) : 'et frø';
+    afterAction('Du plantede ' + what + '! 🌱 Vand det for at få det til at gro.');
+    const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); later(() => cell.classList.remove('gd-grown'), 500); }
+  }
+  function openSeedPicker(i) {
+    startMusicOnce();
+    const seen = L.FLOWERS.filter((f) => S.flowersSeen[f]);
+    const opt = (emoji, name, choice) =>
+      '<button class="gd-build-opt" data-choice="' + (choice || '') + '">' +
+      '<span class="gd-build-emoji">' + emoji + '</span>' +
+      '<span class="gd-build-name">' + name + '</span>' +
+      '<span class="gd-build-cost">🌱1</span></button>';
+    overlayEl.innerHTML = '<div class="gd-task"><h3>🌱 Hvad vil du plante?</h3>' +
+      '<p>Vælg en blomst — eller prøv blandede frø for en overraskelse.</p>' +
+      '<div class="gd-build-menu">' + opt('🎲', 'Blandede frø', '') +
+      seen.map((f) => opt(f, L.FLOWER_NAMES[f] || 'Blomst', f)).join('') + '</div>' +
+      '<button class="btn btn-secondary gd-cancel">Fortryd</button></div>';
+    overlayEl.classList.add('active');
+    overlayEl.querySelectorAll('.gd-build-opt').forEach((b) => b.addEventListener('click', () => { const c = b.dataset.choice || null; closeOverlay(); plantSeed(i, c); }));
     overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
   }
 

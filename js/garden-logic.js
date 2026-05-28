@@ -109,17 +109,20 @@
   function hasType(s, type) { return s.grid.some((t) => t.type === type); }
   function countType(s, type) { return s.grid.filter((t) => t.type === type).length; }
 
-  function plant(s, i) {
+  // choice: a specific flower emoji to grow, or null/undefined for "mixed seeds" (random at bloom)
+  function plant(s, i, choice) {
     const t = s.grid[i];
     if (!t || t.type !== 'soil' || !canAfford(s, PLANT_COST)) return false;
-    spend(s, PLANT_COST); t.type = 'flower'; t.stage = 1; t.flower = null; return true;
+    spend(s, PLANT_COST); t.type = 'flower'; t.stage = 1;
+    t.flower = (choice && FLOWERS.includes(choice)) ? choice : null;
+    return true;
   }
   function water(s, i, rng) {
     const t = s.grid[i];
     if (!t || t.type !== 'flower' || t.stage < 1 || t.stage >= 3 || !canAfford(s, WATER_COST)) return { ok: false };
     spend(s, WATER_COST); t.stage++;
     if (t.stage === 3) {
-      t.flower = pickFlower(rng);
+      if (!t.flower) t.flower = pickFlower(rng); // mixed seed → random (may discover a rare one)
       const newFlower = !s.flowersSeen[t.flower];
       s.flowersSeen[t.flower] = true;
       return { ok: true, bloomed: true, flower: t.flower, newFlower: newFlower, wildlife: refreshWildlife(s) };
