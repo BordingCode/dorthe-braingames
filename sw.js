@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v77';
+const CACHE_NAME = 'brain-games-v78';
 const ASSETS = [
   './',
   './index.html',
@@ -18,6 +18,8 @@ const ASSETS = [
   './css/notequiz.css',
   './css/moreless.css',
   './css/guessnumber.css',
+  './css/sequence.css',
+  './css/rhythm.css',
   './css/stats.css',
   './js/shared.js',
   './js/lightsout.js',
@@ -31,6 +33,8 @@ const ASSETS = [
   './js/notequiz.js',
   './js/moreless.js',
   './js/guessnumber.js',
+  './js/sequence.js',
+  './js/rhythm.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/favicon.svg'

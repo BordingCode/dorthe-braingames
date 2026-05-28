@@ -1,0 +1,118 @@
+/* ===== Rytmespil ===== */
+
+#screen-rhythm .game-area {
+  gap: 16px;
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+.rn-status {
+  font-size: 20px;
+  font-weight: 700;
+  min-height: 26px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.rn-status.listen { color: var(--warning); }
+.rn-status.your-turn { color: var(--primary); }
+.rn-status.wrong { color: var(--danger); }
+
+/* --- Notation --- */
+#rhythm-notation {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 8px 6px 2px;
+  box-shadow: var(--shadow-sm);
+}
+.rn-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.rn-staff { stroke: #2D3B2E; stroke-width: 2; }
+.rn-tick { stroke: rgba(45, 59, 46, 0.16); stroke-width: 1.5; }
+.rn-bar { stroke: #2D3B2E; stroke-width: 2.5; }
+.rn-beatnum { fill: var(--text-muted); font: 600 13px system-ui, sans-serif; text-anchor: middle; }
+.rn-time { fill: var(--text); font: 700 15px Georgia, serif; text-anchor: middle; }
+
+.rn-stem { stroke: #2D3B2E; stroke-width: 2; }
+.rn-beam { stroke: #2D3B2E; stroke-width: 4.5; stroke-linecap: round; }
+.rn-flag { fill: #2D3B2E; }
+.rn-head { stroke: rgba(0, 0, 0, 0.18); stroke-width: 0.5; transition: fill 0.2s ease; }
+
+.rn-rest-stroke { stroke: var(--text-muted); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.rn-rest-dot { fill: var(--text-muted); }
+
+.rn-note.hit .rn-head { fill: var(--success); }
+.rn-note.missed .rn-head { fill: var(--danger); opacity: 0.5; }
+.rn-note.missed .rn-stem { opacity: 0.45; }
+
+#rhythm-playhead {
+  position: absolute;
+  top: 8%;
+  bottom: 26%;
+  width: 3px;
+  background: var(--accent-taptempo, #E07A5F);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  box-shadow: 0 0 8px rgba(224, 122, 95, 0.6);
+}
+
+/* --- Beat dots --- */
+#rhythm-beats { display: flex; gap: 14px; justify-content: center; }
+.rn-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: var(--text-muted);
+  background: var(--surface-alt);
+  transition: transform 0.1s ease, background 0.1s ease, color 0.1s ease;
+}
+.rn-dot.count { background: var(--warning); color: #fff; transform: scale(1.18); }
+.rn-dot.play { background: var(--primary); color: #fff; transform: scale(1.18); }
+
+/* --- Pads --- */
+#rhythm-pads {
+  display: grid;
+  grid-template-columns: repeat(var(--pad-count, 1), minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 540px;
+}
+#rhythm-pads.disabled { opacity: 0.45; pointer-events: none; }
+
+.rn-pad {
+  border: 2px solid var(--c, var(--primary));
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  min-height: 72px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rn-pad-dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--c, var(--primary));
+}
+.rn-pad:active { transform: scale(0.94); }
+.rn-pad.hit { animation: rnPadHit 0.26s ease; }
+@keyframes rnPadHit {
+  0% { background: var(--c, var(--primary)); transform: scale(0.92); }
+  100% { background: var(--surface); transform: scale(1); }
+}
+
+.rn-start { align-self: center; min-width: 160px; }
+
+@media (min-width: 768px) {
+  #rhythm-notation, #rhythm-pads { max-width: 600px; }
+}

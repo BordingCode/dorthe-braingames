@@ -53,7 +53,7 @@ function showDifficultyModal(game, options, onSelect) {
 
 /* ----- Stats ----- */
 
-const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire', 'sudoku', 'yatzy', 'taptempo', 'notequiz', 'moreless', 'guessnumber'];
+const ALL_GAMES = ['lightsout', 'memory', 'minesweeper', 'wordsearch', 'nback', 'solitaire', 'sudoku', 'yatzy', 'taptempo', 'notequiz', 'moreless', 'guessnumber', 'sequence', 'rhythm'];
 
 const Stats = {
   get(game) {
@@ -538,6 +538,8 @@ const GAME_DEFS = [
   { id: 'notequiz', icon: '🎵', name: 'Gæt tonen', desc: 'Hør tonen og gæt', init: 'initNoteQuiz' },
   { id: 'moreless', icon: '⚖️', name: 'Mere eller mindre', desc: 'Hvad er størst?', init: 'initMoreLess' },
   { id: 'guessnumber', icon: '🎯', name: 'Gæt tallet', desc: 'Find tallet med ledetråde', init: 'initGuessNumber' },
+  { id: 'sequence', icon: '🔆', name: 'Husk rækkefølgen', desc: 'Gentag lysenes rækkefølge', init: 'initSequence' },
+  { id: 'rhythm', icon: '🪘', name: 'Rytmespil', desc: 'Spil rytmen du ser og hører', init: 'initRhythm' },
 ];
 
 function formatTimeAgo(ts) {

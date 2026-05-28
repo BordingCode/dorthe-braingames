@@ -24,6 +24,8 @@
   <link rel="stylesheet" href="css/notequiz.css?v=20260526a">
   <link rel="stylesheet" href="css/moreless.css?v=20260526a">
   <link rel="stylesheet" href="css/guessnumber.css?v=20260526a">
+  <link rel="stylesheet" href="css/sequence.css?v=20260528a">
+  <link rel="stylesheet" href="css/rhythm.css?v=20260528a">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -314,6 +316,47 @@
     </div>
   </div>
 
+  <!-- ===== Husk rækkefølgen ===== -->
+  <div id="screen-sequence" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Husk rækkefølgen</span>
+      <button class="difficulty-btn" id="sequence-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Runde: <b id="sequence-level">0</b></span>
+      <span>Rekord: <b id="sequence-best">0</b></span>
+    </div>
+    <div class="game-area">
+      <div class="seq-status" id="sequence-status">Tryk Start</div>
+      <div id="sequence-board" class="seq-board grid-3"></div>
+      <button id="sequence-start" class="btn btn-primary seq-start">Start</button>
+    </div>
+  </div>
+
+  <!-- ===== Rytmespil ===== -->
+  <div id="screen-rhythm" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Rytmespil</span>
+      <button class="difficulty-btn" id="rhythm-mode-btn">Læs</button>
+    </div>
+    <div class="game-info">
+      <span>Niveau: <b id="rhythm-level">0</b></span>
+      <span>Rekord: <b id="rhythm-best">0</b></span>
+    </div>
+    <div class="game-area">
+      <div class="rn-status" id="rhythm-status">Tryk Start</div>
+      <div id="rhythm-notation">
+        <div id="rhythm-svg"></div>
+        <div id="rhythm-playhead"></div>
+      </div>
+      <div id="rhythm-beats"></div>
+      <div id="rhythm-pads"></div>
+      <button id="rhythm-start" class="btn btn-primary rn-start">Start</button>
+    </div>
+  </div>
+
   <!-- ===== Stats / Results ===== -->
   <div id="screen-stats" class="screen">
     <div class="game-header">
@@ -365,7 +408,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/shared.js?v=20260526a"></script>
+  <script src="js/shared.js?v=20260528a"></script>
   <script src="js/lightsout.js?v=20260324a"></script>
   <script src="js/memory.js?v=20260324a"></script>
   <script src="js/minesweeper.js?v=20260324a"></script>
@@ -377,6 +420,8 @@
   <script src="js/notequiz.js?v=20260526a"></script>
   <script src="js/moreless.js?v=20260526b"></script>
   <script src="js/guessnumber.js?v=20260526c"></script>
+  <script src="js/sequence.js?v=20260528a"></script>
+  <script src="js/rhythm.js?v=20260528a"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';
