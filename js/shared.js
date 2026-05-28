@@ -542,7 +542,7 @@ const GAME_DEFS = [
   { id: 'rhythm', icon: '🪘', name: 'Rytmespil', desc: 'Spil rytmen du ser og hører', init: 'initRhythm' },
   { id: 'tictactoe', icon: '⭕', name: 'Kryds og bolle', desc: 'Få tre på stribe mod computeren', init: 'initTicTacToe' },
   { id: 'slidepuzzle', icon: '🧩', name: 'Skydepuslespil', desc: 'Skub tallene på plads', init: 'initSlidePuzzle' },
-  { id: 'garden', icon: '🌷', name: 'Dorthes have', desc: 'Pas haven og saml blomster', init: 'initGarden' },
+  { id: 'garden', icon: '🌷', name: 'Dorthes have', desc: 'Byg en have der hjælper naturen', init: 'initGarden' },
 ];
 
 function formatTimeAgo(ts) {
