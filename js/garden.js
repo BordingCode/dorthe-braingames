@@ -10,6 +10,7 @@
   const EMOJI_OF = (type) => L.BUILD_EMOJI[type] || L.DECOR_EMOJI[type] || '';
   const COST_OF = (type) => L.BUILD_COST[type] || L.DECOR_COST[type];
   const RES_ICON = { sol: '☀️', vand: '💧', froe: '🌱' };
+  const GUIDE = { emoji: '🐕', name: 'Amigo' };
   const TASK_REWARDS = [{ vand: 2, sol: 1 }, { froe: 2 }, { sol: 2, vand: 1 }, { vand: 3 }, { froe: 1, sol: 1, vand: 1 }];
 
   let S = null, stopped = false, timers = [], pendingBuild = null, pendingMove = null, musicStarted = false;
@@ -20,6 +21,7 @@
   const hintEl = document.getElementById('garden-hint');
   const overlayEl = document.getElementById('garden-overlay');
   const musicBtn = document.getElementById('garden-music-btn');
+  const guideEl = document.getElementById('garden-guide');
   const worldEl = document.querySelector('#screen-garden .gd-world');
 
   const later = (fn, ms) => { const id = setTimeout(() => { if (!stopped) fn(); }, Math.max(0, ms)); timers.push(id); return id; };
@@ -66,6 +68,15 @@
       ? '📜 ' + q.icon + ' <b>' + q.title + '</b> — ' + q.goal(S).text
       : '🌳 <b>Haven trives!</b> Nyd den — eller pluk og plant videre.';
   }
+  function currentStory() {
+    const q = L.currentQuest(S);
+    return q ? (L.STORY[q.id] || '') : 'Haven trives nu! Den er blevet et lille paradis for dyrene. 🌳';
+  }
+  function renderGuide(text) {
+    if (!guideEl) return;
+    guideEl.innerHTML = '<span class="gd-guide-face">' + GUIDE.emoji + '</span>' +
+      '<span class="gd-guide-say"><b>' + GUIDE.name + ':</b> ' + (text || currentStory()) + '</span>';
+  }
   function renderGrid() {
     gridEl.innerHTML = '';
     gridEl.style.setProperty('--cols', S.cols);
@@ -79,7 +90,7 @@
       gridEl.appendChild(b);
     });
   }
-  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderGrid(); }
+  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderGuide(); renderGrid(); }
 
   /* ---------- actions ---------- */
   function afterAction(hint) { save(); renderHUD(); renderGrid(); if (hint) setHint(hint); checkQuests(); }
@@ -152,13 +163,15 @@
       toast('✅ ' + q.title + '!');
       playTone(523.25, 140, 'sine'); later(() => playTone(659.25, 160, 'sine'), 120); later(() => playTone(783.99, 200, 'sine'), 240);
       renderQuest();
+      renderGuide(L.CHEERS[Math.floor(Math.random() * L.CHEERS.length)]);
       if (res.finale && k === res.completed.length - 1) {
         launchConfetti(3000);
         setHint('🎉 Du har genoprettet et helt lille stykke natur!');
       }
     }, 300 + k * 1100));
-    // after the quest fanfare, see if the world should grow to a bigger stage
+    // after the quest fanfare, see if the world should grow — then settle Amigo back to the next story line
     later(growIfReady, 300 + res.completed.length * 1100 + 200);
+    later(() => renderGuide(), 300 + res.completed.length * 1100 + 700);
   }
 
   function growIfReady() {
@@ -226,8 +239,14 @@
     const wl = L.WILDLIFE.map((w) => '<span class="gd-coll ' + (S.wildlifeSeen[w] ? 'got' : '') + '">' + (S.wildlifeSeen[w] ? w : '❔') + '</span>').join('');
     const p = L.progress(S);
     const done = p.quests >= p.questsTotal;
+    const seenFacts = L.WILDLIFE.filter((w) => S.wildlifeSeen[w] && L.FACTS[w]);
+    const facts = seenFacts.length
+      ? '<div class="gd-facts"><p class="gd-facts-h">💡 Vidste du?</p>' +
+        seenFacts.map((w) => '<p class="gd-fact"><span>' + w + '</span> ' + L.FACTS[w] + '</p>').join('') + '</div>'
+      : '<p class="gd-facts-empty">Tiltræk dyr for at låse små vidste-du-fakta op. 💡</p>';
     overlayEl.innerHTML = '<div class="gd-task gd-log"><h3>📖 Havelog</h3>' +
       '<p>Naturens gæster (' + p.wildlife + '/' + p.wildlifeTotal + ')</p><div class="gd-coll-row">' + wl + '</div>' +
+      facts +
       '<p>Blomster i blomst: <b>' + p.flowers + '</b> · plukket: <b>' + (S.picked || 0) + '</b> 🧺</p>' +
       '<p>Opgaver klaret: <b>' + p.quests + '/' + p.questsTotal + '</b></p>' +
       (done && p.wildlife === p.wildlifeTotal ? '<p class="gd-complete">🎉 Haven er i fuldt flor og fuld af liv!</p>' : '') +

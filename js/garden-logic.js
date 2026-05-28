@@ -35,6 +35,28 @@
   const PLANT_COST = { froe: 1 };
   const WATER_COST = { vand: 1 };
 
+  // light story: Amigo the dog guides you, one warm line per quest
+  const STORY = {
+    plant3: 'Lad os fylde haven med blomster! Plant tre, og vand dem til de springer ud. 🌱',
+    bee: 'Når haven står i fuldt flor, kommer bierne helt af sig selv. 🐝',
+    feeder: 'Byg et fuglebad — så får de små fugle et sted at soppe. 🛁',
+    bird: 'Fugle elsker bade og træer. Hold øje med den første gæst! 🐦',
+    tree: 'Et træ giver skygge og ly til mange dyr. Plant et stort et. 🌳',
+    pond: 'En lille dam gør haven helt levende. 🪷',
+    frog: 'Hvor der er vand, flytter frøerne ind. Lyt efter dem om aftenen! 🐸',
+    thrive: 'Nu skal haven bare fyldes helt op. Du er der næsten! 🌸',
+  };
+  // "vidste du?" facts shown in the Havelog for each collected guest
+  const FACTS = {
+    '🦋': 'Sommerfugle smager med fødderne, før de drikker nektar.',
+    '🐝': 'En bi kan besøge op mod tusind blomster på én dag.',
+    '🐞': 'Mariehøns spiser bladlus og passer på haven.',
+    '🐦': 'Fugle spreder blomsterfrø rundt i hele naturen.',
+    '🐸': 'Frøer ånder både gennem huden og lungerne.',
+    '🦔': 'Pindsvin ruller sig sammen til en pigget kugle, når de er bange.',
+  };
+  const CHEERS = ['Hvor er du dygtig! 🐾', 'Se lige den have! 🌿', 'Naturen takker dig! 💚', 'Sikke et flot arbejde! ✨'];
+
   function pick(arr, rng) { return arr[Math.floor((rng || Math.random)() * arr.length)]; }
   function makeGrid(n) { const g = []; for (let i = 0; i < n; i++) g.push({ type: 'soil', stage: 0, flower: null }); return g; }
 
@@ -185,7 +207,7 @@
 
   const api = {
     VERSION, STAGES, FLOWERS, WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI,
-    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS,
+    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
     difficultyParams, progress, save, load,

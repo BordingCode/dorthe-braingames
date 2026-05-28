@@ -13,6 +13,24 @@
 }
 #garden-hud .gd-prog { color: var(--text-muted); }
 
+/* Amigo the guide — a friendly speech bubble */
+.gd-guide {
+  width: 100%; max-width: 480px; margin: 0 auto; display: flex; align-items: flex-start; gap: 8px;
+}
+.gd-guide-face {
+  font-size: 30px; line-height: 1.4; flex: 0 0 auto;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+}
+.gd-guide-say {
+  position: relative; flex: 1; background: #fffdf5; border-radius: 14px; padding: 8px 12px;
+  font-size: 14.5px; color: var(--text); box-shadow: var(--shadow-sm); line-height: 1.4;
+}
+.gd-guide-say::before {
+  content: ''; position: absolute; left: -7px; top: 12px; width: 0; height: 0;
+  border: 7px solid transparent; border-right-color: #fffdf5; border-left: 0;
+}
+.gd-guide-say b { color: var(--primary); }
+
 /* quest objective panel */
 #garden-quest {
   width: 100%; max-width: 480px; margin: 0 auto;
@@ -162,6 +180,17 @@
 .gd-coll.got { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
 .gd-complete { color: var(--success); font-weight: 700; margin-top: 8px; }
 .gd-task .gd-cancel { margin-top: 4px; }
+
+/* havelog "vidste du?" facts */
+.gd-log .gd-facts {
+  text-align: left; background: #f3f8ee; border-radius: var(--radius);
+  padding: 10px 12px; margin: 0 0 14px;
+}
+.gd-log .gd-facts-h { margin: 0 0 6px; color: var(--primary); font-weight: 700; font-size: 14.5px; }
+.gd-log .gd-fact { margin: 0 0 6px; color: var(--text); font-size: 14px; line-height: 1.45; }
+.gd-log .gd-fact:last-child { margin-bottom: 0; }
+.gd-log .gd-fact span { font-size: 18px; margin-right: 3px; }
+.gd-log .gd-facts-empty { font-size: 13.5px; font-style: italic; color: var(--text-muted); }
 
 @media (prefers-reduced-motion: reduce) {
   .gd-tile.pop, .gd-tile.wiggle, .gd-toast, .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong,
