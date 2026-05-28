@@ -1,13 +1,15 @@
-/* ===== Gæt tallet (1–1000 with growing hints) ===== */
+/* ===== Gæt tallet (1–999 with growing, de-duplicated hints) ===== */
 
 (function () {
-  const MAX = 1000;
+  const MAX = 999;
+  const MAXLEN = String(MAX).length;
 
   let secret = 0;
   let guesses = 0;
   let entry = '';
   let hintQueue = [];
-  let revealed = [];
+  let revealed = [];      // { hint, el, iconEl }
+  let lo = 1, hi = MAX;    // known range from feedback + revealed range-clues
   let solved = false;
   let padBuilt = false;
 
@@ -36,35 +38,74 @@
     return arr;
   }
 
+  // Each hint: { text, test(g)->bool (does guess g satisfy the clue),
+  //              range:[min,max]|null (the secret-range this clue implies) }
   function buildHints(n) {
     const digits = String(n).length;
 
-    // Broad clues — shuffled so the order differs every game
-    const broad = [
-      'Tallet har ' + digits + ' cifre.',
-      'Tallet er et ' + (n % 2 === 0 ? 'lige' : 'ulige') + ' tal.',
-      n > 500 ? 'Tallet er større end 500.' : (n < 500 ? 'Tallet er mindre end 500.' : 'Tallet er præcis 500.'),
-      'Tallets cifre giver tilsammen ' + digitSum(n) + '.',
-    ];
+    const broad = [];
+
+    broad.push({
+      text: 'Tallet har ' + digits + ' cifre.',
+      test: (g) => String(g).length === digits,
+      range: [Math.pow(10, digits - 1), Math.min(MAX, Math.pow(10, digits) - 1)],
+    });
+
+    const even = n % 2 === 0;
+    broad.push({
+      text: 'Tallet er et ' + (even ? 'lige' : 'ulige') + ' tal.',
+      test: (g) => (g % 2 === 0) === even,
+      range: null,
+    });
+
+    if (n > 500) broad.push({ text: 'Tallet er større end 500.', test: (g) => g > 500, range: [501, MAX] });
+    else if (n < 500) broad.push({ text: 'Tallet er mindre end 500.', test: (g) => g < 500, range: [1, 499] });
+    else broad.push({ text: 'Tallet er præcis 500.', test: (g) => g === 500, range: [500, 500] });
+
+    const ds = digitSum(n);
+    broad.push({
+      text: 'Tallets cifre giver tilsammen ' + ds + '.',
+      test: (g) => digitSum(g) === ds,
+      range: null,
+    });
 
     if (n >= 100) {
-      const lo = Math.floor(n / 100) * 100;
-      broad.push('Tallet ligger mellem ' + lo + ' og ' + (lo + 100) + '.');
+      const band = Math.floor(n / 100) * 100;
+      broad.push({
+        text: 'Tallet ligger mellem ' + band + ' og ' + (band + 99) + '.',
+        test: (g) => g >= band && g <= band + 99,
+        range: [band, band + 99],
+      });
     } else {
-      const lo = Math.floor(n / 10) * 10;
-      broad.push('Tallet ligger mellem ' + lo + ' og ' + (lo + 10) + '.');
+      const band = Math.floor(n / 10) * 10;
+      const a = Math.max(1, band);
+      broad.push({
+        text: 'Tallet ligger mellem ' + a + ' og ' + (band + 9) + '.',
+        test: (g) => g >= band && g <= band + 9,
+        range: [a, band + 9],
+      });
     }
 
-    let divHint = null;
+    let div = null;
     for (const d of [3, 7, 11, 13]) {
-      if (n % d === 0) { divHint = 'Tallet kan deles med ' + d + ' (det går op).'; break; }
+      if (n % d === 0) {
+        div = { text: 'Tallet kan deles med ' + d + ' (det går op).', test: (g) => g % d === 0, range: null };
+        break;
+      }
     }
-    if (!divHint) divHint = isPrime(n) ? 'Tallet er et primtal.' : 'Tallet kan hverken deles med 3 eller 7.';
-    broad.push(divHint);
+    if (!div) {
+      div = isPrime(n)
+        ? { text: 'Tallet er et primtal.', test: (g) => isPrime(g), range: null }
+        : { text: 'Tallet kan hverken deles med 3 eller 7.', test: (g) => g % 3 !== 0 && g % 7 !== 0, range: null };
+    }
+    broad.push(div);
 
     // Pinpoint clues — kept until last so the answer isn't given away too early
-    const specific = ['Tallet ender på ' + (n % 10) + '.'];
-    if (digits >= 2) specific.push('Det første ciffer er ' + String(n)[0] + '.');
+    const specific = [{ text: 'Tallet ender på ' + (n % 10) + '.', test: (g) => g % 10 === n % 10, range: null }];
+    if (digits >= 2) {
+      const fd = String(n)[0];
+      specific.push({ text: 'Det første ciffer er ' + fd + '.', test: (g) => String(g)[0] === fd, range: null });
+    }
 
     return [...shuffle(broad), ...shuffle(specific)];
   }
@@ -95,6 +136,8 @@
     guesses = 0;
     entry = '';
     revealed = [];
+    lo = 1;
+    hi = MAX;
     solved = false;
     hintQueue = buildHints(secret);
 
@@ -113,15 +156,54 @@
     displayEl.classList.toggle('empty', entry === '');
   }
 
-  function revealNextHint() {
-    if (hintQueue.length === 0) return;
-    const hint = hintQueue.shift();
-    revealed.push(hint);
+  // A clue is redundant if every number still possible (in [lo,hi]) already
+  // satisfies it — then telling the player adds nothing new.
+  function isRedundant(hint) {
+    if (lo > hi) return true;
+    for (let g = lo; g <= hi; g++) if (!hint.test(g)) return false;
+    return true;
+  }
+
+  function narrowByRange(range) {
+    if (!range) return;
+    lo = Math.max(lo, range[0]);
+    hi = Math.min(hi, range[1]);
+  }
+
+  function addHintChip(hint) {
     const chip = document.createElement('div');
     chip.className = 'gn-hint';
-    chip.textContent = '💡 ' + hint;
+    const icon = document.createElement('span');
+    icon.className = 'gn-hint-icon';
+    icon.textContent = '💡';
+    const text = document.createElement('span');
+    text.className = 'gn-hint-text';
+    text.textContent = hint.text;
+    chip.appendChild(icon);
+    chip.appendChild(text);
     hintsEl.appendChild(chip);
     hintsEl.scrollTop = hintsEl.scrollHeight;
+    revealed.push({ hint, el: chip, iconEl: icon });
+  }
+
+  function revealNextHint() {
+    while (hintQueue.length) {
+      const hint = hintQueue.shift();
+      if (isRedundant(hint)) continue; // skip clues already implied by what we know
+      addHintChip(hint);
+      narrowByRange(hint.range);
+      return;
+    }
+  }
+
+  // Mark every shown clue against the latest guess: ✓ followed, ✗ ignored.
+  function markGuessOnHints(val) {
+    revealed.forEach((r) => {
+      const ok = r.hint.test(val);
+      r.el.classList.remove('followed', 'broken');
+      r.el.classList.add(ok ? 'followed' : 'broken');
+      r.iconEl.textContent = ok ? '✓' : '✗';
+    });
   }
 
   function onKey(k) {
@@ -135,7 +217,7 @@
       submitGuess();
       return;
     }
-    if (entry.length >= 4) return;
+    if (entry.length >= MAXLEN) return;
     if (entry === '' && k === '0') return; // no leading zero
     entry += k;
     if (Number(entry) > MAX) entry = String(MAX);
@@ -156,6 +238,7 @@
     vibrate(15);
 
     if (val === secret) {
+      markGuessOnHints(val);
       win();
       return;
     }
@@ -163,14 +246,17 @@
     if (val < secret) {
       feedbackEl.className = 'gn-feedback too-low';
       feedbackEl.textContent = val + ' er for lavt — prøv højere ⬆';
+      lo = Math.max(lo, val + 1);
       playTone(330, 200, 'sine');
     } else {
       feedbackEl.className = 'gn-feedback too-high';
       feedbackEl.textContent = val + ' er for højt — prøv lavere ⬇';
+      hi = Math.min(hi, val - 1);
       playTone(247, 200, 'sine');
     }
     vibrate([30, 40]);
-    revealNextHint();
+    revealNextHint();        // uses the narrowed range, so redundant clues are skipped
+    markGuessOnHints(val);   // ✓/✗ on every clue, including any just revealed
     entry = '';
     renderDisplay();
   }

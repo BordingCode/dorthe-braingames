@@ -43,6 +43,9 @@
 }
 
 .gn-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: #fdf6e3;
   border: 1px solid #ecdca8;
   border-radius: var(--radius-sm);
@@ -50,7 +53,31 @@
   font-size: 15px;
   color: var(--text);
   animation: gnHintIn 0.3s ease-out;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
+
+.gn-hint-icon {
+  flex: 0 0 auto;
+  width: 1.4em;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+.gn-hint-text { flex: 1; }
+
+/* After a guess: did the guess match this clue or not? */
+.gn-hint.followed {
+  background: #eef7ec;
+  border-color: #b9deb0;
+}
+.gn-hint.followed .gn-hint-icon { color: var(--success); }
+
+.gn-hint.broken {
+  background: #fbeceb;
+  border-color: #ecc2bf;
+}
+.gn-hint.broken .gn-hint-icon { color: var(--danger); }
+.gn-hint.broken .gn-hint-text { text-decoration: line-through; opacity: 0.65; }
 
 @keyframes gnHintIn {
   from { opacity: 0; transform: translateY(-6px); }
