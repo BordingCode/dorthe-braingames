@@ -165,6 +165,7 @@
 }
 .gd-cell.right, .gd-num.right, .gd-pad.right { box-shadow: 0 0 0 3px var(--success) inset; background: #eaf6ea; }
 .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong { animation: gdNudge 0.4s ease; }
+.gd-complete { color: var(--success); font-weight: 700; margin-top: 8px; }
 
 @media (prefers-reduced-motion: reduce) {
   .gd-plot.pop, .gd-plot.wiggle, .gd-task-btn.nudge, .gd-critter, .gd-toast,

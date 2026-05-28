@@ -51,6 +51,22 @@ test('progress + allBloomed', () => {
   assert.ok(p.flowers >= 1 && p.flowers <= p.flowersTotal);
 });
 
+test('harvest frees a bloomed plot so you can progress when full', () => {
+  const s = G.newState();
+  const rng = seeded(3);
+  // bloom every plot
+  s.plots.forEach((_, i) => { G.plant(s, i); G.addWater(s, 2); G.water(s, i, rng); G.water(s, i, rng); });
+  assert.ok(G.allBloomed(s));
+  assert.strictEqual(G.emptyPlots(s).length, 0); // nothing to do → stuck without harvest
+  const flower = G.harvest(s, 0);
+  assert.ok(G.FLOWERS.includes(flower));
+  assert.strictEqual(s.plots[0].stage, 0);       // freed
+  assert.strictEqual(s.plots[0].flower, null);
+  assert.strictEqual(s.picked, 1);
+  assert.strictEqual(G.emptyPlots(s).length, 1); // can plant again → progress continues
+  assert.strictEqual(G.harvest(s, 0), null);     // plot 0 is now empty — can't harvest it
+});
+
 test('save → load round-trips; corrupt/garbage load → fresh garden', () => {
   const s = G.newState();
   G.plant(s, 2); G.addWater(s, 3);

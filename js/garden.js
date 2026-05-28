@@ -89,19 +89,22 @@
           flutter(sceneEl.children[i], r.critter);
           toast('Ny gæst i haven: ' + r.critter);
         }
-        if (G.allBloomed(S) && !everBloomed) {
-          everBloomed = true;
-          launchConfetti(2600);
-          setHint('Hele haven blomstrer! 🌸 Hvor er her smukt.');
-          Stats.save('garden', { won: (Stats.get('garden').won || 0) + 1 });
+        if (G.allBloomed(S)) {
+          if (!everBloomed) { everBloomed = true; launchConfetti(2600); Stats.save('garden', { won: (Stats.get('garden').won || 0) + 1 }); }
+          setHint('Hele haven blomstrer! 🌸 Tryk på en blomst for at plukke den og dyrke en ny.');
         }
       } else {
         setHint('Godt — den vokser! Vand igen for mere.');
       }
     } else {
-      // bloomed: just admire
-      wiggle(cell);
-      setHint('En dejlig ' + p.flower + ' — godt arbejde!');
+      // bloomed → harvest: pick the flower, freeing the plot so you can keep growing
+      const f = G.harvest(S, i);
+      save(); renderInfo(); renderScene();
+      pop(sceneEl.children[i]);
+      playTone(523.25, 130, 'sine');
+      vibrate(10);
+      toast('Du plukkede ' + f + ' 🧺');
+      setHint('Plukket! Nu er der plads — tryk på bedet for at plante et nyt frø. 🌱');
     }
   }
 
@@ -120,7 +123,7 @@
   /* ---------- tasks (the water faucet) ---------- */
   function openTask() {
     if (stopped) return;
-    const pool = [taskFindPair, taskRemember, taskCount, taskOdd, taskMissing];
+    const pool = [taskFindPair, taskRemember, taskCount, taskOdd, taskMissing, taskSortColor];
     pool[Math.floor(Math.random() * pool.length)]();
   }
 
@@ -291,6 +294,41 @@
     wireAnswers('#gd-miss-opts .gd-pad');
   }
 
+  // Task F: tap all the flowers of one colour (sort/categorise by colour)
+  const COLOR_FLOWERS = [
+    { word: 'gule', dot: '🟡', flower: '🌻' },
+    { word: 'røde', dot: '🔴', flower: '🌹' },
+    { word: 'lilla', dot: '🟣', flower: '🪻' },
+    { word: 'lyserøde', dot: '🩷', flower: '🌸' },
+  ];
+  function taskSortColor() {
+    const target = COLOR_FLOWERS[Math.floor(Math.random() * COLOR_FLOWERS.length)];
+    const others = COLOR_FLOWERS.filter((c) => c !== target);
+    const tCount = 2 + Math.floor(Math.random() * 3);   // 2..4 of the target colour
+    const items = [];
+    for (let i = 0; i < tCount; i++) items.push(target.flower);
+    const dCount = 3 + Math.floor(Math.random() * 3);   // 3..5 distractors
+    for (let i = 0; i < dCount; i++) items.push(others[Math.floor(Math.random() * others.length)].flower);
+    const scene = pickN(items, items.length);
+    showOverlay(
+      '<div class="gd-task"><h3>Sortér efter farve ' + target.dot + '</h3>' +
+      '<p>Tryk på alle de ' + target.word + ' blomster.</p>' +
+      '<div class="gd-grid">' + scene.map((f) => '<button class="gd-cell"' + (f === target.flower ? ' data-correct="1"' : '') + '>' + f + '</button>').join('') + '</div>' +
+      '<button class="btn btn-secondary gd-cancel">Senere</button></div>'
+    );
+    let found = 0;
+    overlayEl.querySelectorAll('.gd-cell').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.done) return;
+      if (b.dataset.correct) {
+        b.dataset.done = '1'; b.classList.add('right'); playTone(523.25, 110, 'sine');
+        if (++found === tCount) { playTone(659.25, 120, 'sine'); later(finishTask, 420); }
+      } else {
+        b.classList.add('wrong'); playTone(196, 160, 'sine'); vibrate(20); later(() => b.classList.remove('wrong'), 500);
+      }
+    }));
+    overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
+  }
+
   /* ---------- Havelog (collection) ---------- */
   function openHavelog() {
     const flowers = G.FLOWERS.map((f) => '<span class="gd-coll ' + (S.flowersSeen[f] ? 'got' : '') + '">' + (S.flowersSeen[f] ? f : '❔') + '</span>').join('');
@@ -300,6 +338,8 @@
       '<div class="gd-task gd-log"><h3>📖 Havelog</h3>' +
       '<p>Blomster (' + p.flowers + '/' + p.flowersTotal + ')</p><div class="gd-coll-row">' + flowers + '</div>' +
       '<p>Havens gæster (' + p.critters + '/' + p.crittersTotal + ')</p><div class="gd-coll-row">' + critters + '</div>' +
+      '<p>Plukket i alt: <b>' + (S.picked || 0) + '</b> 🧺</p>' +
+      (p.flowers === p.flowersTotal && p.critters === p.crittersTotal ? '<p class="gd-complete">🎉 Du har samlet alle blomster og gæster!</p>' : '') +
       '<button class="btn btn-primary gd-cancel">Luk</button></div>'
     );
     overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
@@ -319,7 +359,9 @@
     const empties = G.emptyPlots(S).length;
     setHint(empties === G.PLOTS
       ? 'Velkommen i haven! Tryk på et bed for at plante et frø. 🌱'
-      : 'Velkommen tilbage! Pas dine planter, eller plant nye.');
+      : G.allBloomed(S)
+        ? 'Haven er fuld og smuk! 🌸 Tryk på en blomst for at plukke den og gøre plads til en ny.'
+        : 'Velkommen tilbage! Pas dine planter, eller plant nye.');
   }
 
   taskBtn.addEventListener('click', openTask);

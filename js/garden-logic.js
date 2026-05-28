@@ -20,7 +20,7 @@
   function newState() {
     const plots = [];
     for (let i = 0; i < PLOTS; i++) plots.push({ stage: 0, flower: null });
-    return { v: VERSION, plots, water: 0, flowersSeen: {}, crittersSeen: {}, bloomedTotal: 0 };
+    return { v: VERSION, plots, water: 0, flowersSeen: {}, crittersSeen: {}, bloomedTotal: 0, picked: 0 };
   }
 
   function plant(s, i) {
@@ -28,6 +28,18 @@
     if (!p || p.stage !== 0) return false;
     p.stage = 1;
     return true;
+  }
+
+  // Harvest a bloomed plot: returns the flower and frees the plot (back to empty) so the
+  // player can keep growing — the way to progress once the whole garden is in bloom.
+  function harvest(s, i) {
+    const p = s.plots[i];
+    if (!p || p.stage !== 3) return null;
+    const flower = p.flower;
+    p.stage = 0;
+    p.flower = null;
+    s.picked = (s.picked || 0) + 1;
+    return flower;
   }
 
   // Water plot i: costs 1 water, advances one stage. Blooming (stage→3) records a flower
@@ -77,13 +89,14 @@
       s.flowersSeen = s.flowersSeen || {};
       s.crittersSeen = s.crittersSeen || {};
       s.bloomedTotal = s.bloomedTotal || 0;
+      s.picked = s.picked || 0;
       return s;
     } catch {
       return newState();
     }
   }
 
-  const api = { FLOWERS, CRITTERS, PLOTS, WATER_PER_TASK, newState, plant, water, addWater, progress, allBloomed, emptyPlots, save, load };
+  const api = { FLOWERS, CRITTERS, PLOTS, WATER_PER_TASK, newState, plant, water, harvest, addWater, progress, allBloomed, emptyPlots, save, load };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.GardenLogic = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
