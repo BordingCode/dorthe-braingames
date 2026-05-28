@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="css/sequence.css?v=20260528b">
   <link rel="stylesheet" href="css/rhythm.css?v=20260528b">
   <link rel="stylesheet" href="css/tictactoe.css?v=20260528d">
+  <link rel="stylesheet" href="css/slidepuzzle.css?v=20260528f">
   <link rel="stylesheet" href="css/stats.css?v=20260324a">
   <style>
     html, body { overflow: hidden !important; max-width: 100vw !important; }
@@ -372,6 +373,24 @@
     </div>
   </div>
 
+  <!-- ===== Skydepuslespil ===== -->
+  <div id="screen-slidepuzzle" class="screen">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome();">← Hjem</button>
+      <span class="title">Skydepuslespil</span>
+      <button class="difficulty-btn" id="slidepuzzle-diff-btn">Let</button>
+    </div>
+    <div class="game-info">
+      <span>Træk: <b id="slidepuzzle-moves">0</b></span>
+      <span>Tid: <b id="slidepuzzle-timer">0:00</b></span>
+      <span id="slidepuzzle-best">🏆 –</span>
+    </div>
+    <div class="game-area">
+      <div class="sp-status" id="slidepuzzle-status">Skub tallene på plads</div>
+      <div id="slidepuzzle-board" class="sp-board"></div>
+    </div>
+  </div>
+
   <!-- ===== Stats / Results ===== -->
   <div id="screen-stats" class="screen">
     <div class="game-header">
@@ -438,6 +457,8 @@
   <script src="js/sequence.js?v=20260528b"></script>
   <script src="js/rhythm.js?v=20260528b"></script>
   <script src="js/tictactoe.js?v=20260528e"></script>
+  <script src="js/slidepuzzle-logic.js?v=20260528f"></script>
+  <script src="js/slidepuzzle.js?v=20260528f"></script>
   <script>
     function initYatzy() {
       document.getElementById('yatzy-frame').src = 'https://bordingcode.github.io/yatzy/';
