@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = 4;
+  const VERSION = 5;
   // the world grows through these stages (the "small bed → huge wild park" arc)
   const STAGES = [
     { id: 'bed', name: 'Lille bed', cols: 3, rows: 3 },
@@ -23,7 +23,20 @@
   // cosmetic season derived from how big the world has grown (renewal as it reaches the wild)
   const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
   const SEASON_FOR_STAGE = [0, 1, 2, 3, 0];
-  const FLOWERS = ['🌷', '🌻', '🌹', '🌼', '🌸', '🪻'];
+  const FLOWERS = ['🌷', '🌻', '🌹', '🌼', '🌸', '🪻', '🌺', '🏵️'];
+  const COMMON_FLOWERS = ['🌷', '🌻', '🌹', '🌼', '🌸', '🪻'];
+  const RARE = ['🌺', '🏵️']; // appear occasionally — a small thrill to discover
+  const FLOWER_NAMES = { '🌷': 'Tulipan', '🌻': 'Solsikke', '🌹': 'Rose', '🌼': 'Bellis', '🌸': 'Kirsebærblomst', '🪻': 'Hyacint', '🌺': 'Hibiscus', '🏵️': 'Morgenfrue' };
+  const FLOWER_FACTS = {
+    '🌷': 'Tulipaner blev engang handlet så dyrt som huse i Holland.',
+    '🌻': 'Unge solsikker vender hovedet og følger solen hen over himlen.',
+    '🌹': 'Roser har været dyrket i haver i over 5.000 år.',
+    '🌼': 'Bellis lukker kronbladene om natten og åbner dem ved daggry.',
+    '🌸': 'Kirsebærtræer blomstrer kun nogle få uger om foråret.',
+    '🪻': 'Hyacintens søde duft kan fylde et helt rum.',
+    '🌺': 'En hibiscus-blomst holder kun én dag — men der kommer altid nye.',
+    '🏵️': 'Morgenfruer plantes ofte i køkkenhaven, fordi de holder skadedyr væk.',
+  };
   const WILDLIFE = ['🦋', '🐝', '🐞', '🐦', '🐸', '🦔', '🐿️', '🦆'];
   const BUILDABLE = ['tree', 'pond', 'feeder', 'beehouse'];
   const BUILD_COST = {
@@ -68,6 +81,12 @@
   const CHEERS = ['Hvor er du dygtig! 🐾', 'Se lige den have! 🌿', 'Naturen takker dig! 💚', 'Sikke et flot arbejde! ✨'];
 
   function pick(arr, rng) { return arr[Math.floor((rng || Math.random)() * arr.length)]; }
+  // mostly common flowers, with an occasional rare one to discover
+  function pickFlower(rng) {
+    const rnd = (rng || Math.random);
+    if (rnd() < 0.12) return RARE[Math.floor(rnd() * RARE.length)];
+    return COMMON_FLOWERS[Math.floor(rnd() * COMMON_FLOWERS.length)];
+  }
   function makeGrid(n) { const g = []; for (let i = 0; i < n; i++) g.push({ type: 'soil', stage: 0, flower: null }); return g; }
 
   function newState() {
@@ -76,7 +95,7 @@
       v: VERSION, stage: 0, cols: s0.cols, rows: s0.rows, chapter: 1,
       grid: makeGrid(s0.cols * s0.rows),
       resources: { sol: 1, vand: 3, froe: 3 },
-      questIndex: 0, wildlifeSeen: {}, picked: 0, timeOfDay: 0,
+      questIndex: 0, wildlifeSeen: {}, flowersSeen: {}, builtSeen: {}, picked: 0, timeOfDay: 0,
     };
   }
 
@@ -99,7 +118,12 @@
     const t = s.grid[i];
     if (!t || t.type !== 'flower' || t.stage < 1 || t.stage >= 3 || !canAfford(s, WATER_COST)) return { ok: false };
     spend(s, WATER_COST); t.stage++;
-    if (t.stage === 3) { t.flower = pick(FLOWERS, rng); return { ok: true, bloomed: true, flower: t.flower, wildlife: refreshWildlife(s) }; }
+    if (t.stage === 3) {
+      t.flower = pickFlower(rng);
+      const newFlower = !s.flowersSeen[t.flower];
+      s.flowersSeen[t.flower] = true;
+      return { ok: true, bloomed: true, flower: t.flower, newFlower: newFlower, wildlife: refreshWildlife(s) };
+    }
     return { ok: true, bloomed: false };
   }
   function harvest(s, i) {
@@ -113,7 +137,9 @@
     const t = s.grid[i], cost = costOf(type);
     if (!t || t.type !== 'soil' || !cost || !canAfford(s, cost)) return { ok: false };
     spend(s, cost); t.type = type; t.stage = 0; t.flower = null;
-    return { ok: true, wildlife: BUILD_COST[type] ? refreshWildlife(s) : [] };
+    const newBuild = !s.builtSeen[type];
+    s.builtSeen[type] = true;
+    return { ok: true, newBuild: newBuild, wildlife: BUILD_COST[type] ? refreshWildlife(s) : [] };
   }
   const build = place; // back-compat alias (buildables go through place too)
   // rearrange: move any non-soil tile onto an empty (soil) tile, preserving its state
@@ -146,17 +172,18 @@
   }
 
   /* ---------- quests (region 1 arc) ---------- */
+  // Rewards are a modest bonus — the main income is playing brain games (gentle, earned).
   const QUESTS = [
-    { id: 'plant3', icon: '🌱', title: 'Plant og dyrk 3 blomster', goal: (s) => { const n = bloomCount(s); return { done: n >= 3, text: n + '/3 blomster i blomst' }; }, reward: { sol: 2, froe: 2 } },
-    { id: 'bee', icon: '🐝', title: 'Tiltræk en bi', goal: (s) => ({ done: !!s.wildlifeSeen['🐝'], text: s.wildlifeSeen['🐝'] ? 'klaret!' : 'bier kommer til en have fuld af blomster' }), reward: { vand: 4 } },
-    { id: 'feeder', icon: '🛁', title: 'Byg et fuglebad', goal: (s) => ({ done: hasType(s, 'feeder'), text: hasType(s, 'feeder') ? 'klaret!' : 'byg et fuglebad fra menuen' }), reward: { sol: 2, froe: 2 } },
-    { id: 'bird', icon: '🐦', title: 'Tiltræk en fugl', goal: (s) => ({ done: !!s.wildlifeSeen['🐦'], text: s.wildlifeSeen['🐦'] ? 'klaret!' : 'fugle elsker fuglebade og træer' }), reward: { vand: 3, sol: 1 } },
-    { id: 'tree', icon: '🌳', title: 'Plant et træ', goal: (s) => ({ done: hasType(s, 'tree'), text: hasType(s, 'tree') ? 'klaret!' : 'byg et træ fra menuen' }), reward: { vand: 3, froe: 2 } },
-    { id: 'pond', icon: '🪷', title: 'Byg en dam', goal: (s) => ({ done: hasType(s, 'pond'), text: hasType(s, 'pond') ? 'klaret!' : 'byg en dam fra menuen' }), reward: { sol: 3, froe: 1 } },
-    { id: 'frog', icon: '🐸', title: 'Tiltræk en frø', goal: (s) => ({ done: !!s.wildlifeSeen['🐸'], text: s.wildlifeSeen['🐸'] ? 'klaret!' : 'frøer flytter ind ved en dam' }), reward: { vand: 4, froe: 2 } },
-    { id: 'thrive', icon: '🌸', title: 'Få haven til at trives', goal: (s) => { const ok = bloomCount(s) >= 6 && hasType(s, 'tree') && hasType(s, 'pond') && hasType(s, 'feeder'); return { done: ok, text: 'fyld haven: 6 blomster + træ + dam + fuglebad' }; }, reward: { sol: 5, vand: 5, froe: 5 } },
-    { id: 'squirrel', icon: '🐿️', title: 'Tiltræk et egern', goal: (s) => ({ done: !!s.wildlifeSeen['🐿️'], text: s.wildlifeSeen['🐿️'] ? 'klaret!' : 'egern kommer hvor der står mindst to træer' }), reward: { froe: 4, sol: 2 } },
-    { id: 'wildpark', icon: '🌳', title: 'Gør haven helt vild', finale: true, goal: (s) => { const ok = bloomCount(s) >= 8 && Object.keys(s.wildlifeSeen).length >= 7; return { done: ok, text: '8 blomster + 7 forskellige dyr i haven' }; }, reward: { sol: 6, vand: 6, froe: 6 } },
+    { id: 'plant3', icon: '🌱', title: 'Plant og dyrk 3 blomster', goal: (s) => { const n = bloomCount(s); return { done: n >= 3, text: n + '/3 blomster i blomst' }; }, reward: { sol: 1, froe: 1 } },
+    { id: 'bee', icon: '🐝', title: 'Tiltræk en bi', goal: (s) => ({ done: !!s.wildlifeSeen['🐝'], text: s.wildlifeSeen['🐝'] ? 'klaret!' : 'bier kommer til en have fuld af blomster' }), reward: { vand: 2 } },
+    { id: 'feeder', icon: '🛁', title: 'Byg et fuglebad', goal: (s) => ({ done: hasType(s, 'feeder'), text: hasType(s, 'feeder') ? 'klaret!' : 'byg et fuglebad fra menuen' }), reward: { froe: 2 } },
+    { id: 'bird', icon: '🐦', title: 'Tiltræk en fugl', goal: (s) => ({ done: !!s.wildlifeSeen['🐦'], text: s.wildlifeSeen['🐦'] ? 'klaret!' : 'fugle elsker fuglebade og træer' }), reward: { vand: 2 } },
+    { id: 'tree', icon: '🌳', title: 'Plant et træ', goal: (s) => ({ done: hasType(s, 'tree'), text: hasType(s, 'tree') ? 'klaret!' : 'byg et træ fra menuen' }), reward: { froe: 2 } },
+    { id: 'pond', icon: '🪷', title: 'Byg en dam', goal: (s) => ({ done: hasType(s, 'pond'), text: hasType(s, 'pond') ? 'klaret!' : 'byg en dam fra menuen' }), reward: { sol: 2 } },
+    { id: 'frog', icon: '🐸', title: 'Tiltræk en frø', goal: (s) => ({ done: !!s.wildlifeSeen['🐸'], text: s.wildlifeSeen['🐸'] ? 'klaret!' : 'frøer flytter ind ved en dam' }), reward: { vand: 2 } },
+    { id: 'thrive', icon: '🌸', title: 'Få haven til at trives', goal: (s) => { const ok = bloomCount(s) >= 6 && hasType(s, 'tree') && hasType(s, 'pond') && hasType(s, 'feeder'); return { done: ok, text: 'fyld haven: 6 blomster + træ + dam + fuglebad' }; }, reward: { sol: 2, vand: 2, froe: 2 } },
+    { id: 'squirrel', icon: '🐿️', title: 'Tiltræk et egern', goal: (s) => ({ done: !!s.wildlifeSeen['🐿️'], text: s.wildlifeSeen['🐿️'] ? 'klaret!' : 'egern kommer hvor der står mindst to træer' }), reward: { froe: 2 } },
+    { id: 'wildpark', icon: '🌳', title: 'Gør haven helt vild', finale: true, goal: (s) => { const ok = bloomCount(s) >= 8 && Object.keys(s.wildlifeSeen).length >= 7; return { done: ok, text: '8 blomster + 7 forskellige dyr i haven' }; }, reward: { sol: 3, vand: 3, froe: 3 } },
   ];
   function currentQuest(s) { return QUESTS[s.questIndex] || null; }
   function tryAdvance(s) {
@@ -193,10 +220,13 @@
     return { pairs: c >= 3 ? 4 : 3, seqLen: Math.min(3 + Math.floor((c - 1) / 2), 6), oddTiles: c >= 3 ? 16 : 9, countMax: 5 + c, sortTargets: c >= 4 ? 4 : 3 };
   }
 
+  const DECORATIONS = BUILDABLE.concat(DECOR); // everything you can place, for the almanac
   function progress(s) {
     return {
       flowers: bloomCount(s),
       wildlife: Object.keys(s.wildlifeSeen).length, wildlifeTotal: WILDLIFE.length,
+      flowerKinds: Object.keys(s.flowersSeen || {}).length, flowerKindsTotal: FLOWERS.length,
+      builtKinds: Object.keys(s.builtSeen || {}).length, builtKindsTotal: DECORATIONS.length,
       quests: s.questIndex, questsTotal: QUESTS.length,
       stage: s.stage, stageName: STAGES[s.stage].name, stagesTotal: STAGES.length,
     };
@@ -213,6 +243,8 @@
       s.resources = s.resources || { sol: 0, vand: 0, froe: 0 };
       for (const k of ['sol', 'vand', 'froe']) if (typeof s.resources[k] !== 'number' || s.resources[k] < 0) s.resources[k] = 0;
       s.wildlifeSeen = s.wildlifeSeen || {};
+      s.flowersSeen = s.flowersSeen || {};
+      s.builtSeen = s.builtSeen || {};
       if (typeof s.questIndex !== 'number' || s.questIndex < 0) s.questIndex = 0;
       if (typeof s.chapter !== 'number' || s.chapter < 1) s.chapter = 1;
       if (typeof s.stage !== 'number' || s.stage < 0 || s.stage >= STAGES.length) s.stage = 0;
@@ -223,7 +255,8 @@
   }
 
   const api = {
-    VERSION, STAGES, TIMES, SEASONS, SEASON_FOR_STAGE, FLOWERS, WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI,
+    VERSION, STAGES, TIMES, SEASONS, SEASON_FOR_STAGE, FLOWERS, RARE, FLOWER_NAMES, FLOWER_FACTS,
+    WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI, DECORATIONS,
     DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,

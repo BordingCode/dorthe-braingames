@@ -246,6 +246,10 @@
 .gd-log .gd-fact:last-child { margin-bottom: 0; }
 .gd-log .gd-fact span { font-size: 18px; margin-right: 3px; }
 .gd-log .gd-facts-empty { font-size: 13.5px; font-style: italic; color: var(--text-muted); }
+/* almanac section headers + collection */
+.gd-log .gd-alm-h { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 6px; color: var(--primary); font-size: 15px; font-weight: 700; }
+.gd-log .gd-alm-h span { color: var(--text-muted); font-size: 13px; }
+.gd-log .gd-fact b { color: var(--primary-dark); }
 
 /* ---------- storybook feel: bloom, grow-in, sparkles, pop-numbers, arrivals ---------- */
 .gd-petals { transform-box: view-box; transform-origin: 50px 40px; }

@@ -8,8 +8,8 @@
 (function (root) {
   'use strict';
   const INK = '#3c4a2e';
-  const PETAL = { '🌷': '#ec6a8a', '🌻': '#f6c83c', '🌹': '#e0413f', '🌼': '#fbfbf2', '🌸': '#f4a6c0', '🪻': '#9b6fc7' };
-  const CENTER = { '🌻': '#8a5a2b', '🌼': '#f6c83c' };
+  const PETAL = { '🌷': '#ec6a8a', '🌻': '#f6c83c', '🌹': '#e0413f', '🌼': '#fbfbf2', '🌸': '#f4a6c0', '🪻': '#9b6fc7', '🌺': '#e8557f', '🏵️': '#f0902e' };
+  const CENTER = { '🌻': '#8a5a2b', '🌼': '#f6c83c', '🌺': '#c0314f', '🏵️': '#b5641c' };
 
   const svg = (inner) => '<svg class="gd-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">' + inner + '</svg>';
   // soft shadow on the ground beneath an object, so it feels planted not floating

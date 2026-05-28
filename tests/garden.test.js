@@ -131,7 +131,25 @@ test('save → load round-trips; corrupt / old-version load → fresh', () => {
   assert.deepStrictEqual(G.load(G.save(s)), s);
   assert.deepStrictEqual(G.load('not json {{'), G.newState());
   assert.deepStrictEqual(G.load('{"v":2}'), G.newState());
-  assert.deepStrictEqual(G.load('{"v":3}'), G.newState()); // pre-M5 save (no timeOfDay) is replaced
+  assert.deepStrictEqual(G.load('{"v":3}'), G.newState());
+  assert.deepStrictEqual(G.load('{"v":4}'), G.newState()); // older saves are replaced cleanly
+});
+
+test('flowers are collected; rares still belong to FLOWERS; blooming records the kind', () => {
+  G.RARE.forEach((r) => assert.ok(G.FLOWERS.includes(r)));     // rare flowers are valid blooms
+  const s = G.newState(); s.resources = { sol: 9, vand: 99, froe: 9 };
+  const r = bloom(s, 0);
+  assert.ok(r.bloomed && G.FLOWERS.includes(r.flower));
+  assert.ok(s.flowersSeen[r.flower]);                          // recorded in the almanac
+  assert.strictEqual(typeof r.newFlower, 'boolean');
+});
+
+test('placing something records it in the build collection (once)', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 9, froe: 9 };
+  const r = G.place(s, 'lantern', 0);
+  assert.ok(r.ok && r.newBuild === true);
+  assert.ok(s.builtSeen['lantern']);
+  assert.strictEqual(G.place(s, 'lantern', 1).newBuild, false); // already discovered
 });
 
 test('timeOfDay: starts at dawn, advances and wraps; survives load', () => {

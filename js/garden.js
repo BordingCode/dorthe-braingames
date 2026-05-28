@@ -67,6 +67,14 @@
       GardenMusic.setScene({ pond: L.hasType(S, 'pond'), birds: L.hasType(S, 'tree') || L.hasType(S, 'feeder') || L.hasType(S, 'birdhouse'), bees: L.hasType(S, 'beehouse') });
     }
   }
+  function discoverFlower(f, cell) {
+    const name = L.FLOWER_NAMES[f] || 'blomst';
+    L.earn(S, { froe: 2 }); save(); renderHUD();
+    if (cell) sparkle(cell, 6);
+    renderGuide('Sikke en flot blomst — en ' + name + '! 🌸');
+    later(() => { if (!stopped) renderGuide(); }, 2800);
+    later(() => { toast('🌸 Ny blomst opdaget: ' + name + '!  +2🌱'); popAtHud('+2🌱'); }, 550);
+  }
 
   /* ---------- render ---------- */
   function ensureLayers() {
@@ -164,7 +172,9 @@
           playTone(330, 140, 'sine'); const b = pendingBuild; pendingBuild = null;
           afterAction('Du placerede ' + NAME[b].toLowerCase() + '! 🌿');
           const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); sparkle(cell, 5); later(() => cell.classList.remove('gd-grown'), 500); }
-          mEvent('build'); updateScene(); celebrateWildlife(r.wildlife);
+          mEvent('build'); updateScene();
+          if (r.newBuild) later(() => toast('✨ Ny ting i haven: ' + (NAME[b] || '') + '!'), 450);
+          celebrateWildlife(r.wildlife);
         } else { pendingBuild = null; setHint('Ikke nok ressourcer til det — lav en opgave.'); renderGrid(); }
       } else { pendingBuild = null; setHint('Vælg et tomt bed at bygge på.'); renderGrid(); }
       return;
@@ -184,7 +194,8 @@
           afterAction('Den sprang ud! ' + r.flower);
           const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-bloomed'); sparkle(cell, 8); later(() => cell.classList.remove('gd-bloomed'), 850); }
           mEvent('bloom');
-          if (Math.random() < 0.6) { renderGuide(pickCheer()); later(() => { if (!stopped) renderGuide(); }, 2600); }
+          if (r.newFlower) discoverFlower(r.flower, cell);
+          else if (Math.random() < 0.6) { renderGuide(pickCheer()); later(() => { if (!stopped) renderGuide(); }, 2600); }
           celebrateWildlife(r.wildlife);
         } else {
           afterAction('Godt — den vokser! 💧 Vand igen.');
@@ -323,21 +334,35 @@
     checkQuests();
   }
 
+  function collRow(items, seenMap) {
+    return '<div class="gd-coll-row">' + items.map((it) =>
+      '<span class="gd-coll ' + (seenMap[it] ? 'got' : '') + '">' + (seenMap[it] ? it : '❔') + '</span>').join('') + '</div>';
+  }
+  function factList(items, seenMap, names, facts, emptyMsg) {
+    const seen = items.filter((it) => seenMap[it] && (facts[it] || (names && names[it])));
+    if (!seen.length) return '<p class="gd-facts-empty">' + emptyMsg + '</p>';
+    return '<div class="gd-facts">' + seen.map((it) => {
+      const nm = names && names[it] ? '<b>' + names[it] + '</b>' : '';
+      const ft = facts[it] ? (nm ? ' — ' : '') + facts[it] : '';
+      return '<p class="gd-fact"><span>' + it + '</span> ' + nm + ft + '</p>';
+    }).join('') + '</div>';
+  }
   function openHavelog() {
-    const wl = L.WILDLIFE.map((w) => '<span class="gd-coll ' + (S.wildlifeSeen[w] ? 'got' : '') + '">' + (S.wildlifeSeen[w] ? w : '❔') + '</span>').join('');
     const p = L.progress(S);
-    const done = p.quests >= p.questsTotal;
-    const seenFacts = L.WILDLIFE.filter((w) => S.wildlifeSeen[w] && L.FACTS[w]);
-    const facts = seenFacts.length
-      ? '<div class="gd-facts"><p class="gd-facts-h">💡 Vidste du?</p>' +
-        seenFacts.map((w) => '<p class="gd-fact"><span>' + w + '</span> ' + L.FACTS[w] + '</p>').join('') + '</div>'
-      : '<p class="gd-facts-empty">Tiltræk dyr for at låse små vidste-du-fakta op. 💡</p>';
+    const buildNames = {}; L.DECORATIONS.forEach((t) => { buildNames[t] = NAME[t] || ''; });
+    const allDone = p.flowerKinds >= p.flowerKindsTotal && p.wildlife >= p.wildlifeTotal && p.builtKinds >= p.builtKindsTotal;
     overlayEl.innerHTML = '<div class="gd-task gd-log"><h3>📖 Havelog</h3>' +
-      '<p>Naturens gæster (' + p.wildlife + '/' + p.wildlifeTotal + ')</p><div class="gd-coll-row">' + wl + '</div>' +
-      facts +
-      '<p>Blomster i blomst: <b>' + p.flowers + '</b> · plukket: <b>' + (S.picked || 0) + '</b> 🧺</p>' +
-      '<p>Opgaver klaret: <b>' + p.quests + '/' + p.questsTotal + '</b></p>' +
-      (done && p.wildlife === p.wildlifeTotal ? '<p class="gd-complete">🎉 Haven er i fuldt flor og fuld af liv!</p>' : '') +
+      '<p>Din samling — opdag det hele lidt efter lidt 🌿</p>' +
+      '<h4 class="gd-alm-h">🌸 Blomster <span>' + p.flowerKinds + '/' + p.flowerKindsTotal + '</span></h4>' +
+      collRow(L.FLOWERS, S.flowersSeen) +
+      factList(L.FLOWERS, S.flowersSeen, L.FLOWER_NAMES, L.FLOWER_FACTS, 'Dyrk blomster for at fylde samlingen. 🌱') +
+      '<h4 class="gd-alm-h">🦋 Dyr <span>' + p.wildlife + '/' + p.wildlifeTotal + '</span></h4>' +
+      collRow(L.WILDLIFE, S.wildlifeSeen) +
+      factList(L.WILDLIFE, S.wildlifeSeen, null, L.FACTS, 'Tiltræk dyr for at låse vidste-du-fakta op. 💡') +
+      '<h4 class="gd-alm-h">🪴 Pynt & natur <span>' + p.builtKinds + '/' + p.builtKindsTotal + '</span></h4>' +
+      collRow(L.DECORATIONS, S.builtSeen) +
+      factList(L.DECORATIONS, S.builtSeen, buildNames, {}, 'Byg og pynt for at fylde denne side. 🔨') +
+      (allDone ? '<p class="gd-complete">🎉 Du har opdaget det hele! Haven er fuld af liv.</p>' : '') +
       '<button class="btn btn-primary gd-cancel">Luk</button></div>';
     overlayEl.classList.add('active');
     overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
