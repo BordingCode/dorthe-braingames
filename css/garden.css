@@ -100,12 +100,17 @@
 .gd-task {
   background: var(--surface); border-radius: var(--radius-lg); padding: 20px 18px;
   width: 100%; max-width: 380px; text-align: center; box-shadow: var(--shadow-lg);
+  max-height: 88vh; overflow-y: auto;
 }
 .gd-task h3 { margin: 0 0 4px; color: var(--primary); }
 .gd-task p { margin: 0 0 14px; color: var(--text-muted); }
 
 /* build menu */
+.gd-build-h { margin: 6px 0 8px; font-size: 15px; color: var(--text-muted); text-align: left; }
 .gd-build-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+/* tile action menu (move / remove) */
+.gd-tilemenu { display: flex; gap: 10px; margin-bottom: 12px; }
+.gd-tilemenu .btn { flex: 1; }
 .gd-build-opt {
   border: 2px solid var(--surface-alt); border-radius: var(--radius); background: var(--surface);
   padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;

@@ -3,11 +3,16 @@
 (function () {
   const L = GardenLogic;
   const KEY = 'bg_garden';
-  const BUILD_NAME = { tree: 'Træ', pond: 'Dam', feeder: 'Fuglebad', beehouse: 'Bistade' };
+  const NAME = {
+    tree: 'Træ', pond: 'Dam', feeder: 'Fuglebad', beehouse: 'Bistade',
+    stone: 'Sten', mushroom: 'Svamp', hedge: 'Hæk', path: 'Sti', lantern: 'Lanterne',
+  };
+  const EMOJI_OF = (type) => L.BUILD_EMOJI[type] || L.DECOR_EMOJI[type] || '';
+  const COST_OF = (type) => L.BUILD_COST[type] || L.DECOR_COST[type];
   const RES_ICON = { sol: '☀️', vand: '💧', froe: '🌱' };
   const TASK_REWARDS = [{ vand: 2, sol: 1 }, { froe: 2 }, { sol: 2, vand: 1 }, { vand: 3 }, { froe: 1, sol: 1, vand: 1 }];
 
-  let S = null, stopped = false, timers = [], pendingBuild = null, musicStarted = false;
+  let S = null, stopped = false, timers = [], pendingBuild = null, pendingMove = null, musicStarted = false;
 
   const gridEl = document.getElementById('garden-grid');
   const hudEl = document.getElementById('garden-hud');
@@ -64,9 +69,10 @@
   function renderGrid() {
     gridEl.innerHTML = '';
     gridEl.style.setProperty('--cols', S.cols);
+    const placing = pendingBuild || pendingMove !== null;
     S.grid.forEach((t, i) => {
       const b = document.createElement('button');
-      b.className = 'gd-tile t-' + t.type + (t.type === 'flower' ? ' s-' + t.stage : '') + (pendingBuild && t.type === 'soil' ? ' placeable' : '');
+      b.className = 'gd-tile t-' + t.type + (t.type === 'flower' ? ' s-' + t.stage : '') + (placing && t.type === 'soil' ? ' placeable' : '');
       b.innerHTML = GardenArt.tile(t);
       b.setAttribute('aria-label', 'Bed ' + (i + 1) + ' (' + t.type + ')');
       b.addEventListener('click', () => onTile(i));
@@ -82,10 +88,17 @@
     if (stopped) return;
     startMusicOnce();
     const t = S.grid[i];
+    if (pendingMove !== null) {
+      if (t.type === 'soil') {
+        if (L.move(S, pendingMove, i)) { playTone(392, 140, 'sine'); pendingMove = null; pop(gridEl.children[i]); afterAction('Flyttet! 🌿'); }
+        else { pendingMove = null; renderGrid(); }
+      } else { pendingMove = null; setHint('Vælg et tomt bed at flytte det hen til.'); renderGrid(); }
+      return;
+    }
     if (pendingBuild) {
       if (t.type === 'soil') {
-        const r = L.build(S, pendingBuild, i);
-        if (r.ok) { playTone(330, 140, 'sine'); pop(gridEl.children[i]); const b = pendingBuild; pendingBuild = null; afterAction('Du byggede et ' + BUILD_NAME[b].toLowerCase() + '! 🌿'); celebrateWildlife(r.wildlife); }
+        const r = L.place(S, pendingBuild, i);
+        if (r.ok) { playTone(330, 140, 'sine'); pop(gridEl.children[i]); const b = pendingBuild; pendingBuild = null; afterAction('Du placerede ' + NAME[b].toLowerCase() + '! 🌿'); celebrateWildlife(r.wildlife); }
         else { pendingBuild = null; setHint('Ikke nok ressourcer til det — lav en opgave.'); renderGrid(); }
       } else { pendingBuild = null; setHint('Vælg et tomt bed at bygge på.'); renderGrid(); }
       return;
@@ -105,8 +118,25 @@
         afterAction('Du plukkede ' + f + ' 🧺 — nu er der plads igen.');
       }
     } else {
-      wiggle(gridEl.children[i]); setHint('Et dejligt ' + (BUILD_NAME[t.type] || 'sted').toLowerCase() + ' — naturen elsker det.');
+      wiggle(gridEl.children[i]); openTileMenu(i);
     }
+  }
+
+  function openTileMenu(i) {
+    const t = S.grid[i];
+    overlayEl.innerHTML = '<div class="gd-task"><h3>' + EMOJI_OF(t.type) + ' ' + (NAME[t.type] || 'Bed') + '</h3>' +
+      '<p>Vil du flytte det eller fjerne det?</p>' +
+      '<div class="gd-tilemenu"><button class="btn btn-primary" data-act="move">↔️ Flyt</button>' +
+      '<button class="btn btn-secondary" data-act="remove">🗑️ Fjern</button></div>' +
+      '<button class="btn btn-secondary gd-cancel">Behold</button></div>';
+    overlayEl.classList.add('active');
+    overlayEl.querySelector('[data-act="move"]').addEventListener('click', () => {
+      pendingMove = i; closeOverlay(); setHint('Tryk på et tomt bed for at flytte det dertil. ↔️'); renderGrid();
+    });
+    overlayEl.querySelector('[data-act="remove"]').addEventListener('click', () => {
+      L.remove(S, i); playTone(220, 120, 'sine'); closeOverlay(); afterAction('Fjernet — nu er der plads igen. 🧺');
+    });
+    overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
   }
 
   function celebrateWildlife(list) {
@@ -147,22 +177,26 @@
   function closeOverlay() { overlayEl.classList.remove('active'); overlayEl.innerHTML = ''; }
   const costStr = (cost) => Object.keys(cost).map((k) => RES_ICON[k] + cost[k]).join(' ');
 
+  function buildOpt(type) {
+    const cost = COST_OF(type), ok = L.canAfford(S, cost);
+    return '<button class="gd-build-opt"' + (ok ? '' : ' disabled') + ' data-type="' + type + '">' +
+      '<span class="gd-build-emoji">' + EMOJI_OF(type) + '</span>' +
+      '<span class="gd-build-name">' + NAME[type] + '</span>' +
+      '<span class="gd-build-cost">' + costStr(cost) + '</span></button>';
+  }
   function openBuildMenu() {
     startMusicOnce();
-    const items = L.BUILDABLE.map((type) => {
-      const cost = L.BUILD_COST[type], ok = L.canAfford(S, cost);
-      return '<button class="gd-build-opt"' + (ok ? '' : ' disabled') + ' data-type="' + type + '">' +
-        '<span class="gd-build-emoji">' + L.BUILD_EMOJI[type] + '</span>' +
-        '<span class="gd-build-name">' + BUILD_NAME[type] + '</span>' +
-        '<span class="gd-build-cost">' + costStr(cost) + '</span></button>';
-    }).join('');
-    overlayEl.innerHTML = '<div class="gd-task"><h3>🔨 Byg i haven</h3><p>Vælg noget — tryk så på et tomt bed.</p>' +
-      '<div class="gd-build-menu">' + items + '</div><button class="btn btn-secondary gd-cancel">Luk</button></div>';
+    const builds = L.BUILDABLE.map(buildOpt).join('');
+    const decor = L.DECOR.map(buildOpt).join('');
+    overlayEl.innerHTML = '<div class="gd-task"><h3>🔨 Byg & pynt</h3><p>Vælg noget — tryk så på et tomt bed.</p>' +
+      '<h4 class="gd-build-h">🌿 Byg natur</h4><div class="gd-build-menu">' + builds + '</div>' +
+      '<h4 class="gd-build-h">🎀 Pynt (kun for hyggen)</h4><div class="gd-build-menu">' + decor + '</div>' +
+      '<button class="btn btn-secondary gd-cancel">Luk</button></div>';
     overlayEl.classList.add('active');
     overlayEl.querySelectorAll('.gd-build-opt').forEach((b) => b.addEventListener('click', () => {
       if (b.disabled) return;
       pendingBuild = b.dataset.type; closeOverlay();
-      setHint('Tryk på et tomt bed for at placere ' + L.BUILD_EMOJI[pendingBuild]); renderGrid();
+      setHint('Tryk på et tomt bed for at placere ' + EMOJI_OF(pendingBuild)); renderGrid();
     }));
     overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
   }
@@ -204,7 +238,7 @@
 
   /* ---------- lifecycle ---------- */
   function initGarden() {
-    stopped = false; clearTimers(); pendingBuild = null;
+    stopped = false; clearTimers(); pendingBuild = null; pendingMove = null;
     let raw = null; try { raw = localStorage.getItem(KEY); } catch {}
     S = raw ? L.load(raw) : L.newState();
     closeOverlay();
@@ -221,6 +255,6 @@
   if (musicBtn) musicBtn.addEventListener('click', () => { startMusicOnce(); GardenMusic.toggle(); updateMusicBtn(); });
 
   window.initGarden = initGarden;
-  window.gameRestarters.garden = function () { closeOverlay(); pendingBuild = null; renderAll(); };
+  window.gameRestarters.garden = function () { closeOverlay(); pendingBuild = null; pendingMove = null; renderAll(); };
   window.gameCleanups.garden = function () { stopped = true; clearTimers(); if (typeof GardenMusic !== 'undefined') GardenMusic.stop(); musicStarted = false; save(); };
 })();

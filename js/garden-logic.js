@@ -25,6 +25,13 @@
     feeder: { vand: 2, sol: 1 }, beehouse: { froe: 2, sol: 1 },
   };
   const BUILD_EMOJI = { soil: '', tree: '🌳', pond: '🪷', feeder: '🛁', beehouse: '🐝' };
+  // purely cosmetic decorations (no wildlife effect) — free self-expression, cheap
+  const DECOR = ['stone', 'mushroom', 'hedge', 'path', 'lantern'];
+  const DECOR_COST = {
+    stone: { sol: 1 }, mushroom: { froe: 1 }, hedge: { froe: 2 },
+    path: { sol: 1 }, lantern: { vand: 2 },
+  };
+  const DECOR_EMOJI = { stone: '🪨', mushroom: '🍄', hedge: '🌿', path: '🟫', lantern: '🏮' };
   const PLANT_COST = { froe: 1 };
   const WATER_COST = { vand: 1 };
 
@@ -68,10 +75,27 @@
     if (!t || t.type !== 'flower' || t.stage !== 3) return null;
     const f = t.flower; t.type = 'soil'; t.stage = 0; t.flower = null; s.picked = (s.picked || 0) + 1; return f;
   }
-  function build(s, type, i) {
+  const costOf = (type) => BUILD_COST[type] || DECOR_COST[type] || null;
+  // unified placement for buildables AND decor; only buildables refresh wildlife
+  function place(s, type, i) {
+    const t = s.grid[i], cost = costOf(type);
+    if (!t || t.type !== 'soil' || !cost || !canAfford(s, cost)) return { ok: false };
+    spend(s, cost); t.type = type; t.stage = 0; t.flower = null;
+    return { ok: true, wildlife: BUILD_COST[type] ? refreshWildlife(s) : [] };
+  }
+  const build = place; // back-compat alias (buildables go through place too)
+  // rearrange: move any non-soil tile onto an empty (soil) tile, preserving its state
+  function move(s, from, to) {
+    if (from === to) return false;
+    const a = s.grid[from], b = s.grid[to];
+    if (!a || !b || a.type === 'soil' || b.type !== 'soil') return false;
+    s.grid[to] = a; s.grid[from] = { type: 'soil', stage: 0, flower: null }; return true;
+  }
+  // clear a tile back to soil (no refund — wildlife already seen stays seen)
+  function remove(s, i) {
     const t = s.grid[i];
-    if (!t || t.type !== 'soil' || !BUILD_COST[type] || !canAfford(s, BUILD_COST[type])) return { ok: false };
-    spend(s, BUILD_COST[type]); t.type = type; t.stage = 0; t.flower = null; return { ok: true, wildlife: refreshWildlife(s) };
+    if (!t || t.type === 'soil') return false;
+    s.grid[i] = { type: 'soil', stage: 0, flower: null }; return true;
   }
 
   function refreshWildlife(s) {
@@ -160,8 +184,9 @@
   }
 
   const api = {
-    VERSION, STAGES, FLOWERS, WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI, PLANT_COST, WATER_COST, QUESTS,
-    newState, canAfford, spend, earn, plant, water, harvest, build, refreshWildlife,
+    VERSION, STAGES, FLOWERS, WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI,
+    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS,
+    newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
     difficultyParams, progress, save, load,
   };

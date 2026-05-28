@@ -88,6 +88,39 @@ test('the world GROWS: crossing quest thresholds expands the grid, keeping tiles
   assert.strictEqual(s.grid[0].flower, flowerAt0);     // existing tile preserved (top-left anchored)
 });
 
+test('decor: place is cosmetic (costs resources, soil only, no wildlife)', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 9, froe: 9 };
+  const before = Object.keys(s.wildlifeSeen).length;
+  assert.ok(G.place(s, 'stone', 0).ok);
+  assert.strictEqual(s.grid[0].type, 'stone');
+  assert.strictEqual(Object.keys(s.wildlifeSeen).length, before); // decor never attracts wildlife
+  assert.ok(!G.place(s, 'stone', 0).ok);                          // can't place on an occupied tile
+  s.resources = { sol: 0, vand: 0, froe: 0 };
+  assert.ok(!G.place(s, 'mushroom', 1).ok);                       // needs resources
+});
+
+test('move: relocate any non-soil tile onto an empty tile, preserving its state', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 9, froe: 9 };
+  G.place(s, 'lantern', 0);
+  assert.ok(G.move(s, 0, 5));
+  assert.strictEqual(s.grid[5].type, 'lantern');
+  assert.strictEqual(s.grid[0].type, 'soil');
+  assert.ok(!G.move(s, 5, 5));   // can't move onto itself
+  assert.ok(!G.move(s, 1, 6));   // source must not be soil
+  G.place(s, 'stone', 1);
+  assert.ok(!G.move(s, 5, 1));   // destination must be soil
+});
+
+test('remove: clears a tile back to soil; seen wildlife stays seen', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 9, froe: 9 };
+  G.build(s, 'pond', 0);
+  assert.ok(s.wildlifeSeen['🐸']);
+  assert.ok(G.remove(s, 0));
+  assert.strictEqual(s.grid[0].type, 'soil');
+  assert.ok(s.wildlifeSeen['🐸']);     // collection is permanent
+  assert.ok(!G.remove(s, 0));          // nothing to remove on soil
+});
+
 test('difficultyParams scale up, never below base', () => {
   const a = G.difficultyParams(1), z = G.difficultyParams(8);
   assert.ok(z.seqLen >= a.seqLen && z.seqLen <= 6 && z.oddTiles >= a.oddTiles && z.countMax > a.countMax);

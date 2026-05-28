@@ -42,11 +42,38 @@
       '<circle cx="50" cy="76" r="4" fill="#6b4f1d"/>');
   }
 
+  /* ---- decorations (cosmetic) ---- */
+  function stone() {
+    return svg('<ellipse cx="44" cy="70" rx="27" ry="18" fill="#9aa0a6"/><ellipse cx="44" cy="63" rx="20" ry="12" fill="#b6bcc2"/>' +
+      '<ellipse cx="72" cy="76" rx="15" ry="11" fill="#868c92"/><ellipse cx="38" cy="60" rx="6" ry="3" fill="#c8cdd2"/>');
+  }
+  function mushroom() {
+    return svg('<rect x="44" y="56" width="12" height="30" rx="6" fill="#f1e8d6"/>' +
+      '<path d="M22 58 a28 23 0 0 1 56 0 z" fill="#e0413f"/>' +
+      '<circle cx="38" cy="46" r="4.5" fill="#fff"/><circle cx="60" cy="50" r="4" fill="#fff"/><circle cx="50" cy="38" r="3.5" fill="#fff"/>');
+  }
+  function hedge() {
+    return svg('<g class="gd-sway"><rect x="14" y="58" width="72" height="28" rx="13" fill="#5aa84f"/>' +
+      '<circle cx="30" cy="60" r="16" fill="#67b85b"/><circle cx="50" cy="54" r="18" fill="#73c465"/><circle cx="70" cy="60" r="16" fill="#67b85b"/></g>');
+  }
+  function path() {
+    return svg('<ellipse cx="34" cy="34" rx="17" ry="12" fill="#cdb083"/><ellipse cx="66" cy="56" rx="17" ry="12" fill="#cdb083"/>' +
+      '<ellipse cx="40" cy="78" rx="15" ry="10" fill="#bfa074"/>');
+  }
+  function lantern() {
+    return svg('<rect x="47" y="42" width="6" height="46" fill="#6b5436"/>' +
+      '<path d="M39 24 h22 l-4 -6 h-14 z" fill="#3d3a33"/>' +
+      '<rect x="40" y="24" width="20" height="18" rx="4" fill="#ffd86b"/>' +
+      '<rect x="40" y="24" width="20" height="18" rx="4" fill="none" stroke="#8a6d2f" stroke-width="2"/>' +
+      '<line x1="40" y1="33" x2="60" y2="33" stroke="#8a6d2f" stroke-width="1.5"/>');
+  }
+
   const BUILD = { tree, pond, feeder, beehouse };
+  const DECOR = { stone, mushroom, hedge, path, lantern };
   function tile(t) {
     if (!t || t.type === 'soil') return '';
     if (t.type === 'flower') return t.stage === 1 ? sprout() : t.stage === 2 ? young() : flower(t.flower);
-    return (BUILD[t.type] || (() => ''))();
+    return (BUILD[t.type] || DECOR[t.type] || (() => ''))();
   }
   root.GardenArt = { tile };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
