@@ -132,7 +132,19 @@ test('save → load round-trips; corrupt / old-version load → fresh', () => {
   assert.deepStrictEqual(G.load('not json {{'), G.newState());
   assert.deepStrictEqual(G.load('{"v":2}'), G.newState());
   assert.deepStrictEqual(G.load('{"v":3}'), G.newState());
-  assert.deepStrictEqual(G.load('{"v":4}'), G.newState()); // older saves are replaced cleanly
+  assert.deepStrictEqual(G.load('{"v":4}'), G.newState());
+  assert.deepStrictEqual(G.load('{"v":5}'), G.newState()); // older saves are replaced cleanly
+});
+
+test('hygge: decorations and variety raise charm; levels climb', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 99, froe: 99 };
+  const base = G.hyggeScore(s);
+  G.place(s, 'stone', 0);
+  const oneDecor = G.hyggeScore(s);
+  assert.ok(oneDecor >= base + 3);                 // a decoration adds a meaningful chunk (placed*2 + distinct*2)
+  G.place(s, 'mushroom', 1);
+  assert.ok(G.hyggeScore(s) > oneDecor);           // a *different* decoration adds more (variety)
+  assert.ok(G.hyggeLevel(0) === 0 && G.hyggeLevel(8) === 1 && G.hyggeLevel(50) === G.HYGGE_LEVELS.length - 1);
 });
 
 test('flowers are collected; rares still belong to FLOWERS; blooming records the kind', () => {

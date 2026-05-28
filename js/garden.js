@@ -149,10 +149,31 @@
       gridEl.appendChild(b);
     });
   }
-  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderGuide(); renderGrid(); }
+  function renderHygge() {
+    const el = document.getElementById('garden-hygge'); if (!el) return;
+    const score = L.hyggeScore(S), lv = L.hyggeLevel(score), levels = L.HYGGE_LEVELS;
+    const cur = levels[lv], next = levels[lv + 1];
+    const pct = next ? Math.max(6, Math.min(100, Math.round((score - cur.min) / (next.min - cur.min) * 100))) : 100;
+    el.innerHTML = '<div class="gd-hygge-top"><span>✨ ' + cur.name + '</span>' +
+      '<span class="gd-hygge-next">' + (next ? 'næste: ' + next.name : 'fuld hygge! 💚') + '</span></div>' +
+      '<div class="gd-hygge-bar"><div class="gd-hygge-fill" style="width:' + pct + '%"></div></div>';
+  }
+  // celebrate when the garden becomes more charming than ever before
+  function checkHygge() {
+    const lv = L.hyggeLevel(L.hyggeScore(S));
+    if (lv > (S.hygge || 0)) {
+      S.hygge = lv; L.earn(S, { sol: 2, vand: 2, froe: 2 }); save(); renderHUD(); renderHygge();
+      const name = L.HYGGE_LEVELS[lv].name;
+      launchConfetti(1600); mEvent('grow');
+      later(() => { toast('✨ Din have er nu en ' + name + '!'); popAtHud('+2☀️ +2💧 +2🌱'); }, 300);
+      renderGuide('Sikke en ' + name.toLowerCase() + ' du har skabt! 💚');
+      later(() => { if (!stopped) renderGuide(); }, 3200);
+    }
+  }
+  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderGuide(); renderHygge(); renderGrid(); }
 
   /* ---------- actions ---------- */
-  function afterAction(hint) { save(); renderHUD(); renderGrid(); if (hint) setHint(hint); checkQuests(); }
+  function afterAction(hint) { save(); renderHUD(); renderHygge(); renderGrid(); if (hint) setHint(hint); checkQuests(); checkHygge(); }
 
   function onTile(i) {
     if (stopped) return;

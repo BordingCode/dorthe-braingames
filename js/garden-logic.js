@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = 5;
+  const VERSION = 6;
   // the world grows through these stages (the "small bed → huge wild park" arc)
   const STAGES = [
     { id: 'bed', name: 'Lille bed', cols: 3, rows: 3 },
@@ -23,6 +23,14 @@
   // cosmetic season derived from how big the world has grown (renewal as it reaches the wild)
   const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
   const SEASON_FOR_STAGE = [0, 1, 2, 3, 0];
+  // "hygge" (charm) — a cosy garden grows more charming as you decorate it and add variety
+  const HYGGE_LEVELS = [
+    { min: 0, name: 'Spirende have' },
+    { min: 8, name: 'Hyggelig have' },
+    { min: 18, name: 'Dejlig have' },
+    { min: 32, name: 'Fortryllende have' },
+    { min: 50, name: 'Drømmehave' },
+  ];
   const FLOWERS = ['🌷', '🌻', '🌹', '🌼', '🌸', '🪻', '🌺', '🏵️'];
   const COMMON_FLOWERS = ['🌷', '🌻', '🌹', '🌼', '🌸', '🪻'];
   const RARE = ['🌺', '🏵️']; // appear occasionally — a small thrill to discover
@@ -95,7 +103,7 @@
       v: VERSION, stage: 0, cols: s0.cols, rows: s0.rows, chapter: 1,
       grid: makeGrid(s0.cols * s0.rows),
       resources: { sol: 1, vand: 3, froe: 3 },
-      questIndex: 0, wildlifeSeen: {}, flowersSeen: {}, builtSeen: {}, picked: 0, timeOfDay: 0,
+      questIndex: 0, wildlifeSeen: {}, flowersSeen: {}, builtSeen: {}, picked: 0, timeOfDay: 0, hygge: 0,
     };
   }
 
@@ -224,6 +232,21 @@
   }
 
   const DECORATIONS = BUILDABLE.concat(DECOR); // everything you can place, for the almanac
+
+  // Charm score. Decorations count most (they're pure self-expression), and variety —
+  // different decoration types, flower colours and animals — is rewarded over sameness.
+  function hyggeScore(s) {
+    let placedDecor = 0, nature = 0, distinctDecor = 0;
+    const seenType = {};
+    for (const t of s.grid) {
+      if (DECOR.includes(t.type)) { placedDecor++; if (!seenType[t.type]) { seenType[t.type] = 1; distinctDecor++; } }
+      else if (BUILDABLE.includes(t.type)) nature++;
+    }
+    const colours = new Set(s.grid.filter((t) => t.type === 'flower' && t.stage === 3 && t.flower).map((t) => t.flower)).size;
+    const wildlife = Object.keys(s.wildlifeSeen || {}).length;
+    return bloomCount(s) + nature + placedDecor * 2 + distinctDecor * 2 + colours + wildlife;
+  }
+  function hyggeLevel(score) { let lv = 0; for (let i = 0; i < HYGGE_LEVELS.length; i++) if (score >= HYGGE_LEVELS[i].min) lv = i; return lv; }
   function progress(s) {
     return {
       flowers: bloomCount(s),
@@ -253,6 +276,7 @@
       if (typeof s.stage !== 'number' || s.stage < 0 || s.stage >= STAGES.length) s.stage = 0;
       s.picked = s.picked || 0;
       if (typeof s.timeOfDay !== 'number' || s.timeOfDay < 0 || s.timeOfDay >= TIMES.length) s.timeOfDay = 0;
+      if (typeof s.hygge !== 'number' || s.hygge < 0) s.hygge = 0;
       return s;
     } catch { return newState(); }
   }
@@ -263,7 +287,7 @@
     DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
-    currentSeason, advanceTime, difficultyParams, progress, save, load,
+    currentSeason, advanceTime, HYGGE_LEVELS, hyggeScore, hyggeLevel, difficultyParams, progress, save, load,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.GardenLogic = api;
