@@ -24,6 +24,8 @@
   let locked = false;
   let peeking = false;
   let peekTimer = null;
+  let resolveTimer = null;
+  let winTimer = null;
   let timer = null;
   let currentCols = 3;
 
@@ -49,7 +51,17 @@
     startGame();
   }
 
+  function clearTimers() {
+    if (peekTimer) { clearTimeout(peekTimer); peekTimer = null; }
+    if (resolveTimer) { clearTimeout(resolveTimer); resolveTimer = null; }
+    if (winTimer) { clearTimeout(winTimer); winTimer = null; }
+  }
+
   function startGame() {
+    clearTimers();
+    document.removeEventListener('visibilitychange', onVisibilityDuringPeek);
+    peeking = false;
+
     const diff = getDifficulty('memory');
     const config = CONFIG[diff] || CONFIG.easy;
     totalPairs = config.pairs;
@@ -88,7 +100,7 @@
   function endPeek() {
     if (!peeking) return;
     peeking = false;
-    clearTimeout(peekTimer);
+    if (peekTimer) { clearTimeout(peekTimer); peekTimer = null; }
     document.removeEventListener('visibilitychange', onVisibilityDuringPeek);
     board.querySelectorAll('.mem-card').forEach((el) => el.classList.remove('peek'));
     locked = false;
@@ -143,7 +155,8 @@
         flipped = [];
 
         // Delay unlock briefly so match animation plays
-        setTimeout(() => {
+        resolveTimer = setTimeout(() => {
+          resolveTimer = null;
           updateCard(a);
           updateCard(b);
           locked = false;
@@ -156,13 +169,15 @@
               time: timer.getElapsed(),
               difficulty: getDifficulty('memory'),
             });
-            setTimeout(() => {
+            winTimer = setTimeout(() => {
+              winTimer = null;
               showResult(true, 'Træk: ' + moves + '<br>Tid: ' + timer.getFormatted(), 'memory');
             }, 300);
           }
         }, 200);
       } else {
-        setTimeout(() => {
+        resolveTimer = setTimeout(() => {
+          resolveTimer = null;
           cards[a].flipped = false;
           cards[b].flipped = false;
           updateCard(a);
@@ -190,4 +205,11 @@
 
   window.initMemory = initMemory;
   window.gameRestarters.memory = startGame;
+  window.gameCleanups.memory = function () {
+    locked = true;
+    peeking = false;
+    clearTimers();
+    document.removeEventListener('visibilitychange', onVisibilityDuringPeek);
+    if (timer) timer.stop();
+  };
 })();

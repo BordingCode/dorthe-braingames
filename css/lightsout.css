@@ -8,9 +8,9 @@
   height: var(--board-size);
 }
 
-#lightsout-board.grid-3 { grid-template-columns: repeat(3, 1fr); }
-#lightsout-board.grid-4 { grid-template-columns: repeat(4, 1fr); }
-#lightsout-board.grid-5 { grid-template-columns: repeat(5, 1fr); }
+#lightsout-board.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#lightsout-board.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#lightsout-board.grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 .lo-cell {
   border: none;
@@ -18,9 +18,13 @@
   cursor: pointer;
   transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.1s;
   aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
   font-size: 0;
   position: relative;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .lo-cell:active {

@@ -6,6 +6,12 @@
   let moves = 0;
   let gameOver = false;
   let timer = null;
+  let winTimeouts = [];
+
+  function clearWinTimeouts() {
+    winTimeouts.forEach(clearTimeout);
+    winTimeouts = [];
+  }
 
   const board = document.getElementById('lightsout-board');
   const movesEl = document.getElementById('lightsout-moves');
@@ -33,6 +39,7 @@
     gameOver = false;
     movesEl.textContent = '0';
 
+    clearWinTimeouts();
     if (timer) timer.reset();
     timer = new GameTimer(timerEl);
 
@@ -137,9 +144,9 @@
       // Win cascade animation
       const cells = board.querySelectorAll('.lo-cell');
       cells.forEach((cell, i) => {
-        setTimeout(() => {
+        winTimeouts.push(setTimeout(() => {
           cell.classList.add('win-flash');
-        }, i * 60);
+        }, i * 60));
       });
 
       Stats.record('lightsout', {
@@ -148,9 +155,9 @@
         difficulty: getDifficulty('lightsout'),
       });
 
-      setTimeout(() => {
+      winTimeouts.push(setTimeout(() => {
         showResult(true, 'Træk: ' + moves + '<br>Tid: ' + timeStr, 'lightsout');
-      }, cells.length * 60 + 400);
+      }, cells.length * 60 + 400));
     }
   }
 
@@ -164,4 +171,9 @@
 
   window.initLightsOut = initLightsOut;
   window.gameRestarters.lightsout = startGame;
+  window.gameCleanups.lightsout = function () {
+    gameOver = true;
+    clearWinTimeouts();
+    if (timer) timer.stop();
+  };
 })();

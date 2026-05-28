@@ -57,6 +57,9 @@
   margin: 8px 0;
   transition: transform 0.06s ease;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .tt-pad:active {
@@ -76,6 +79,28 @@
 .tt-pad.done {
   background: radial-gradient(circle at 50% 40%, #8fd49a, var(--success));
   font-size: 64px;
+}
+
+.tt-preview {
+  appearance: none;
+  border: 2px solid var(--primary);
+  background: var(--surface, #fff);
+  color: var(--primary-dark);
+  font-size: 17px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  margin: 2px 0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tt-preview.playing {
+  background: var(--primary);
+  color: var(--text-on-primary);
 }
 
 .tt-hint {

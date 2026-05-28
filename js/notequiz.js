@@ -32,6 +32,52 @@
   let score = 0;
   let answered = false;
   let nextTimer = null;
+  let playTimer = null;
+  let activeVoice = null;
+
+  // Local synth: a single voice, gently faded out before retriggering so
+  // replayed/overlapping notes never clash or click.
+  function playNote(freq) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    stopVoice();
+    const now = ctx.currentTime;
+    const dur = TONE_MS / 1000;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.03);
+    gain.gain.setValueAtTime(0.22, now + Math.max(0.06, dur - 0.18));
+    gain.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + dur + 0.05);
+    activeVoice = { osc, gain };
+    osc.onended = () => { if (activeVoice && activeVoice.osc === osc) activeVoice = null; };
+  }
+
+  function stopVoice() {
+    if (!activeVoice) return;
+    const ctx = getAudioCtx();
+    const v = activeVoice;
+    activeVoice = null;
+    try {
+      const t = ctx ? ctx.currentTime : 0;
+      v.gain.gain.cancelScheduledValues(t);
+      v.gain.gain.setValueAtTime(Math.max(v.gain.gain.value, 0.0008), t);
+      v.gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.04);
+      v.osc.stop(t + 0.06);
+    } catch (e) { /* already stopped */ }
+  }
+
+  function clearTimers() {
+    if (nextTimer) clearTimeout(nextTimer);
+    if (playTimer) clearTimeout(playTimer);
+    nextTimer = null;
+    playTimer = null;
+  }
 
   const progressEl = document.getElementById('notequiz-progress');
   const scoreEl = document.getElementById('notequiz-score');
@@ -48,8 +94,8 @@
   }
 
   function resetUI() {
-    if (nextTimer) clearTimeout(nextTimer);
-    nextTimer = null;
+    clearTimers();
+    stopVoice();
     currentIndex = 0;
     score = 0;
     answered = false;
@@ -63,6 +109,8 @@
   }
 
   function startGame() {
+    getAudioCtx(); // unlock/resume audio within the Start gesture (iOS)
+    clearTimers();
     noteSet = NOTE_SETS[level] || NOTE_SETS.easy;
     targets = [];
     let prev = null;
@@ -107,7 +155,8 @@
       b.disabled = false;
     });
     progressEl.textContent = (currentIndex + 1) + '/' + ROUND_LENGTH;
-    setTimeout(() => playTone(currentTarget().freq, TONE_MS, 'triangle'), 250);
+    if (playTimer) clearTimeout(playTimer);
+    playTimer = setTimeout(() => { playTimer = null; playNote(currentTarget().freq); }, 250);
   }
 
   function chooseAnswer(chosen, btn) {
@@ -156,12 +205,12 @@
       'Du fik <b>' + score + ' ud af ' + ROUND_LENGTH + '</b> rigtige!' +
       (won ? '<br>Du har et godt øre 🎵' : '<br>Øvelse gør mester 🎵');
 
-    setTimeout(() => showResult(won, statsHtml, 'notequiz'), 300);
+    nextTimer = setTimeout(() => { nextTimer = null; showResult(won, statsHtml, 'notequiz'); }, 300);
   }
 
   replayBtn.onclick = () => {
     if (targets.length && currentIndex < ROUND_LENGTH) {
-      playTone(currentTarget().freq, TONE_MS, 'triangle');
+      playNote(currentTarget().freq);
     }
   };
   startBtn.onclick = startGame;
@@ -178,7 +227,7 @@
   window.initNoteQuiz = initNoteQuiz;
   window.gameRestarters.notequiz = function () { resetUI(); startGame(); };
   window.gameCleanups.notequiz = function () {
-    if (nextTimer) clearTimeout(nextTimer);
-    nextTimer = null;
+    clearTimers();
+    stopVoice();
   };
 })();

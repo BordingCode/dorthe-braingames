@@ -203,6 +203,23 @@
   let highlightCandidates = true;
   let tabletMode = false;
   let paused = false;
+  let pendingTimeouts = [];
+
+  // Track timeouts that mutate game state or show overlays so they can be
+  // cancelled when the player leaves mid-game (see gameCleanups.sudoku).
+  function trackTimeout(fn, ms) {
+    const id = setTimeout(() => {
+      pendingTimeouts = pendingTimeouts.filter(t => t !== id);
+      fn();
+    }, ms);
+    pendingTimeouts.push(id);
+    return id;
+  }
+
+  function clearPendingTimeouts() {
+    pendingTimeouts.forEach(id => clearTimeout(id));
+    pendingTimeouts = [];
+  }
 
   // Load persisted settings
   try {
@@ -354,6 +371,7 @@
     hintCount = 0;
     activeHint = null;
     paused = false;
+    clearPendingTimeouts();
 
     errorsEl.textContent = '0';
     maxErrorsEl.textContent = maxErrors;
@@ -2596,11 +2614,11 @@
         cell.style.color = 'var(--danger)';
       }
 
-      setTimeout(() => {
+      trackTimeout(() => {
+        if (gameOver) return;
         board[r][c] = 0;
         renderBoard();
         renderNumpad();
-    
         saveGame();
       }, 600);
 
@@ -2614,7 +2632,7 @@
           difficulty: getDifficulty('sudoku'),
           extra: { hints: hintCount },
         });
-        setTimeout(() => {
+        trackTimeout(() => {
           showResult(false, 'For mange fejl!<br>Fejl: ' + errors + '/' + maxErrors + '<br>Tid: ' + timer.getFormatted() + '<br>Tips brugt: ' + hintCount, 'sudoku');
         }, 800);
       } else {
@@ -2697,7 +2715,7 @@
       difficulty: getDifficulty('sudoku'),
       extra: { hints: hintCount },
     });
-    setTimeout(() => {
+    trackTimeout(() => {
       showResult(true, 'Tid: ' + timer.getFormatted() + '<br>Fejl: ' + errors + '/' + maxErrors + '<br>Tips brugt: ' + hintCount, 'sudoku');
     }, 400);
   }
@@ -2964,6 +2982,8 @@
     gameOver = false;
     pencilMode = false;
     activeHint = null;
+    paused = false;
+    clearPendingTimeouts();
     moveHistory = (state.moveHistory || []).map(m => ({
       r: m.r, c: m.c,
       prevValue: m.prevValue,
@@ -2974,6 +2994,11 @@
     errorsEl.textContent = errors;
     maxErrorsEl.textContent = maxErrors;
     pencilBtn.classList.remove('active');
+    document.getElementById('sudoku-pause-btn').textContent = '⏸';
+    boardEl.classList.remove('su-paused');
+    document.getElementById('sudoku-pause-overlay').classList.remove('active');
+    numpadEl.style.pointerEvents = '';
+    numpadEl.style.opacity = '';
 
     if (timer) timer.reset();
     timer = new GameTimer(timerEl);
@@ -3155,6 +3180,7 @@
     gameOver = true;
     selectedNumber = null;
     activeHint = null;
+    clearPendingTimeouts();
     if (timer) timer.reset();
     closeHintModal();
     closeTechniqueLibrary();

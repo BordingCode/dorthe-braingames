@@ -140,6 +140,7 @@
   let locked = false;
   let countTimer = null;
   let advanceTimer = null;
+  let resultTimer = null;
 
   const aLabel = document.getElementById('moreless-a-label');
   const aValue = document.getElementById('moreless-a-value');
@@ -214,9 +215,13 @@
         streak++;
         streakEl.textContent = streak;
         vibrate(15);
+        playTone(587.33, 130, 'sine');
+        setTimeout(() => playTone(880, 200, 'sine'), 110);
         advanceTimer = setTimeout(advance, 1100);
       } else {
         vibrate([40, 60, 40]);
+        playTone(392, 160, 'sine');
+        setTimeout(() => playTone(311.13, 320, 'sine'), 150);
         advanceTimer = setTimeout(endGame, 1300);
       }
     });
@@ -262,14 +267,16 @@
         ? '<br>🏆 Ny rekord!'
         : '<br>Rekord: <b>' + prevBest + '</b>');
 
-    setTimeout(() => showResult(newRecord, statsHtml, 'moreless'), 300);
+    resultTimer = setTimeout(() => showResult(newRecord, statsHtml, 'moreless'), 300);
   }
 
   function clearTimers() {
     if (countTimer) cancelAnimationFrame(countTimer);
     if (advanceTimer) clearTimeout(advanceTimer);
+    if (resultTimer) clearTimeout(resultTimer);
     countTimer = null;
     advanceTimer = null;
+    resultTimer = null;
   }
 
   higherBtn.onclick = () => guess(true);

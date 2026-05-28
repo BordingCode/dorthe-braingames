@@ -7,12 +7,13 @@
   width: var(--board-size);
 }
 
-#minesweeper-board.cols-8  { grid-template-columns: repeat(8, 1fr); }
-#minesweeper-board.cols-10 { grid-template-columns: repeat(10, 1fr); }
-#minesweeper-board.cols-12 { grid-template-columns: repeat(12, 1fr); }
+#minesweeper-board.cols-8  { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+#minesweeper-board.cols-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+#minesweeper-board.cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
 
 .ms-cell {
   aspect-ratio: 1;
+  min-width: 0;
   border: none;
   border-radius: 3px;
   cursor: pointer;
@@ -24,6 +25,11 @@
   transition: background 0.15s, transform 0.1s;
   padding: 0;
   line-height: 1;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 .ms-cell.hidden {
@@ -105,11 +111,14 @@
   background: var(--surface);
   border: 2px solid var(--surface-alt);
   color: var(--text);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  padding: 4px 12px;
+  min-height: 40px;
+  padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: all 0.2s ease;
 }
 
@@ -118,6 +127,20 @@
   border-color: var(--warning);
   color: #333;
   transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(232, 180, 79, 0.35);
+  animation: msFlagBtnPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes msFlagBtnPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(232, 180, 79, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 180, 79, 0.18); }
+}
+
+/* Clear board cue when flag mode is on, so taps placing flags is obvious */
+#minesweeper-board.flag-mode {
+  outline: 3px solid var(--warning);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 /* Long-press hint */

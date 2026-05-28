@@ -65,6 +65,9 @@
   let taps = [];
   let finished = false;
   let lastSong = null;
+  let finishTimer = null;
+  let previewTimer = null;
+  let previewing = false;
 
   const countEl = document.getElementById('taptempo-count');
   const targetEl = document.getElementById('taptempo-target');
@@ -89,6 +92,8 @@
   }
 
   function newRound() {
+    stopPreview();
+    if (finishTimer) { clearTimeout(finishTimer); finishTimer = null; }
     song = pickSong();
     target = song.bpm;
     taps = [];
@@ -103,6 +108,7 @@
 
   function handleTap() {
     if (finished) return;
+    stopPreview();
     taps.push(performance.now());
     vibrate(15);
 
@@ -119,14 +125,31 @@
     }
   }
 
+  // Average of the tap intervals, dropping the first (the first gap is often a
+  // slow "settling" tap before the beat is steady). Falls back to all intervals
+  // when there are too few to spare one.
+  function computeBpm() {
+    const intervals = [];
+    for (let i = 1; i < taps.length; i++) intervals.push(taps[i] - taps[i - 1]);
+    if (intervals.length === 0) return 0;
+    const used = intervals.length > 2 ? intervals.slice(1) : intervals;
+    const avg = used.reduce((a, b) => a + b, 0) / used.length;
+    if (avg <= 0) return 0;
+    return Math.round(60000 / avg);
+  }
+
   function finish() {
     finished = true;
+    stopPreview();
     padEl.textContent = '✓';
     padEl.classList.add('done');
 
-    const totalMs = taps[taps.length - 1] - taps[0];
-    const avgInterval = totalMs / (taps.length - 1);
-    const bpm = Math.round(60000 / avgInterval);
+    const bpm = computeBpm();
+    if (!bpm) {
+      hintEl.textContent = 'Tryk lidt langsommere næste gang.';
+      newRound();
+      return;
+    }
 
     const fracOff = Math.abs(bpm - target) / target;
     const won = fracOff <= (TOLERANCE[level] || 0.10);
@@ -146,8 +169,51 @@
       (won ? 'Flot ramt!' : 'Du var ' + fasterSlower) +
       '<br>Træfsikkerhed: <b>' + accuracy + '%</b>';
 
-    setTimeout(() => showResult(won, statsHtml, 'taptempo'), 350);
+    finishTimer = setTimeout(() => {
+      finishTimer = null;
+      showResult(won, statsHtml, 'taptempo');
+    }, 350);
   }
+
+  // Optional, gentle metronome so the target tempo can be heard, not just read.
+  // One soft sine "tick" per beat for a couple of bars, then stops on its own.
+  function startPreview() {
+    if (finished) return;
+    if (previewing) { stopPreview(); return; }
+    previewing = true;
+    previewBtn.classList.add('playing');
+    previewBtn.textContent = '⏸ Stop tempoet';
+    const intervalMs = 60000 / target;
+    let beat = 0;
+    const tick = () => {
+      if (!previewing) return;
+      playTone(660, 70, 'sine');
+      padEl.classList.remove('pulse');
+      void padEl.offsetWidth;
+      padEl.classList.add('pulse');
+      beat++;
+      if (beat >= 8) { stopPreview(); return; }
+      previewTimer = setTimeout(tick, intervalMs);
+    };
+    tick();
+  }
+
+  function stopPreview() {
+    previewing = false;
+    if (previewTimer) { clearTimeout(previewTimer); previewTimer = null; }
+    if (previewBtn) {
+      previewBtn.classList.remove('playing');
+      previewBtn.textContent = '🔊 Hør tempoet';
+    }
+  }
+
+  const previewBtn = document.createElement('button');
+  previewBtn.id = 'taptempo-preview';
+  previewBtn.className = 'tt-preview';
+  previewBtn.type = 'button';
+  previewBtn.textContent = '🔊 Hør tempoet';
+  previewBtn.addEventListener('click', startPreview);
+  if (padEl && padEl.parentNode) padEl.parentNode.insertBefore(previewBtn, padEl);
 
   padEl.addEventListener('click', handleTap);
 
@@ -161,5 +227,9 @@
 
   window.initTapTempo = initTapTempo;
   window.gameRestarters.taptempo = function () { newRound(); };
-  window.gameCleanups.taptempo = function () { finished = true; };
+  window.gameCleanups.taptempo = function () {
+    finished = true;
+    stopPreview();
+    if (finishTimer) { clearTimeout(finishTimer); finishTimer = null; }
+  };
 })();

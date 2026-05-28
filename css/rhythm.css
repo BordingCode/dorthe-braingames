@@ -99,6 +99,9 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 .rn-pad-dot {
   width: 26px; height: 26px; border-radius: 50%;

@@ -35,8 +35,12 @@
   cursor: pointer;
   aspect-ratio: 1;
   min-width: 0;
+  min-height: 0;
   font-size: 0;
   position: relative;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
   background: linear-gradient(145deg,
     hsl(var(--h, 140) 22% 42%),
     hsl(var(--h, 140) 26% 32%));

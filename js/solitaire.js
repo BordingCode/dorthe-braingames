@@ -25,6 +25,8 @@
   let gameOver = false;
   let autoCompleting = false;
   let lastRecycleSnapshot = null;
+  let autoCompleteTimer = null;
+  let resultTimer = null;
 
   // Drag state
   let drag = null;
@@ -632,13 +634,16 @@
     endDrag(e.clientX, e.clientY);
   }
 
-  function endDrag(x, y) {
-    // Remove document listeners
+  function removeDragListeners() {
     document.removeEventListener('mousemove', onDragMove);
     document.removeEventListener('mouseup', onDragEnd);
     document.removeEventListener('touchmove', onTouchMove);
     document.removeEventListener('touchend', onTouchEnd);
     document.removeEventListener('touchcancel', onTouchEnd);
+  }
+
+  function endDrag(x, y) {
+    removeDragListeners();
 
     clearHighlights();
 
@@ -776,7 +781,7 @@
         time: timer.getElapsed(),
         difficulty: getDifficulty('solitaire'),
       });
-      setTimeout(function () {
+      resultTimer = setTimeout(function () {
         showResult(false, 'Ingen flere træk mulige<br>Træk: ' + moves + '<br>Tid: ' + timer.getFormatted(), 'solitaire');
       }, 300);
       return;
@@ -1188,7 +1193,7 @@
           render();
           checkWin();
           if (!gameOver) {
-            setTimeout(runAutoComplete, 80);
+            autoCompleteTimer = setTimeout(runAutoComplete, 80);
           }
           return;
         }
@@ -1211,7 +1216,7 @@
         difficulty: getDifficulty('solitaire'),
       });
 
-      setTimeout(function () {
+      resultTimer = setTimeout(function () {
         showResult(true, 'Tr\u00e6k: ' + moves + '<br>Tid: ' + timer.getFormatted(), 'solitaire');
       }, 500);
     }
@@ -1226,4 +1231,15 @@
 
   window.initSolitaire = initSolitaire;
   window.gameRestarters.solitaire = startGame;
+  window.gameCleanups.solitaire = function () {
+    gameOver = true;
+    autoCompleting = false;
+    removeDragListeners();
+    drag = null;
+    clearHint();
+    clearSelection();
+    if (autoCompleteTimer) { clearTimeout(autoCompleteTimer); autoCompleteTimer = null; }
+    if (resultTimer) { clearTimeout(resultTimer); resultTimer = null; }
+    if (timer) timer.reset();
+  };
 })();

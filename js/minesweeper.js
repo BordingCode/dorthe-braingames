@@ -26,6 +26,7 @@
   let timer = null;
   let longPressTimer = null;
   let longPressTriggered = false;
+  let resultTimer = null;
 
   const boardEl = document.getElementById('minesweeper-board');
   const minesEl = document.getElementById('minesweeper-mines');
@@ -51,8 +52,11 @@
     flagsPlaced = 0;
     revealedCount = 0;
 
+    cancelLongPress();
+    clearTimeout(resultTimer);
     flagBtn.classList.remove('active');
-    flagBtn.textContent = '🚩 Flag';
+    flagBtn.textContent = '🚩 Sæt flag';
+    boardEl.classList.remove('flag-mode');
     minesEl.textContent = mineCount;
 
     if (timer) timer.reset();
@@ -111,7 +115,7 @@
 
   function renderBoard() {
     boardEl.innerHTML = '';
-    boardEl.className = 'cols-' + cols;
+    boardEl.className = 'cols-' + cols + (flagMode ? ' flag-mode' : '');
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -140,6 +144,7 @@
         btn.addEventListener('pointerdown', (e) => onCellDown(r, c, e));
         btn.addEventListener('pointerup', (e) => onCellUp(r, c, e));
         btn.addEventListener('pointerleave', cancelLongPress);
+        btn.addEventListener('pointercancel', cancelLongPress);
         btn.addEventListener('contextmenu', (e) => e.preventDefault());
 
         boardEl.appendChild(btn);
@@ -215,6 +220,7 @@
     if (cell.mine) {
       cell.revealed = true;
       gameOver = true;
+      cancelLongPress();
       timer.stop();
       vibrate([50, 30, 100]);
 
@@ -230,7 +236,7 @@
         difficulty: getDifficulty('minesweeper'),
       });
 
-      setTimeout(() => {
+      resultTimer = setTimeout(() => {
         showResult(false, 'Du ramte en mine!<br>Tid: ' + timer.getFormatted(), 'minesweeper');
       }, 600);
       return;
@@ -243,6 +249,7 @@
     const totalSafe = rows * cols - mineCount;
     if (revealedCount >= totalSafe) {
       gameOver = true;
+      cancelLongPress();
       timer.stop();
 
       Stats.record('minesweeper', {
@@ -251,7 +258,7 @@
         difficulty: getDifficulty('minesweeper'),
       });
 
-      setTimeout(() => {
+      resultTimer = setTimeout(() => {
         showResult(true, 'Tid: ' + timer.getFormatted(), 'minesweeper');
       }, 300);
     }
@@ -260,7 +267,9 @@
   flagBtn.onclick = () => {
     flagMode = !flagMode;
     flagBtn.classList.toggle('active', flagMode);
-    flagBtn.textContent = flagMode ? '🚩 Flag ON' : '🚩 Flag';
+    flagBtn.textContent = flagMode ? '🚩 Flag-tilstand TIL' : '🚩 Sæt flag';
+    boardEl.classList.toggle('flag-mode', flagMode);
+    vibrate(15);
   };
 
   diffBtn.onclick = () => {
@@ -272,4 +281,10 @@
 
   window.initMinesweeper = initMinesweeper;
   window.gameRestarters.minesweeper = startGame;
+  window.gameCleanups.minesweeper = function () {
+    gameOver = true;
+    cancelLongPress();
+    clearTimeout(resultTimer);
+    if (timer) timer.reset();
+  };
 })();

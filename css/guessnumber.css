@@ -65,6 +65,8 @@
   letter-spacing: 2px;
   min-height: 1.2em;
   line-height: 1.2;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .gn-display.empty { color: var(--text-muted); }
@@ -88,6 +90,10 @@
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: transform 0.08s, background 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .gn-key:active {

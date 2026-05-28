@@ -58,6 +58,12 @@
     return LETTER_WEIGHTS[Math.floor(Math.random() * LETTER_WEIGHTS.length)];
   }
 
+  function playFoundChime() {
+    if (typeof playTone !== 'function') return;
+    playTone(587.33, 140, 'sine');
+    setTimeout(() => playTone(880, 200, 'sine'), 110);
+  }
+
   function initWordSearch() {
     const diff = getDifficulty('wordsearch');
     diffBtn.textContent = LABEL_MAP[diff] || 'Let';
@@ -228,7 +234,7 @@
       boardEl.addEventListener('pointerdown', onPointerDown);
       boardEl.addEventListener('pointermove', onPointerMove);
       boardEl.addEventListener('pointerup', onPointerUp);
-      boardEl.addEventListener('pointerleave', onPointerUp);
+      boardEl.addEventListener('pointercancel', onPointerUp);
       listenersAdded = true;
     }
   }
@@ -236,7 +242,7 @@
   function getCellFromPoint(x, y) {
     const el = document.elementFromPoint(x, y);
     if (el && el.classList.contains('ws-cell')) {
-      return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c) };
+      return { r: parseInt(el.dataset.r, 10), c: parseInt(el.dataset.c, 10) };
     }
     return null;
   }
@@ -262,6 +268,9 @@
     e.preventDefault();
     const cell = getCellFromPoint(e.clientX, e.clientY);
     if (!cell) return;
+    if (boardEl.setPointerCapture) {
+      try { boardEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    }
     selecting = true;
     selStart = cell;
     selCells = [cell];
@@ -308,6 +317,7 @@
         w.found = true;
         foundWords.add(w.word);
         vibrate(20);
+        playFoundChime();
         foundEl.textContent = foundWords.size + '/' + words.length;
         renderBoard();
         renderWordList(wi);
@@ -346,6 +356,14 @@
     });
   };
 
+  function cleanup() {
+    if (timer) timer.stop();
+    selecting = false;
+    selStart = null;
+    selCells = [];
+  }
+
   window.initWordSearch = initWordSearch;
   window.gameRestarters.wordsearch = startGame;
+  window.gameCleanups.wordsearch = cleanup;
 })();

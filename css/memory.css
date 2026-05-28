@@ -7,11 +7,12 @@
   width: var(--board-size);
 }
 
-#memory-board.cols-3 { grid-template-columns: repeat(3, 1fr); }
-#memory-board.cols-4 { grid-template-columns: repeat(4, 1fr); }
+#memory-board.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#memory-board.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .mem-card {
   aspect-ratio: 1;
+  min-width: 0;
   perspective: 800px;
   cursor: pointer;
 }

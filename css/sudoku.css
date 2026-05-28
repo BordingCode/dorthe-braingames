@@ -9,6 +9,17 @@
   border-radius: 0 !important;
 }
 
+/* iOS Safari: kill grey tap flash & double-tap-zoom delay on game controls */
+#screen-sudoku .su-cell,
+#screen-sudoku .su-num-btn,
+#screen-sudoku .su-action-btn,
+.su-pause-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 #screen-sudoku {
   padding-left: 0 !important;
   padding-right: 0 !important;

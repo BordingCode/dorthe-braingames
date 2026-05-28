@@ -490,14 +490,14 @@
     vibrate(12);
     if (!listening) return;
     const t = performance.now() - turnStartPerf;
-    const window = measure.beatMs * 0.45;
+    const winMs = measure.beatMs * 0.45;
     let bestHit = null, bestDelta = Infinity;
     measure.hits.forEach((h) => {
       if (h.status !== 'pending' || h.inst !== inst) return;
       const d = Math.abs(h.time - t);
       if (d < bestDelta) { bestDelta = d; bestHit = h; }
     });
-    if (bestHit && bestDelta <= window) {
+    if (bestHit && bestDelta <= winMs) {
       bestHit.status = 'hit';
       if (mode !== 'echo') markNote(bestHit.slot, 'hit');
     }

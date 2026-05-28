@@ -29,6 +29,7 @@
   let results = [];
   let running = false;
   let timeoutId = null;
+  let resultTimeoutId = null;
 
   const displayEl = document.getElementById('nback-display');
   const matchBtn = document.getElementById('nback-match-btn');
@@ -74,6 +75,8 @@
     results = [];
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = null;
+    if (resultTimeoutId) clearTimeout(resultTimeoutId);
+    resultTimeoutId = null;
 
     displayEl.textContent = '';
     displayEl.classList.add('empty');
@@ -207,7 +210,8 @@
       extra: { bestAccuracy: Math.max(Stats.get('nback').bestAccuracy || 0, accuracy) },
     });
 
-    setTimeout(() => {
+    resultTimeoutId = setTimeout(() => {
+      resultTimeoutId = null;
       showResult(
         won,
         'Præcision: ' + accuracy + '%<br>Korrekte: ' + correct + '/' + total +
@@ -234,5 +238,7 @@
     running = false;
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = null;
+    if (resultTimeoutId) clearTimeout(resultTimeoutId);
+    resultTimeoutId = null;
   };
 })();

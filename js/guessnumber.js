@@ -163,9 +163,11 @@
     if (val < secret) {
       feedbackEl.className = 'gn-feedback too-low';
       feedbackEl.textContent = val + ' er for lavt — prøv højere ⬆';
+      playTone(330, 200, 'sine');
     } else {
       feedbackEl.className = 'gn-feedback too-high';
       feedbackEl.textContent = val + ' er for højt — prøv lavere ⬇';
+      playTone(247, 200, 'sine');
     }
     vibrate([30, 40]);
     revealNextHint();
@@ -188,10 +190,12 @@
     feedbackEl.className = 'gn-feedback correct';
     feedbackEl.textContent = '🎉 Rigtigt! Tallet var ' + secret + '.';
     displayEl.textContent = secret;
+    displayEl.classList.remove('empty');
 
-    const word = guesses === 1 ? 'gæt' : 'gæt';
+    [523, 659, 784].forEach((f, i) => setTimeout(() => playTone(f, 260, 'sine'), i * 130));
+
     const statsHtml =
-      'Du fandt tallet <b>' + secret + '</b><br>på <b>' + guesses + '</b> ' + word + '!' +
+      'Du fandt tallet <b>' + secret + '</b><br>på <b>' + guesses + '</b> gæt!' +
       (newRecord && isFinite(prevBest) ? '<br>🏆 Ny rekord — færreste gæt!' : '');
 
     setTimeout(() => showResult(true, statsHtml, 'guessnumber'), 400);
