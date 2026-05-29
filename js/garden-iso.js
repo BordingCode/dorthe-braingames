@@ -229,6 +229,25 @@
     sceneLayer.removeChildren();
     sceneLayer.x = originX; sceneLayer.y = originY;
 
+    // a grassy lawn the bed sits on (so it doesn't float on the sky)
+    const cx = ((cols - 1) - (rows - 1)) * (TW / 4);
+    const cy = ((cols - 1) + (rows - 1)) * (TH / 4);
+    const lhw = (cols + rows) * (TW / 4) + 46, lhh = (cols + rows) * (TH / 4) + 30;
+    const lawn = new PIXI.Graphics();
+    lawn.beginFill(0x3f7a38, 1); // grass side/edge
+    lawn.moveTo(cx, cy - lhh - 8); lawn.lineTo(cx + lhw, cy - 8); lawn.lineTo(cx + lhw, cy + 6); lawn.lineTo(cx, cy + lhh + 6); lawn.lineTo(cx - lhw, cy + 6); lawn.lineTo(cx - lhw, cy - 8); lawn.closePath(); lawn.endFill();
+    lawn.beginFill(0x82c46a, 1); // grass top
+    lawn.moveTo(cx, cy - lhh); lawn.lineTo(cx + lhw, cy); lawn.lineTo(cx, cy + lhh); lawn.lineTo(cx - lhw, cy); lawn.closePath(); lawn.endFill();
+    lawn.beginFill(0x96d27c, 0.5); lawn.drawEllipse(cx, cy - 6, lhw * 0.6, lhh * 0.5).endFill(); // soft highlight
+    // scattered grass tufts + flecks for richness
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2, rr = 0.55 + (k % 3) * 0.16;
+      const tx = cx + Math.cos(a) * lhw * rr, ty = cy + Math.sin(a) * lhh * rr;
+      lawn.beginFill(k % 4 ? 0x6cbf5e : 0xf6d65a, 0.9).drawEllipse(tx, ty, 2.2, 1.4).endFill();
+    }
+    lawn.zIndex = -100; lawn.eventMode = 'none';
+    sceneLayer.addChild(lawn);
+
     const placing = opts.pendingBuild || (opts.pendingMove != null);
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const i = r * cols + c;
