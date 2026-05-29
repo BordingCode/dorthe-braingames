@@ -153,15 +153,35 @@
     g.beginFill(0x66bb55).drawEllipse(10, 2, 5, 3).endFill(); // lily pad
     c.addChild(g); return c;
   }
-  function emojiProp(type) {
-    const c = new PIXI.Container();
-    const txt = new PIXI.Text(EMOJI[type] || '❔', { fontSize: 26, align: 'center' });
-    txt.anchor.set(0.5, 0.9); txt.y = -4; c.addChild(txt); return c;
+  function feederProp() { // birdbath
+    const c = new PIXI.Container(); const g = new PIXI.Graphics();
+    g.beginFill(0x9aa0a6).drawRoundedRect(-3, -10, 6, 12, 2).endFill();
+    g.beginFill(0xb8bdc2).drawEllipse(0, -12, 12, 5).endFill();
+    g.beginFill(C.water).drawEllipse(0, -13, 9, 3.4).endFill();
+    g.beginFill(0xffffff, 0.5).drawEllipse(-3, -14, 3, 1.2).endFill();
+    c.addChild(g); return c;
   }
+  function beehouseProp() { // straw skep
+    const c = new PIXI.Container(); const g = new PIXI.Graphics();
+    for (let k = 0; k < 4; k++) { const w = 16 - k * 3; g.beginFill(k % 2 ? 0xe0ad44 : 0xefc463).drawEllipse(0, -2 - k * 6, w, 4).endFill(); }
+    g.beginFill(0x6a4a24).drawEllipse(0, -2, 2.4, 2).endFill(); // entrance
+    c.addChild(g); return c;
+  }
+  function stoneProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); g.beginFill(0x9097a0).drawEllipse(0, -3, 12, 8).endFill(); g.beginFill(0xb4bac2).drawEllipse(-2, -6, 7, 4).endFill(); c.addChild(g); return c; }
+  function mushroomProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); g.beginFill(0xf3ede0).drawRoundedRect(-3, -10, 6, 10, 3).endFill(); g.beginFill(0xdc4b42).drawEllipse(0, -11, 11, 7).endFill(); g.beginFill(0xffffff, 0.85).drawCircle(-3, -12, 1.6).drawCircle(3, -10, 1.3).drawCircle(0, -14, 1.2).endFill(); c.addChild(g); return c; }
+  function hedgeProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); g.beginFill(0x4f9a48).drawRoundedRect(-13, -14, 26, 16, 8).endFill(); g.beginFill(0x6cbf5e).drawEllipse(-5, -12, 7, 5).drawEllipse(6, -11, 6, 4).endFill(); c.addChild(g); return c; }
+  function pathProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); diamond(g, TW * 0.8, TH * 0.8, 0xcdb083); diamond(g, TW * 0.5, TH * 0.5, 0xdcc89a); c.addChild(g); return c; }
+  function lanternProp() { const c = new PIXI.Container(); const glow = new PIXI.Graphics(); glow.beginFill(0xffd66b, 0.5).drawCircle(0, -16, 13).endFill(); glow.__glow = true; const g = new PIXI.Graphics(); g.lineStyle(2.4, 0x5b4636).moveTo(0, 0).lineTo(0, -12); g.beginFill(0x3a2e22).drawRoundedRect(-5, -22, 10, 11, 2).endFill(); g.beginFill(0xffe08a).drawRoundedRect(-3.4, -20, 6.8, 7, 1.5).endFill(); c.addChild(glow, g); return c; }
+  function benchProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); g.beginFill(0x9b6b3e).drawRoundedRect(-13, -7, 26, 4, 2).endFill(); g.beginFill(0x86572f).drawRoundedRect(-13, -16, 26, 4, 2).endFill(); g.beginFill(0x6f471f).drawRect(-11, -7, 3, 8).drawRect(8, -7, 3, 8).endFill(); c.addChild(g); return c; }
+  function birdhouseProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); g.beginFill(0x8a6238).drawRect(-1.6, -10, 3.2, 12).endFill(); g.beginFill(0xe6c98e).drawRoundedRect(-9, -26, 18, 16, 3).endFill(); g.beginFill(0xc0392b).moveTo(-11, -24).lineTo(0, -34).lineTo(11, -24).closePath().endFill(); g.beginFill(0x4a3320).drawCircle(0, -18, 3.4).endFill(); c.addChild(g); return c; }
+  function emojiProp(type) { const c = new PIXI.Container(); const txt = new PIXI.Text(EMOJI[type] || '❔', { fontSize: 26, align: 'center' }); txt.anchor.set(0.5, 0.9); txt.y = -4; c.addChild(txt); return c; }
+
+  const VEC = { feeder: feederProp, beehouse: beehouseProp, stone: stoneProp, mushroom: mushroomProp, hedge: hedgeProp, path: pathProp, lantern: lanternProp, bench: benchProp, birdhouse: birdhouseProp };
   function propFor(t) {
     if (t.type === 'flower') return flowerProp(t.stage, t.flower);
     if (t.type === 'tree') return treeProp();
     if (t.type === 'pond') return pondProp();
+    if (VEC[t.type]) return VEC[t.type]();
     return emojiProp(t.type);
   }
 
@@ -266,9 +286,16 @@
       if (m.g.x < -10) { m.g.x = W + 10; m.g.y = Math.random() * H * 0.8; }
       if (m.g.y < -10) m.g.y = H * 0.8;
     }
-    // gentle sway on flowers/trees
-    if (sceneLayer) for (const cell of sceneLayer.children) for (const child of cell.children)
-      if (child.__sway) child.rotation = Math.sin(t * 0.035 + cell.x * 0.05) * 0.05;
+    // gentle sway on flowers/trees + soft lantern glow (flags may sit on nested children)
+    if (sceneLayer) for (const cell of sceneLayer.children) {
+      const ph = cell.x * 0.05;
+      const walk = (node) => {
+        if (node.__sway) node.rotation = Math.sin(t * 0.035 + ph) * 0.05;
+        if (node.__glow) node.alpha = 0.4 + (Math.sin(t * 0.04 + ph) * 0.5 + 0.5) * 0.4;
+        if (node.children) for (const ch of node.children) walk(ch);
+      };
+      for (const child of cell.children) walk(child);
+    }
   }
 
   root.GardenIso = { mount, render, destroy, setSky };

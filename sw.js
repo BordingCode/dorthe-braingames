@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brain-games-v105';
+const CACHE_NAME = 'brain-games-v106';
 const ASSETS = [
   './',
   './index.html',
