@@ -172,6 +172,13 @@
   92%  { opacity: 0.95; }
   100% { transform: translate(120vw, 6px) rotate(-3deg); opacity: 0; }
 }
+/* birds glide across the sky; a duck paddles along the water */
+.gd-bird { position: absolute; left: -8%; animation: gdGlide linear infinite; opacity: 0.85; }
+.gd-bird .gd-bird-w { animation: gdWing 0.5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes gdWing { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.5); } }
+@keyframes gdGlide { 0% { transform: translate(0,0); } 50% { transform: translate(58vw, -10px); } 100% { transform: translate(122vw, 4px); } }
+.gd-duck { position: absolute; left: -8%; bottom: 20%; animation: gdPaddle linear infinite; }
+@keyframes gdPaddle { 0% { transform: translate(0,0) rotate(-1deg); } 25% { transform: translate(30vw,2px) rotate(1deg); } 50% { transform: translate(58vw,0) rotate(-1deg); } 75% { transform: translate(86vw,2px) rotate(1deg); } 100% { transform: translate(120vw,0); } }
 
 /* ---- M-A: plots become a raised garden bed in the foreground ---- */
 #garden-grid {

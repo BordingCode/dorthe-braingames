@@ -164,6 +164,24 @@
           '<ellipse cx="12" cy="10" rx="1.4" ry="4" fill="#5b4636"/></g></svg>';
         amb.appendChild(b);
       }
+      // birds glide across the sky once there are trees/feeders to live in
+      if (!reduce() && (L.hasType(S, 'tree') || L.hasType(S, 'feeder') || L.hasType(S, 'birdhouse'))) {
+        for (let k = 0; k < 2; k++) {
+          const bird = document.createElement('div'); bird.className = 'gd-bird';
+          bird.style.top = (8 + Math.random() * 22) + '%';
+          bird.style.animationDuration = (10 + Math.random() * 6) + 's';
+          bird.style.animationDelay = (-Math.random() * 10) + 's';
+          bird.innerHTML = '<svg viewBox="0 0 28 14" width="24" height="12"><path class="gd-bird-w" d="M2 9 Q8 2 14 8 Q20 2 26 9" fill="none" stroke="#5b5b6e" stroke-width="2.2" stroke-linecap="round"/></svg>';
+          amb.appendChild(bird);
+        }
+      }
+      // a duck paddles along once there's a pond
+      if (!reduce() && L.hasType(S, 'pond')) {
+        const duck = document.createElement('div'); duck.className = 'gd-duck';
+        duck.style.animationDuration = '22s'; duck.style.animationDelay = '-4s';
+        duck.innerHTML = '<svg viewBox="0 0 30 20" width="26" height="18"><ellipse cx="15" cy="13" rx="11" ry="6" fill="#f4f0e6"/><circle cx="24" cy="8" r="4.2" fill="#f4f0e6"/><path d="M27 8 l5 1 -5 1.6 Z" fill="#e7a33c"/><circle cx="25" cy="7" r="0.9" fill="#3a3a3a"/></svg>';
+        amb.appendChild(duck);
+      }
     }
     // season weather: cherry petals in spring, falling leaves in autumn
     if (weather) {
