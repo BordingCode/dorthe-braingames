@@ -178,6 +178,7 @@
   display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 4px;
   margin-top: auto; position: relative; z-index: 2; padding: 10px 10px 12px; border-radius: 14px;
   background:
+    repeating-linear-gradient(90deg, rgba(74,46,20,0.13) 0 2px, rgba(255,240,210,0.05) 2px 5px, rgba(74,46,20,0) 5px 26px),
     linear-gradient(180deg, rgba(120,84,46,0) 0%, rgba(120,84,46,0.14) 16%, rgba(90,60,30,0.30) 100%),
     linear-gradient(180deg, #b98a5a 0%, #9a6a3d 100%);
   box-shadow: 0 6px 0 #6f4a26, 0 10px 16px rgba(50,34,16,0.35), inset 0 2px 4px rgba(255,240,210,0.25);
