@@ -19,6 +19,7 @@
   let S = null, stopped = false, timers = [], pendingBuild = null, pendingMove = null, musicStarted = false;
 
   const gridEl = document.getElementById('garden-grid');
+  const stageEl = document.getElementById('garden-stage');
   const hudEl = document.getElementById('garden-hud');
   const questEl = document.getElementById('garden-quest');
   const wishEl = document.getElementById('garden-wish');
@@ -126,6 +127,10 @@
       '</svg>';
   }
   function applyStageTheme() {
+    // The scene (sky, hills, day/night tint, particles) is owned by the PixiJS canvas now.
+    if (window.GardenIso) GardenIso.render(S, { pendingBuild, pendingMove });
+    if (worldEl) worldEl.className = 'gd-world time-' + (L.TIMES[S.timeOfDay | 0] || 'day') + ' season-' + (L.SEASONS[L.currentSeason(S)] || 'spring');
+    return; // old DOM-scenery path below is superseded by the canvas
     if (!worldEl) return;
     const timeName = L.TIMES[S.timeOfDay | 0] || 'day';
     const seasonName = L.SEASONS[L.currentSeason(S)] || 'spring';
@@ -236,21 +241,10 @@
     guideEl.innerHTML = '<span class="gd-guide-face">' + GUIDE.emoji + '</span>' +
       '<span class="gd-guide-say"><b>' + GUIDE.name + ':</b> ' + (text || currentStory()) + '</span>';
   }
+  // The scene is now a 2.5D isometric PixiJS canvas (garden-iso.js); it renders S.grid and
+  // calls onTile(i) on tap. We keep the same logic/HUD/menus — only the visuals changed.
   function renderGrid() {
-    gridEl.innerHTML = '';
-    gridEl.style.setProperty('--cols', S.cols);
-    const placing = pendingBuild || pendingMove !== null;
-    S.grid.forEach((t, i) => {
-      const b = document.createElement('button');
-      const placeable = placing && t.type === 'soil';
-      b.className = 'gd-tile t-' + t.type + (t.type === 'flower' ? ' s-' + t.stage : '') + (placeable ? ' placeable' : '');
-      // show a translucent ghost of what's about to be placed
-      if (placeable && pendingBuild) b.innerHTML = '<div class="gd-ghost">' + GardenArt.tile({ type: pendingBuild }) + '</div>';
-      else b.innerHTML = GardenArt.tile(t);
-      b.setAttribute('aria-label', 'Bed ' + (i + 1) + ' (' + t.type + ')');
-      b.addEventListener('click', () => onTile(i));
-      gridEl.appendChild(b);
-    });
+    if (window.GardenIso) GardenIso.render(S, { pendingBuild, pendingMove });
   }
   function renderHygge() {
     const el = document.getElementById('garden-hygge'); if (!el) return;
@@ -566,7 +560,11 @@
     Stats.increment('garden', 'played');
     updateMusicBtn();
     if (!S.wish) L.assignWish(S, Math.random); // a returning guest may already be waiting with a little wish
+    // (re)mount the isometric PixiJS scene for this screen open
+    if (window.GardenIso && stageEl) { GardenIso.destroy(); GardenIso.mount(stageEl, { onTap: onTile }); }
     renderAll();
+    // redraw once layout has settled (the canvas needs its final size)
+    later(() => { if (!stopped && window.GardenIso) GardenIso.render(S, { pendingBuild, pendingMove }); }, 80);
     updateScene();
     const q = L.currentQuest(S);
     setHint(q ? 'Velkommen i haven! Plant, vand og pluk dine blomster — så vokser den. 🌱' : 'Haven trives — nyd den, eller dyrk videre. 🌳');
@@ -614,5 +612,5 @@
 
   window.initGarden = initGarden;
   window.gameRestarters.garden = function () { closeOverlay(); pendingBuild = null; pendingMove = null; renderAll(); };
-  window.gameCleanups.garden = function () { stopped = true; clearTimers(); clearTutorial(); if (typeof GardenMusic !== 'undefined') GardenMusic.stop(); musicStarted = false; save(); };
+  window.gameCleanups.garden = function () { stopped = true; clearTimers(); clearTutorial(); if (window.GardenIso) GardenIso.destroy(); if (typeof GardenMusic !== 'undefined') GardenMusic.stop(); musicStarted = false; save(); };
 })();
