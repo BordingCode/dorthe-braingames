@@ -129,8 +129,11 @@ h3 {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
   background: linear-gradient(180deg, var(--surface), var(--surface-alt));
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 10px rgba(44, 62, 45, 0.06);
+  position: relative; z-index: 5;
   flex-shrink: 0;
 }
 
@@ -138,20 +141,21 @@ h3 {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: none;
+  background: var(--surface-alt);
   border: none;
-  color: var(--primary);
-  font-size: 18px;
-  font-weight: 600;
+  color: var(--primary-dark);
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
-  padding: 8px 12px;
-  margin: -8px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s;
+  padding: 9px 16px 9px 12px;
+  border-radius: 22px;
+  transition: background 0.15s, transform 0.1s;
 }
 
 .game-header .back-btn:active {
-  background: var(--surface-alt);
+  background: var(--primary-light);
+  color: #fff;
+  transform: scale(0.96);
 }
 
 .game-header .title {
@@ -160,15 +164,17 @@ h3 {
 }
 
 .game-header .difficulty-btn {
-  background: var(--surface-alt);
-  border: none;
-  color: var(--text);
+  background: var(--surface-alt); /* fallback */
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  border: 1.5px solid var(--surface-alt);
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  color: var(--primary-dark);
   font-size: 14px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 20px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 22px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 
 .game-header .difficulty-btn:active {
@@ -237,21 +243,25 @@ button, .tap-target {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary); /* fallback */
+  background: linear-gradient(165deg, var(--primary-light), var(--primary));
   color: var(--text-on-primary);
+  box-shadow: 0 4px 14px rgba(82, 125, 92, 0.30);
 }
 
 .btn-primary:active {
   background: var(--primary-dark);
+  box-shadow: 0 2px 8px rgba(82, 125, 92, 0.28);
 }
 
 .btn-secondary {
-  background: var(--surface-alt);
+  background: var(--surface);
   color: var(--text);
+  border: 1.5px solid var(--surface-alt);
 }
 
 .btn-secondary:active {
-  background: #ddd5c8;
+  background: var(--surface-alt);
 }
 
 /* Focus indicators for accessibility */
