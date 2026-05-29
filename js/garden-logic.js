@@ -138,14 +138,19 @@
       if (!t.flower) t.flower = pickFlower(rng); // mixed seed → random (may discover a rare one)
       const newFlower = !s.flowersSeen[t.flower];
       s.flowersSeen[t.flower] = true;
-      return { ok: true, bloomed: true, flower: t.flower, newFlower: newFlower, wildlife: refreshWildlife(s) };
+      const bonus = { sol: 1 }; earn(s, bonus); // a bloom opening rewards a little sunlight (self-funding)
+      return { ok: true, bloomed: true, flower: t.flower, newFlower: newFlower, bonus: bonus, wildlife: refreshWildlife(s) };
     }
     return { ok: true, bloomed: false };
   }
+  // harvesting a bloom is the cozy payoff — it returns seeds + water + a little sun,
+  // so tending the garden funds itself (no brain-task required).
   function harvest(s, i) {
     const t = s.grid[i];
     if (!t || t.type !== 'flower' || t.stage !== 3) return null;
-    const f = t.flower; t.type = 'soil'; t.stage = 0; t.flower = null; s.picked = (s.picked || 0) + 1; return f;
+    const f = t.flower; t.type = 'soil'; t.stage = 0; t.flower = null; s.picked = (s.picked || 0) + 1;
+    const reward = { froe: 2, vand: 2, sol: 1 }; earn(s, reward);
+    return { flower: f, reward: reward };
   }
   const costOf = (type) => BUILD_COST[type] || DECOR_COST[type] || null;
   // unified placement for buildables AND decor; only buildables refresh wildlife

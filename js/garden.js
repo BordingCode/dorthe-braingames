@@ -261,6 +261,11 @@
     if (assigned && wishEl) { wishEl.classList.remove('gd-wish-pulse'); void wishEl.offsetWidth; wishEl.classList.add('gd-wish-pulse'); }
   }
 
+  // pretty icon string for a resource reward, e.g. {froe:2,vand:2} -> "🌱🌱 💧💧"
+  function rewardText(r) {
+    const ic = { sol: '☀️', vand: '💧', froe: '🌱' };
+    return Object.keys(r).map((k) => ic[k].repeat(r[k])).join(' ');
+  }
   function onTile(i) {
     if (stopped) return;
     startMusicOnce();
@@ -282,23 +287,23 @@
           mEvent('build'); updateScene();
           if (r.newBuild) later(() => toast('✨ Ny ting i haven: ' + (NAME[b] || '') + '!'), 450);
           celebrateWildlife(r.wildlife);
-        } else { pendingBuild = null; setHint('Ikke nok ressourcer til det — lav en opgave.'); renderGrid(); }
+        } else { pendingBuild = null; setHint('Ikke nok ressourcer — host dine modne blomster for flere.'); renderGrid(); }
       } else { pendingBuild = null; setHint('Vælg et tomt bed at bygge på.'); renderGrid(); }
       return;
     }
     if (t.type === 'soil') {
-      if (!L.canAfford(S, L.PLANT_COST)) { setHint('Du mangler frø 🌱 — lav en opgave for at få flere.'); return; }
+      if (!L.canAfford(S, L.PLANT_COST)) { setHint('Du mangler frø 🌱 — host en moden blomst (🧺) for flere.'); return; }
       // once you've discovered a couple of flowers, you get to choose what to plant
       if (Object.keys(S.flowersSeen || {}).length >= 2) openSeedPicker(i);
       else plantSeed(i, null);
     } else if (t.type === 'flower') {
       if (t.stage < 3) {
         const r = L.water(S, i, Math.random);
-        if (!r.ok) { setHint('Du mangler vand 💧 — lav en opgave for at få mere.'); return; }
+        if (!r.ok) { setHint('Du mangler vand 💧 — host en moden blomst (🧺) for mere.'); return; }
         playTone([329.63, 392.00, 523.25][Math.min(t.stage - 1, 2)], 150, 'sine');
         if (r.bloomed) {
           playTone(659.25, 200, 'sine'); later(() => playTone(783.99, 240, 'sine'), 130);
-          afterAction('Den sprang ud! ' + r.flower);
+          afterAction('Den sprang ud! ' + r.flower + ' +☀️');
           const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-bloomed'); sparkle(cell, 8); later(() => cell.classList.remove('gd-bloomed'), 850); }
           mEvent('bloom');
           if (r.newFlower) discoverFlower(r.flower, cell);
@@ -309,9 +314,9 @@
           const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); later(() => cell.classList.remove('gd-grown'), 500); }
         }
       } else {
-        const f = L.harvest(S, i); playTone(523.25, 130, 'sine');
-        afterAction('Du plukkede ' + f + ' 🧺 — nu er der plads igen.');
-        const cell = gridEl.children[i]; if (cell) sparkle(cell, 4);
+        const h = L.harvest(S, i); playTone(523.25, 130, 'sine'); later(() => playTone(659.25, 150, 'sine'), 90);
+        afterAction('Du plukkede ' + h.flower + ' 🧺 — og fik ' + rewardText(h.reward));
+        const cell = gridEl.children[i]; if (cell) sparkle(cell, 6);
       }
     } else {
       wiggle(gridEl.children[i]); openTileMenu(i);
@@ -420,7 +425,7 @@
   }
 
   function plantSeed(i, choice) {
-    if (!L.plant(S, i, choice)) { setHint('Du mangler frø 🌱 — lav en opgave for at få flere.'); return; }
+    if (!L.plant(S, i, choice)) { setHint('Du mangler frø 🌱 — host en moden blomst (🧺) for flere.'); return; }
     playTone(294, 120, 'sine');
     const what = choice ? ('en ' + (L.FLOWER_NAMES[choice] || 'blomst').toLowerCase()) : 'et frø';
     afterAction('Du plantede ' + what + '! 🌱 Vand det for at få det til at gro.');
@@ -523,7 +528,7 @@
     renderAll();
     updateScene();
     const q = L.currentQuest(S);
-    setHint(q ? 'Velkommen i haven! Lav en opgave for ressourcer, og byg haven op. 🌱' : 'Haven trives — nyd den, eller dyrk videre. 🌳');
+    setHint(q ? 'Velkommen i haven! Plant, vand og pluk dine blomster — så vokser den. 🌱' : 'Haven trives — nyd den, eller dyrk videre. 🌳');
     maybeStartTutorial();
   }
 
@@ -540,8 +545,8 @@
     if (S.questIndex > 0 || L.bloomCount(S) > 0) { try { localStorage.setItem(INTRO_KEY, '1'); } catch {} return; }
     const steps = [
       { say: 'Hej, jeg er Amigo! 🐕 Velkommen i din have. Skal vi gøre den smuk sammen?', btn: 'Ja tak!', target: null },
-      { say: 'Først: tryk på <b>🧠 Lav en opgave</b> for at tjene sol, vand og frø. ☀️💧🌱', btn: 'Forstået', target: 'garden-task-btn' },
-      { say: 'Tryk så på et brunt bed for at <b>plante</b> — og igen for at <b>vande</b>, til blomsten springer ud. 🌸', btn: 'Forstået', target: null },
+      { say: 'Tryk på et brunt bed for at <b>plante</b> 🌱 — og igen for at <b>vande</b> 💧, til blomsten springer ud. 🌸', btn: 'Forstået', target: null },
+      { say: 'Når en blomst er sprunget ud, kan du <b>plukke</b> den 🧺 — så får du sol, vand og frø til mere. ☀️💧🌱', btn: 'Forstået', target: null },
       { say: 'I <b>📖 Havelog</b> ser du alle de dyr, du lokker til haven. God fornøjelse! 💚', btn: 'Lad os gå i gang', target: 'garden-log-btn' },
     ];
     let i = 0;
