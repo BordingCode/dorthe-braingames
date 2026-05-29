@@ -371,7 +371,10 @@
       } else {
         toast('Ny gæst i haven: ' + w + ' 🎉');
       }
-    }, k * 1000));
+      // Amigo warmly shares a little "vidste du?" fact about the new visitor — in-scene, not buried in the log
+      const fact = L.FACTS && L.FACTS[w];
+      if (fact) { later(() => { renderGuide(w + ' ' + fact); later(() => { if (!stopped) renderGuide(); }, 4200); }, 1500); }
+    }, k * 1200));
   }
 
   function checkQuests() {
