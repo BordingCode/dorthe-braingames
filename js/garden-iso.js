@@ -43,10 +43,27 @@
   let app = null, hostEl = null, tapCb = null;
   let bgLayer = null, sceneLayer = null, fxLayer = null, tintG = null;
   let motes = [], t = 0, lastStage = -1;
+  // view transform: fit-to-canvas scale + user zoom/pan (so tiles can be enlarged to avoid misclicks)
+  let fitScale = 1, baseX = 0, baseY = 0, userZoom = 1, panX = 0, panY = 0;
+  const ZMAX = 2.8;
+
+  // apply the current fit-scale * user-zoom and clamped pan to the scene layer
+  function applyView() {
+    if (!sceneLayer || !app) return;
+    sceneLayer.scale.set(fitScale * userZoom);
+    const W = app.screen.width, H = app.screen.height;
+    const maxX = (userZoom - 1) * W * 0.6, maxY = (userZoom - 1) * H * 0.6;
+    panX = Math.max(-maxX, Math.min(maxX, panX));
+    panY = Math.max(-maxY, Math.min(maxY, panY));
+    sceneLayer.x = baseX + panX;
+    sceneLayer.y = baseY + panY;
+  }
+  function setZoom(z) { userZoom = Math.max(1, Math.min(ZMAX, z)); if (userZoom === 1) { panX = panY = 0; } applyView(); }
 
   function mount(el, opts) {
     if (!PIXI) { console.warn('PIXI not loaded'); return false; }
     hostEl = el; tapCb = (opts && opts.onTap) || null;
+    userZoom = 1; panX = panY = 0;
     app = new PIXI.Application({
       resizeTo: el, backgroundAlpha: 0, antialias: true,
       autoDensity: true, resolution: Math.min(2, root.devicePixelRatio || 1),
@@ -58,7 +75,40 @@
     tintG = new PIXI.Graphics();
     app.stage.addChild(bgLayer, sceneLayer, fxLayer, tintG);
     app.ticker.add(animate);
+    attachZoomControls(el);
     return true;
+  }
+
+  // pinch-to-zoom + drag-to-pan (when zoomed) + accessible +/- buttons
+  function attachZoomControls(el) {
+    // on-screen buttons (easiest for an older adult)
+    const ctrls = document.createElement('div');
+    ctrls.className = 'gd-zoom';
+    ctrls.innerHTML = '<button type="button" aria-label="Zoom ind">+</button><button type="button" aria-label="Zoom ud">−</button>';
+    const [zin, zout] = ctrls.querySelectorAll('button');
+    zin.addEventListener('click', (e) => { e.stopPropagation(); setZoom(userZoom + 0.5); });
+    zout.addEventListener('click', (e) => { e.stopPropagation(); setZoom(userZoom - 0.5); });
+    el.appendChild(ctrls);
+
+    // touch pinch + pan
+    let pinchD = 0, pinchStart = 1, lastX = 0, lastY = 0, panning = false;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) { pinchD = dist(e.touches); pinchStart = userZoom; }
+      else if (e.touches.length === 1) { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; panning = userZoom > 1; }
+    }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && pinchD > 0) {
+        e.preventDefault();
+        setZoom(pinchStart * (dist(e.touches) / pinchD));
+      } else if (e.touches.length === 1 && panning) {
+        e.preventDefault();
+        const tt = e.touches[0];
+        panX += tt.clientX - lastX; panY += tt.clientY - lastY;
+        lastX = tt.clientX; lastY = tt.clientY; applyView();
+      }
+    }, { passive: false });
+    el.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchD = 0; if (e.touches.length === 0) panning = false; }, { passive: true });
   }
 
   function destroy() {
@@ -218,16 +268,15 @@
     // fit the iso field to the canvas: bigger gardens scale down → camera pulls back
     const isoW = (cols + rows) * (TW / 2);
     const isoH = (cols + rows) * (TH / 2) + BED + 80;
-    const scale = Math.min(1, (W - 24) / isoW, (H - 30) / isoH);
-    sceneLayer.scale.set(scale);
-    const originX = W / 2;
-    const originY = (H - isoH * scale) / 2 + TH; // center vertically with headroom for props
+    fitScale = Math.min(1, (W - 24) / isoW, (H - 30) / isoH);
+    baseX = W / 2;
+    baseY = (H - isoH * fitScale) / 2 + TH; // center vertically with headroom for props
 
     const stageId = (root.GardenLogic && root.GardenLogic.currentStage(S).id) || 'bed';
     drawHills(stageId, W, H);
 
     sceneLayer.removeChildren();
-    sceneLayer.x = originX; sceneLayer.y = originY;
+    applyView(); // fit-scale * user zoom + clamped pan
 
     // a grassy lawn the bed sits on (so it doesn't float on the sky)
     const cx = ((cols - 1) - (rows - 1)) * (TW / 4);
