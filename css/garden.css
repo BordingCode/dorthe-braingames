@@ -182,6 +182,12 @@
     linear-gradient(180deg, #b98a5a 0%, #9a6a3d 100%);
   box-shadow: 0 6px 0 #6f4a26, 0 10px 16px rgba(50,34,16,0.35), inset 0 2px 4px rgba(255,240,210,0.25);
 }
+/* gentle "what to tap next" cues — thirsty plant = soft blue, ready-to-pick = warm gold */
+.gd-tile.t-flower.s-1, .gd-tile.t-flower.s-2 { animation: gdThirsty 2.8s ease-in-out infinite; }
+.gd-tile.t-flower.s-3 { animation: gdRipe 2.4s ease-in-out infinite; }
+@keyframes gdThirsty { 0%,100% { box-shadow: inset 0 -3px 7px rgba(60,90,46,0.20); } 50% { box-shadow: inset 0 -3px 7px rgba(60,90,46,0.20), 0 0 0 3px rgba(120,200,255,0.55); } }
+@keyframes gdRipe { 0%,100% { box-shadow: inset 0 -3px 7px rgba(60,90,46,0.20); } 50% { box-shadow: inset 0 -3px 7px rgba(60,90,46,0.20), 0 0 0 3px rgba(255,209,102,0.7); } }
+@media (prefers-reduced-motion: reduce) { .gd-tile.t-flower.s-1, .gd-tile.t-flower.s-2, .gd-tile.t-flower.s-3 { animation: none; } }
 .gd-tile {
   position: relative; min-width: 0; aspect-ratio: 1; border: none; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
