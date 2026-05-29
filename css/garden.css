@@ -6,12 +6,21 @@
   padding-top: 6px;
 }
 
-/* resource HUD */
+/* resource HUD — each value is a soft chip so it reads as a tidy resource bar */
 #garden-hud {
-  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center;
-  font-size: 16px;
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+  font-size: 15px; padding: 2px 8px;
 }
-#garden-hud .gd-prog { color: var(--text-muted); }
+#garden-hud > span {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--surface); border: 1.5px solid var(--surface-alt);
+  border-radius: 20px; padding: 5px 13px; font-weight: 800; color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+#garden-hud .gd-prog {
+  flex-basis: 100%; justify-content: center; background: transparent; border: none;
+  box-shadow: none; color: var(--text-muted); font-weight: 600; font-size: 12.5px; padding: 2px;
+}
 
 /* Amigo the guide — a friendly speech bubble */
 .gd-guide {
@@ -41,12 +50,15 @@
 .gd-hygge-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #9ad97f, #f6c83c); transition: width 0.55s ease; }
 @media (prefers-reduced-motion: reduce) { .gd-hygge-fill { transition: none; } }
 
-/* quest objective panel */
+/* quest objective panel — gold-accented so the current goal is clear */
 #garden-quest {
   width: 100%; max-width: 480px; margin: 0 auto;
-  background: var(--surface); border-radius: var(--radius); padding: 8px 12px;
-  font-size: 15px; text-align: center; box-shadow: var(--shadow-sm);
+  background: linear-gradient(180deg, #ffffff, #fbf6ec);
+  border: 1.5px solid #ece1ce; border-left: 4px solid var(--gold);
+  border-radius: 14px; padding: 9px 14px;
+  font-size: 14.5px; font-weight: 600; text-align: center; box-shadow: var(--shadow-sm);
 }
+#garden-quest b { color: var(--primary-dark); }
 
 /* a guest's gentle little wish — warm, optional, never a fail; at most one at a time */
 #garden-wish {
@@ -72,12 +84,13 @@
 .gd-happy-g { white-space: nowrap; margin: 0 4px; }
 .gd-hearts { font-size: 11px; vertical-align: middle; }
 
-/* the gridded world — a little storybook scene */
+/* the 2.5D scene framed as a tidy "window" — a clean cream frame around the canvas */
 .gd-world {
   position: relative; width: 100%; max-width: 480px; margin: 0 auto;
-  border-radius: var(--radius-lg); padding: 16px 12px 12px;
-  background: linear-gradient(180deg, #bfe3f5 0%, #d8eede 42%, #c6e3b6 43%, #b6d79f 100%);
-  box-shadow: var(--shadow-md), inset 0 0 40px rgba(60,74,46,0.10); overflow: hidden;
+  border-radius: var(--radius-lg); padding: 7px;
+  background: #fffdf7;
+  border: 1px solid var(--surface-alt);
+  box-shadow: var(--shadow-md); overflow: hidden;
 }
 /* soft sun, top-right */
 .gd-world::before {

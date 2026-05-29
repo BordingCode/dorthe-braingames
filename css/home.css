@@ -35,6 +35,25 @@
   width: 100%;
 }
 
+/* section headers chunk the games into calm groups (less overwhelming) */
+.home-section {
+  grid-column: 1 / -1;
+  margin: 16px 4px 0; font-size: 15px; font-weight: 800; letter-spacing: 0.2px;
+  color: var(--primary-dark); display: flex; align-items: center; gap: 8px;
+}
+.home-section:first-child { margin-top: 4px; }
+
+/* featured card (Dorthes have) — full width, horizontal, prominent */
+.game-card.featured {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  column-gap: 16px; row-gap: 2px; text-align: left; min-height: 0; padding: 18px 20px;
+}
+.game-card.featured .game-icon { grid-row: 1 / 3; width: 72px; height: 72px; flex-basis: 72px; font-size: 38px; }
+.game-card.featured .game-name { align-self: end; font-size: 20px; }
+.game-card.featured .game-desc { align-self: start; }
+.game-card.featured .game-stat { grid-column: 2; }
+
 /* premium card: soft accent wash + matching border + depth */
 .game-card {
   --ca: var(--primary);

@@ -566,36 +566,69 @@ function formatTime(ms) {
   return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 }
 
+// Per-game accent colour (stable, not position-based) for the card badge/tint.
+const GAME_COLORS = {
+  lightsout: '#D4A843', memory: '#7B68AE', minesweeper: '#D9534F', wordsearch: '#5BC0DE',
+  nback: '#E88A4F', solitaire: '#527D5C', sudoku: '#4A90D9', yatzy: '#C4A35A',
+  taptempo: '#E07A5F', notequiz: '#5AA9A3', moreless: '#9C7CB8', guessnumber: '#4A90D9',
+  sequence: '#E8B44F', rhythm: '#C4748B', tictactoe: '#6FA85C', slidepuzzle: '#8a86d6',
+  garden: '#6FA85C',
+};
+// Group the 17 games into a few calm, labelled sections so the home isn't an
+// overwhelming wall of cards (chunking lowers cognitive load — KB
+// accessibility-older-adults). "Dorthes have" is featured at the top.
+const HOME_SECTIONS = [
+  { title: '', ids: ['garden'], featured: true },
+  { title: '🧠 Hukommelse & opmærksomhed', ids: ['memory', 'sequence', 'nback', 'wordsearch'] },
+  { title: '🧩 Tal, logik & puslespil', ids: ['sudoku', 'lightsout', 'minesweeper', 'slidepuzzle', 'tictactoe', 'solitaire', 'guessnumber', 'moreless'] },
+  { title: '🎵 Musik, rytme & terninger', ids: ['taptempo', 'notequiz', 'rhythm', 'yatzy'] },
+];
+
 function renderHomeScreen() {
   const grid = document.querySelector('.game-grid');
   if (!grid) return;
   grid.innerHTML = '';
+  const byId = {}; GAME_DEFS.forEach((g) => { byId[g.id] = g; });
 
-  GAME_DEFS.forEach((game) => {
+  function makeCard(game, featured) {
     const stats = Stats.get(game.id);
     const btn = document.createElement('button');
-    btn.className = 'game-card';
+    btn.className = 'game-card' + (featured ? ' featured' : '');
+    btn.style.setProperty('--ca', GAME_COLORS[game.id] || '#527D5C');
     btn.onclick = () => { goScreen(game.id); window[game.init](); };
-
     let statLine = '';
     if (stats.lastPlayed) {
       const parts = [];
       if (stats.won) parts.push('Vundet: ' + stats.won);
       if (stats.bestTime) parts.push('Bedste: ' + formatTime(stats.bestTime));
-      statLine = '<span class="game-stat">' +
-        formatTimeAgo(stats.lastPlayed) +
-        (parts.length ? ' · ' + parts.join(' · ') : '') +
-        '</span>';
+      statLine = '<span class="game-stat">' + formatTimeAgo(stats.lastPlayed) +
+        (parts.length ? ' · ' + parts.join(' · ') : '') + '</span>';
     }
-
     btn.innerHTML =
       '<span class="game-icon">' + game.icon + '</span>' +
       '<span class="game-name">' + game.name + '</span>' +
-      '<span class="game-desc">' + game.desc + '</span>' +
-      statLine;
+      '<span class="game-desc">' + game.desc + '</span>' + statLine;
+    return btn;
+  }
 
-    grid.appendChild(btn);
+  const placed = new Set();
+  HOME_SECTIONS.forEach((section) => {
+    const games = section.ids.map((id) => byId[id]).filter(Boolean);
+    if (!games.length) return;
+    if (section.title) {
+      const h = document.createElement('h2');
+      h.className = 'home-section'; h.textContent = section.title;
+      grid.appendChild(h);
+    }
+    games.forEach((g) => { placed.add(g.id); grid.appendChild(makeCard(g, section.featured)); });
   });
+  // any game not listed in a section still shows (future-proof)
+  const leftovers = GAME_DEFS.filter((g) => !placed.has(g.id));
+  if (leftovers.length) {
+    const h = document.createElement('h2'); h.className = 'home-section'; h.textContent = '🎮 Mere';
+    grid.appendChild(h);
+    leftovers.forEach((g) => grid.appendChild(makeCard(g, false)));
+  }
 
   // Stats page link (avoid duplicating)
   let existingLink = grid.parentElement.querySelector('.stats-link-btn');
