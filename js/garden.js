@@ -14,6 +14,32 @@
   const COST_OF = (type) => L.BUILD_COST[type] || L.DECOR_COST[type];
   const RES_ICON = { sol: '☀️', vand: '💧', froe: '🌱' };
   const GUIDE = { emoji: '🐕', name: 'Amigo' };
+  // Custom vector portrait of Amigo (Mathias's family dog) — a scruffy warm-brown
+  // wire-haired terrier with a beard, bushy brows and floppy ears, drawn from his photo.
+  const AMIGO_SVG = '<svg viewBox="0 0 64 64" class="gd-amigo" role="img" aria-label="Amigo">' +
+    '<g stroke="#3c2f22" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">' +
+    // floppy ears (darker brown), behind the head
+    '<path d="M17 23 C8 22 6 37 15 45 C20 41 22 31 22 26 Z" fill="#8a5a2e"/>' +
+    '<path d="M47 23 C56 22 58 37 49 45 C44 41 42 31 42 26 Z" fill="#8a5a2e"/>' +
+    // head — warm tan, slightly shaggy silhouette
+    '<path d="M13 31 C13 18 21 12 32 12 C43 12 51 18 51 31 C51 43 44 51 32 53 C20 51 13 43 13 31 Z" fill="#c08f4c"/>' +
+    // scruffy fur tufts on top of the head
+    '<path d="M22 14 l-3 -7 l5 3 l3 -7 l3 7 l4 -5 l2 7 l4 -4 l1 6 Z" fill="#cd9c56"/>' +
+    // bushy eyebrows
+    '<path d="M21 27 q4 -4 9 -1" fill="none"/>' +
+    '<path d="M43 27 q-4 -4 -9 -1" fill="none"/>' +
+    // shaggy beard / muzzle (lighter), with side fur
+    '<path d="M22 35 C21 47 27 55 32 55 C37 55 43 47 42 35 C39 41 25 41 22 35 Z" fill="#e2c281"/>' +
+    '<path d="M24 50 l-3 5 l4 -2 l2 4 l3 -4 l3 4 l2 -4 l4 2 l-3 -5 Z" fill="#e7ca90"/>' +
+    '</g>' +
+    // eyes (friendly, with a little shine)
+    '<ellipse cx="26" cy="31" rx="2.7" ry="3" fill="#241c16"/>' +
+    '<ellipse cx="38" cy="31" rx="2.7" ry="3" fill="#241c16"/>' +
+    '<circle cx="27.1" cy="30" r="0.9" fill="#fff"/><circle cx="39.1" cy="30" r="0.9" fill="#fff"/>' +
+    // nose + gentle smile
+    '<ellipse cx="32" cy="39" rx="3.3" ry="2.5" fill="#241c16"/>' +
+    '<path d="M32 41.5 q-3.5 3 -6.5 0.5 M32 41.5 q3.5 3 6.5 0.5" stroke="#3c2f22" stroke-width="1.4" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
   const TASK_REWARDS = [{ vand: 2, sol: 1 }, { froe: 2 }, { sol: 2, vand: 1 }, { vand: 3 }, { froe: 1, sol: 1, vand: 1 }];
 
   let S = null, stopped = false, timers = [], pendingBuild = null, pendingMove = null, musicStarted = false;
@@ -238,7 +264,7 @@
   }
   function renderGuide(text) {
     if (!guideEl) return;
-    guideEl.innerHTML = '<span class="gd-guide-face">' + GUIDE.emoji + '</span>' +
+    guideEl.innerHTML = '<span class="gd-guide-face">' + AMIGO_SVG + '</span>' +
       '<span class="gd-guide-say"><b>' + GUIDE.name + ':</b> ' + (text || currentStory()) + '</span>';
   }
   // The scene is now a 2.5D isometric PixiJS canvas (garden-iso.js); it renders S.grid and
@@ -594,7 +620,7 @@
     function show() {
       document.querySelectorAll('.gd-coach-target').forEach((e) => e.classList.remove('gd-coach-target'));
       const st = steps[i];
-      coach.innerHTML = '<div class="gd-coach-card"><div class="gd-cf">🐕</div>' +
+      coach.innerHTML = '<div class="gd-coach-card"><div class="gd-cf">' + AMIGO_SVG + '</div>' +
         '<p class="gd-coach-say">' + st.say + '</p>' +
         '<button class="btn btn-primary" id="gd-coach-next">' + st.btn + '</button>' +
         '<button class="gd-coach-skip" id="gd-coach-skip">Spring introen over</button></div>';
