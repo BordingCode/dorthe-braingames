@@ -79,8 +79,9 @@
 }
 /* soft sun, top-right */
 .gd-world::before {
-  content: ''; position: absolute; top: 14px; right: 20px; width: 46px; height: 46px; border-radius: 50%; z-index: 0;
-  background: radial-gradient(circle, #fff6cf 0%, #ffe487 45%, rgba(255,220,120,0) 72%);
+  content: ''; position: absolute; top: 6px; right: 10px; width: 64px; height: 64px; border-radius: 50%; z-index: 0;
+  background: radial-gradient(circle, #fffbe9 0%, #fff2b4 30%, #ffe487 48%, rgba(255,224,140,0.28) 70%, rgba(255,224,140,0) 100%);
+  box-shadow: 0 0 120px 60px rgba(255,238,170,0.35); /* soft warm wash over the whole scene */
 }
 /* rolling hills at the horizon + gentle vignette */
 .gd-world::after {
