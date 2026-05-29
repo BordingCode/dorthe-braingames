@@ -143,8 +143,13 @@
 }
 
 /* ---- M-A: layered scene depth ---- */
-.gd-world { min-height: 340px; display: flex; flex-direction: column; }
+.gd-world { min-height: 392px; display: flex; flex-direction: column; }
 .gd-scenery { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+/* soft grass band the foreground bed sits on, so it's planted in the world (not floating) */
+.gd-scenery::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 30%; z-index: 1;
+  background: linear-gradient(180deg, rgba(125,187,105,0) 0%, #84c06d 38%, #6fb259 100%);
+}
 .gd-scenery-svg { position: absolute; left: -4%; bottom: 0; width: 108%; height: 100%; }
 .gd-scenery-svg .gd-hill-far { fill: #b6dca0; opacity: 0.85; }
 .gd-scenery-svg .gd-hill-near { fill: #98c97e; }
