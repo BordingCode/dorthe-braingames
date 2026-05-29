@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = 6;
+  const VERSION = 7;
   // the world grows through these stages (the "small bed → huge wild park" arc)
   const STAGES = [
     { id: 'bed', name: 'Lille bed', cols: 3, rows: 3 },
@@ -104,6 +104,7 @@
       grid: makeGrid(s0.cols * s0.rows),
       resources: { sol: 1, vand: 3, froe: 3 },
       questIndex: 0, wildlifeSeen: {}, flowersSeen: {}, builtSeen: {}, picked: 0, timeOfDay: 0, hygge: 0,
+      guests: {}, wish: null,
     };
   }
 
@@ -117,6 +118,9 @@
   function hasType(s, type) { return s.grid.some((t) => t.type === type); }
   function countType(s, type) { return s.grid.filter((t) => t.type === type).length; }
   function decorCount(s) { return s.grid.filter((t) => DECOR.includes(t.type)).length; }
+  function natureCount(s) { return s.grid.filter((t) => BUILDABLE.includes(t.type)).length; }
+  function distinctDecorCount(s) { const seen = {}; let n = 0; for (const t of s.grid) if (DECOR.includes(t.type) && !seen[t.type]) { seen[t.type] = 1; n++; } return n; }
+  function bloomColours(s) { return new Set(s.grid.filter((t) => t.type === 'flower' && t.stage === 3 && t.flower).map((t) => t.flower)).size; }
 
   // choice: a specific flower emoji to grow, or null/undefined for "mixed seeds" (random at bloom)
   function plant(s, i, choice) {
@@ -208,6 +212,72 @@
     return { completed, finale, allDone: !currentQuest(s) };
   }
 
+  /* ---------- living guests & their little wishes ----------
+   * Each animal you've attracted STAYS and, gently, asks for one small thing — always a
+   * real forward ask (relative to the moment it's asked), never pre-satisfied, never timed,
+   * never a fail. At most ONE wish is active at a time (no chore list). Granting it makes
+   * that guest a little happier (a heart) and gives a modest bonus — smaller than a
+   * mini-game, so playing games stays the main income. This is the gentle heartbeat that
+   * keeps the garden alive after the quest chain ends. See gamedev-kb: systems-and-economy
+   * (turn the wildlife "arc" into a loop), motivation-and-ethics (no daily-guilt decay).
+   */
+  const WISHES = {
+    '🦋': { metric: bloomColours, inc: 1, unit: 'farver i flor', say: 'Sommerfuglen drømmer om en ny farve i haven 🌈' },
+    '🐝': { metric: bloomCount, inc: 2, unit: 'blomster i flor', say: 'Bien vil summe om endnu flere blomster 🌼' },
+    '🐞': { metric: bloomCount, inc: 1, unit: 'blomster i flor', say: 'Mariehønen vil se én blomst mere springe ud 🐞' },
+    '🐦': { metric: decorCount, inc: 1, unit: 'pynt i haven', say: 'Fuglen ønsker sig lidt mere pynt at sidde på 🏠' },
+    '🐸': { metric: natureCount, inc: 1, unit: 'natur-ting', say: 'Frøen vil have mere natur omkring sig 🌿' },
+    '🦔': { metric: distinctDecorCount, inc: 1, unit: 'slags pynt', say: 'Pindsvinet elsker hygge — sæt en ny slags pynt 🍄' },
+    '🐿️': { metric: (s) => countType(s, 'tree'), inc: 1, unit: 'træer', say: 'Egernet ønsker sig endnu et træ at klatre i 🌳' },
+    '🦆': { metric: bloomCount, inc: 2, unit: 'blomster i flor', say: 'Anden vil se haven blomstre endnu mere 🌸' },
+  };
+  // make sure every animal we've seen has a guest record (lazy, idempotent)
+  function syncGuests(s) {
+    s.guests = s.guests || {};
+    for (const w in (s.wildlifeSeen || {})) if (WISHES[w] && !s.guests[w]) s.guests[w] = { happy: 0 };
+    return s.guests;
+  }
+  function happyGuestCount(s) { let n = 0; const g = s.guests || {}; for (const k in g) if ((g[k].happy || 0) > 0) n++; return n; }
+  // the modest reward for granting a wish — small, varied, with a tiny extra every 3rd heart
+  function wishReward(happy) {
+    const r = { froe: 1 };
+    if (happy % 2 === 0) r.sol = 1; else r.vand = 1;
+    const gift = happy % 3 === 0;
+    if (gift) r.froe += 1;
+    return { reward: r, gift };
+  }
+  // the live state of the active wish (or null) — progress is clamped at 0 so harvesting can't go negative
+  function wishProgress(s) {
+    if (!s.wish || !WISHES[s.wish.guest]) return null;
+    const w = WISHES[s.wish.guest];
+    const have = Math.max(0, w.metric(s) - s.wish.base);
+    return { guest: s.wish.guest, say: w.say, unit: w.unit, have: Math.min(have, w.inc), need: w.inc, done: have >= w.inc };
+  }
+  // pick a new wish if none is active: a random seen guest, anchored to the current state so it's always a real ask
+  function assignWish(s, rng) {
+    syncGuests(s);
+    if (s.wish) return null;
+    const seen = Object.keys(s.guests).filter((g) => WISHES[g]);
+    if (!seen.length) return null;
+    const g = seen[Math.floor((rng || Math.random)() * seen.length)];
+    s.wish = { guest: g, base: WISHES[g].metric(s) };
+    return g;
+  }
+  // if the active wish is fulfilled: the guest gets happier, you get the bonus, the wish clears
+  function grantWishIfDone(s) {
+    const p = wishProgress(s);
+    if (!p || !p.done) return null;
+    const g = s.wish.guest;
+    syncGuests(s);
+    s.guests[g] = s.guests[g] || { happy: 0 };
+    s.guests[g].happy = (s.guests[g].happy || 0) + 1;
+    const happy = s.guests[g].happy;
+    const { reward, gift } = wishReward(happy);
+    earn(s, reward);
+    s.wish = null;
+    return { guest: g, happy, reward, gift };
+  }
+
   /* ---------- the world grows with progress ---------- */
   function stageForQuest(qi) { return qi >= 9 ? 4 : qi >= 7 ? 3 : qi >= 5 ? 2 : qi >= 2 ? 1 : 0; }
   function currentSeason(s) { return SEASON_FOR_STAGE[s.stage] || 0; }
@@ -246,7 +316,8 @@
     }
     const colours = new Set(s.grid.filter((t) => t.type === 'flower' && t.stage === 3 && t.flower).map((t) => t.flower)).size;
     const wildlife = Object.keys(s.wildlifeSeen || {}).length;
-    return bloomCount(s) + nature + placedDecor * 2 + distinctDecor * 2 + colours + wildlife;
+    // a garden full of happy guests is more charming (capped so endless wishes can't runaway-inflate it)
+    return bloomCount(s) + nature + placedDecor * 2 + distinctDecor * 2 + colours + wildlife + happyGuestCount(s);
   }
   function hyggeLevel(score) { let lv = 0; for (let i = 0; i < HYGGE_LEVELS.length; i++) if (score >= HYGGE_LEVELS[i].min) lv = i; return lv; }
   function progress(s) {
@@ -265,7 +336,8 @@
   function load(json) {
     try {
       const s = JSON.parse(json);
-      if (!s || s.v !== VERSION || !Array.isArray(s.grid)) return newState();
+      // accept the current version AND the immediately-previous one (v6 saves migrate, keeping the garden)
+      if (!s || !Array.isArray(s.grid) || (s.v !== VERSION && s.v !== 6)) return newState();
       if (typeof s.cols !== 'number' || typeof s.rows !== 'number' || s.grid.length !== s.cols * s.rows) return newState();
       for (const t of s.grid) { if (!t || typeof t.type !== 'string') return newState(); }
       s.resources = s.resources || { sol: 0, vand: 0, froe: 0 };
@@ -279,6 +351,12 @@
       s.picked = s.picked || 0;
       if (typeof s.timeOfDay !== 'number' || s.timeOfDay < 0 || s.timeOfDay >= TIMES.length) s.timeOfDay = 0;
       if (typeof s.hygge !== 'number' || s.hygge < 0) s.hygge = 0;
+      // guests & the single active wish
+      if (!s.guests || typeof s.guests !== 'object') s.guests = {};
+      for (const k in s.guests) { const gg = s.guests[k]; if (!gg || typeof gg.happy !== 'number' || gg.happy < 0) s.guests[k] = { happy: 0 }; }
+      syncGuests(s); // any animal already seen becomes a guest (migrates v6 saves cleanly)
+      if (!s.wish || typeof s.wish.guest !== 'string' || !WISHES[s.wish.guest] || typeof s.wish.base !== 'number' || s.wish.base < 0) s.wish = null;
+      s.v = VERSION; // stamp up to the current version after migrating
       return s;
     } catch { return newState(); }
   }
@@ -286,9 +364,10 @@
   const api = {
     VERSION, STAGES, TIMES, SEASONS, SEASON_FOR_STAGE, FLOWERS, RARE, FLOWER_NAMES, FLOWER_FACTS,
     WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI, DECORATIONS,
-    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS,
+    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS, WISHES,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
+    syncGuests, happyGuestCount, wishProgress, assignWish, grantWishIfDone,
     currentSeason, advanceTime, HYGGE_LEVELS, hyggeScore, hyggeLevel, difficultyParams, progress, save, load,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

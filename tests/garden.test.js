@@ -145,6 +145,56 @@ test('save → load round-trips; corrupt / old-version load → fresh', () => {
   assert.deepStrictEqual(G.load('{"v":5}'), G.newState()); // older saves are replaced cleanly
 });
 
+test('v6 saves MIGRATE (keep the garden) and gain guests + wish; seen animals become guests', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 99, froe: 9 };
+  G.build(s, 'pond', 4);                       // attracts a frog → wildlifeSeen has 🐸
+  // simulate an old v6 save: same shape, but without the new guests/wish fields
+  const old = JSON.parse(G.save(s)); old.v = 6; delete old.guests; delete old.wish;
+  const m = G.load(JSON.stringify(old));
+  assert.strictEqual(m.v, G.VERSION);          // stamped up
+  assert.strictEqual(m.grid[4].type, 'pond');  // the garden is preserved, not wiped
+  assert.ok(m.guests['🐸']);                    // the already-seen frog became a guest
+  assert.strictEqual(m.wish, null);            // no active wish yet
+  // a corrupt wish is dropped on load
+  const bad = JSON.parse(G.save(m)); bad.wish = { guest: 'not-an-animal', base: 0 };
+  assert.strictEqual(G.load(JSON.stringify(bad)).wish, null);
+});
+
+test('wishes: assigned only for seen guests, always a real forward ask, one at a time', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 999, froe: 99 };
+  assert.strictEqual(G.assignWish(s, () => 0), null);   // no guests seen yet → no wish
+  for (let i = 0; i <= 6; i++) bloom(s, i);             // blooms → butterfly + ladybug appear
+  const g = G.assignWish(s, () => 0);                   // rng→0 picks the first seen guest deterministically
+  assert.ok(g && G.WISHES[g]);
+  assert.ok(s.wish && s.wish.guest === g);
+  const p = G.wishProgress(s);
+  assert.ok(p && p.done === false && p.have === 0 && p.need >= 1); // freshly assigned is never pre-satisfied
+  assert.strictEqual(G.assignWish(s, () => 0), null);   // already one active → never a second
+});
+
+test('wishes: granting makes a guest happier, pays a modest bonus, then clears', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 999, froe: 99 };
+  bloom(s, 0); bloom(s, 1);                              // butterfly (needs 1 new colour)
+  // force a known wish: the ladybug wants 1 more bloom
+  s.guests = { '🐞': { happy: 0 } }; s.wish = { guest: '🐞', base: G.bloomCount(s) };
+  assert.strictEqual(G.grantWishIfDone(s), null);        // not done yet
+  bloom(s, 2);                                           // one more bloom → wish met
+  const before = s.resources.froe;
+  const r = G.grantWishIfDone(s);
+  assert.ok(r && r.guest === '🐞' && r.happy === 1);
+  assert.ok(s.resources.froe > before);                  // a modest reward was paid
+  assert.strictEqual(s.wish, null);                      // wish cleared
+  assert.strictEqual(s.guests['🐞'].happy, 1);           // heart recorded
+});
+
+test('hygge: happy guests add a small, capped charm bonus', () => {
+  const s = G.newState();
+  const base = G.hyggeScore(s);
+  s.guests = { '🦋': { happy: 3 }, '🐝': { happy: 1 }, '🐞': { happy: 0 } };
+  assert.strictEqual(G.happyGuestCount(s), 2);           // only guests with ≥1 heart count
+  assert.strictEqual(G.hyggeScore(s), base + 2);         // +1 per happy guest, not per heart (no runaway)
+});
+
 test('hygge: decorations and variety raise charm; levels climb', () => {
   const s = G.newState(); s.resources = { sol: 99, vand: 99, froe: 99 };
   const base = G.hyggeScore(s);

@@ -21,6 +21,7 @@
   const gridEl = document.getElementById('garden-grid');
   const hudEl = document.getElementById('garden-hud');
   const questEl = document.getElementById('garden-quest');
+  const wishEl = document.getElementById('garden-wish');
   const hintEl = document.getElementById('garden-hint');
   const overlayEl = document.getElementById('garden-overlay');
   const musicBtn = document.getElementById('garden-music-btn');
@@ -79,10 +80,34 @@
   /* ---------- render ---------- */
   function ensureLayers() {
     if (!worldEl) return {};
+    // distant scenery (parallax hills + trees) — drawn once, behind everything, gives the world depth
+    if (!worldEl.querySelector('.gd-scenery')) {
+      const sc = document.createElement('div'); sc.className = 'gd-scenery';
+      sc.innerHTML =
+        '<svg class="gd-scenery-svg" viewBox="0 0 480 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+        '<path class="gd-hill gd-hill-far" d="M0 168 Q120 120 240 156 T480 150 V300 H0 Z"/>' +
+        '<g class="gd-trees-far">' +
+          treeSVG(60, 168, 0.7) + treeSVG(150, 158, 0.55) + treeSVG(330, 160, 0.6) + treeSVG(430, 166, 0.8) +
+        '</g>' +
+        '<path class="gd-hill gd-hill-near" d="M0 206 Q140 168 280 200 T480 196 V300 H0 Z"/>' +
+        '<g class="gd-trees-near">' + treeSVG(40, 210, 1) + treeSVG(250, 206, 0.9) + treeSVG(455, 212, 1.05) + '</g>' +
+        '</svg>';
+      worldEl.insertBefore(sc, worldEl.firstChild);
+    }
+    if (!worldEl.querySelector('.gd-ambient')) { const a = document.createElement('div'); a.className = 'gd-ambient'; worldEl.appendChild(a); }
     let weather = worldEl.querySelector('.gd-weather');
     if (!worldEl.querySelector('.gd-daylight')) { const d = document.createElement('div'); d.className = 'gd-daylight'; worldEl.appendChild(d); }
     if (!weather) { weather = document.createElement('div'); weather.className = 'gd-weather'; worldEl.appendChild(weather); }
-    return { weather };
+    return { weather, ambient: worldEl.querySelector('.gd-ambient') };
+  }
+  // a soft layered tree for the distant scenery
+  function treeSVG(x, y, s) {
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<rect x="-3" y="-2" width="6" height="16" rx="2" fill="#7a5733"/>' +
+      '<ellipse cx="0" cy="-14" rx="20" ry="18" fill="#6fae5e"/>' +
+      '<ellipse cx="-9" cy="-8" rx="13" ry="12" fill="#7dbb69"/>' +
+      '<ellipse cx="9" cy="-9" rx="12" ry="12" fill="#84c270"/>' +
+      '</g>';
   }
   function applyStageTheme() {
     if (!worldEl) return;
@@ -98,6 +123,27 @@
       m.style.animationDuration = (7 + Math.random() * 6) + 's';
       m.style.animationDelay = (-Math.random() * 8) + 's';
       worldEl.appendChild(m);
+    }
+    // scene-wide ambient life: butterflies drift across the WHOLE world once it's blooming
+    const amb = worldEl.querySelector('.gd-ambient');
+    if (amb) {
+      amb.innerHTML = '';
+      const blooms = S.grid.filter((t) => t.type === 'flower').length;
+      const n = reduce() ? 0 : Math.min(3, Math.floor(blooms / 2));
+      const cols = ['#ffb3d1', '#ffd166', '#a6e3ff'];
+      for (let k = 0; k < n; k++) {
+        const b = document.createElement('div'); b.className = 'gd-butterfly';
+        b.style.top = (30 + Math.random() * 50) + '%';
+        b.style.setProperty('--bf', cols[k % cols.length]);
+        b.style.animationDuration = (13 + Math.random() * 8) + 's';
+        b.style.animationDelay = (-Math.random() * 12) + 's';
+        b.style.setProperty('--rise', (-18 - Math.random() * 26) + 'px');
+        b.innerHTML = '<svg viewBox="0 0 24 20" width="22" height="18"><g class="gd-bf-wings">' +
+          '<path d="M12 10 C6 2 0 4 2 10 C0 16 7 18 12 11 Z" fill="var(--bf)"/>' +
+          '<path d="M12 10 C18 2 24 4 22 10 C24 16 17 18 12 11 Z" fill="var(--bf)" opacity="0.92"/>' +
+          '<ellipse cx="12" cy="10" rx="1.4" ry="4" fill="#5b4636"/></g></svg>';
+        amb.appendChild(b);
+      }
     }
     // season weather: cherry petals in spring, falling leaves in autumn
     if (weather) {
@@ -124,6 +170,25 @@
       ? '📜 ' + q.icon + ' <b>' + q.title + '</b> — ' + q.goal(S).text
       : '🌳 <b>Haven trives!</b> Nyd den — eller pluk og plant videre.';
   }
+  // a living guest perched in the world, tied to the active wish (gentle bob; static if reduced-motion)
+  function renderWorldGuest(guest) {
+    if (!worldEl) return;
+    let el = worldEl.querySelector('.gd-guest');
+    if (!guest) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.className = 'gd-guest'; worldEl.appendChild(el); }
+    el.textContent = guest;
+  }
+  // the single active wish line (or hidden) — always a calm, optional little ask from a guest
+  function renderWish() {
+    const p = L.wishProgress(S);
+    renderWorldGuest(p ? p.guest : null);
+    if (!wishEl) return;
+    if (!p) { wishEl.classList.remove('show'); wishEl.innerHTML = ''; return; }
+    wishEl.classList.add('show');
+    wishEl.innerHTML = '<span class="gd-wish-face">' + p.guest + '</span>' +
+      '<span class="gd-wish-say">' + p.say + ' <b>(' + p.have + '/' + p.need + ')</b></span>';
+  }
+
   function currentStory() {
     const q = L.currentQuest(S);
     return q ? (L.STORY[q.id] || '') : 'Haven trives nu! Den er blevet et lille paradis for dyrene. 🌳';
@@ -170,10 +235,31 @@
       later(() => { if (!stopped) renderGuide(); }, 3200);
     }
   }
-  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderGuide(); renderHygge(); renderGrid(); }
+  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderWish(); renderGuide(); renderHygge(); renderGrid(); }
 
   /* ---------- actions ---------- */
-  function afterAction(hint) { save(); renderHUD(); renderHygge(); renderGrid(); if (hint) setHint(hint); checkQuests(); checkHygge(); }
+  function afterAction(hint) { save(); renderHUD(); renderHygge(); renderGrid(); if (hint) setHint(hint); checkQuests(); checkHygge(); checkWishes(); }
+
+  // grant a fulfilled wish (a happy moment), then hand the garden its next gentle ask
+  function checkWishes() {
+    const g = L.grantWishIfDone(S);
+    if (g) {
+      save(); renderHUD(); renderHygge();
+      mEvent('quest');
+      playTone(587.33, 150, 'sine'); later(() => playTone(783.99, 190, 'sine'), 120);
+      launchConfetti(900);
+      const rewardTxt = Object.keys(g.reward).map((k) => '+' + g.reward[k] + RES_ICON[k]).join('  ');
+      later(() => { toast(g.guest + ' er glad nu! 💛  ' + rewardTxt); popAtHud(rewardTxt); }, 250);
+      renderGuide(g.guest + ' er så glad for haven nu! 💛');
+      later(() => { if (!stopped) renderGuide(); }, 2900);
+      if (g.gift) later(() => toast('💛 ' + g.guest + ' har fået dig rigtig kær!'), 950);
+    }
+    const assigned = L.assignWish(S, Math.random);
+    save();
+    renderWish();
+    // a freshly arrived ask gets a soft pulse; Amigo only speaks it when nothing else is talking
+    if (assigned && wishEl) { wishEl.classList.remove('gd-wish-pulse'); void wishEl.offsetWidth; wishEl.classList.add('gd-wish-pulse'); }
+  }
 
   function onTile(i) {
     if (stopped) return;
@@ -393,6 +479,16 @@
       return '<p class="gd-fact"><span>' + it + '</span> ' + nm + ft + '</p>';
     }).join('') + '</div>';
   }
+  // the guests who've grown happy through their wishes — shown with little hearts
+  function happyGuestsHtml() {
+    const g = S.guests || {};
+    const happy = L.WILDLIFE.filter((w) => g[w] && g[w].happy > 0);
+    if (!happy.length) return '';
+    return '<p class="gd-happy">💛 Glade gæster: ' +
+      happy.map((w) => '<span class="gd-happy-g">' + w + '<span class="gd-hearts">' + '💛'.repeat(Math.min(g[w].happy, 5)) + '</span></span>').join(' ') +
+      '</p>';
+  }
+
   function openHavelog() {
     const p = L.progress(S);
     const buildNames = {}; L.DECORATIONS.forEach((t) => { buildNames[t] = NAME[t] || ''; });
@@ -404,6 +500,7 @@
       factList(L.FLOWERS, S.flowersSeen, L.FLOWER_NAMES, L.FLOWER_FACTS, 'Dyrk blomster for at fylde samlingen. 🌱') +
       '<h4 class="gd-alm-h">🦋 Dyr <span>' + p.wildlife + '/' + p.wildlifeTotal + '</span></h4>' +
       collRow(L.WILDLIFE, S.wildlifeSeen) +
+      happyGuestsHtml() +
       factList(L.WILDLIFE, S.wildlifeSeen, null, L.FACTS, 'Tiltræk dyr for at låse vidste-du-fakta op. 💡') +
       '<h4 class="gd-alm-h">🪴 Pynt & natur <span>' + p.builtKinds + '/' + p.builtKindsTotal + '</span></h4>' +
       collRow(L.DECORATIONS, S.builtSeen) +
@@ -422,6 +519,7 @@
     closeOverlay();
     Stats.increment('garden', 'played');
     updateMusicBtn();
+    if (!S.wish) L.assignWish(S, Math.random); // a returning guest may already be waiting with a little wish
     renderAll();
     updateScene();
     const q = L.currentQuest(S);

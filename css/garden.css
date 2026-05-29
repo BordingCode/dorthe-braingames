@@ -46,6 +46,30 @@
   font-size: 15px; text-align: center; box-shadow: var(--shadow-sm);
 }
 
+/* a guest's gentle little wish — warm, optional, never a fail; at most one at a time */
+#garden-wish {
+  width: 100%; max-width: 480px; margin: 6px auto 0; display: none; align-items: center; gap: 9px;
+  background: linear-gradient(180deg, #fff7e6 0%, #ffeecb 100%);
+  border: 1px solid #f0d49a; border-radius: var(--radius); padding: 7px 12px;
+  font-size: 14px; box-shadow: var(--shadow-sm);
+}
+#garden-wish.show { display: flex; }
+.gd-wish-face { font-size: 22px; flex: 0 0 auto; animation: gdWishBob 3s ease-in-out infinite; }
+.gd-wish-say { line-height: 1.3; }
+.gd-wish-say b { color: var(--primary); white-space: nowrap; }
+#garden-wish.gd-wish-pulse { animation: gdWishPulse 0.6s ease; }
+@keyframes gdWishPulse { 0% { transform: scale(0.97); box-shadow: 0 0 0 0 rgba(240,200,120,0.6); } 60% { transform: scale(1.01); box-shadow: 0 0 0 7px rgba(240,200,120,0); } 100% { transform: none; } }
+@keyframes gdWishBob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-3px) rotate(3deg); } }
+/* the wishing guest, living in the garden scene */
+.gd-guest {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6; font-size: 26px; pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25)); animation: gdGuestBob 3.2s ease-in-out infinite;
+}
+@keyframes gdGuestBob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-5px) rotate(3deg); } }
+.gd-happy { text-align: center; font-size: 15px; margin: 2px 0 10px; line-height: 1.7; }
+.gd-happy-g { white-space: nowrap; margin: 0 4px; }
+.gd-hearts { font-size: 11px; vertical-align: middle; }
+
 /* the gridded world — a little storybook scene */
 .gd-world {
   position: relative; width: 100%; max-width: 480px; margin: 0 auto;
@@ -118,8 +142,40 @@
   100% { transform: translate(26px, -150px); opacity: 0; }
 }
 
+/* ---- M-A: layered scene depth ---- */
+.gd-world { min-height: 340px; display: flex; flex-direction: column; }
+.gd-scenery { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.gd-scenery-svg { position: absolute; left: -4%; bottom: 0; width: 108%; height: 100%; }
+.gd-scenery-svg .gd-hill-far { fill: #b6dca0; opacity: 0.85; }
+.gd-scenery-svg .gd-hill-near { fill: #98c97e; }
+.gd-scenery-svg .gd-trees-far { opacity: 0.72; filter: saturate(0.85) brightness(1.04); }
+@media (prefers-reduced-motion: no-preference) {
+  .gd-scenery-svg .gd-trees-far { animation: gdParallax 26s ease-in-out infinite; }
+  .gd-scenery-svg .gd-trees-near { animation: gdParallax 18s ease-in-out infinite reverse; }
+}
+@keyframes gdParallax { 0%,100% { transform: translateX(-6px); } 50% { transform: translateX(6px); } }
+
+/* ambient life drifting across the WHOLE scene */
+.gd-ambient { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+.gd-butterfly { position: absolute; left: -10%; animation: gdFlutter linear infinite; }
+.gd-butterfly .gd-bf-wings { transform-box: fill-box; transform-origin: 50% 50%; animation: gdFlap 0.28s ease-in-out infinite; }
+@keyframes gdFlap { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(0.45); } }
+@keyframes gdFlutter {
+  0%   { transform: translate(0,0) rotate(-4deg); opacity: 0; }
+  8%   { opacity: 0.95; }
+  50%  { transform: translate(58vw, var(--rise, -20px)) rotate(5deg); }
+  92%  { opacity: 0.95; }
+  100% { transform: translate(120vw, 6px) rotate(-3deg); opacity: 0; }
+}
+
+/* ---- M-A: plots become a raised garden bed in the foreground ---- */
 #garden-grid {
-  display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 6px; margin-top: 12px;
+  display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 4px;
+  margin-top: auto; position: relative; z-index: 2; padding: 10px 10px 12px; border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(120,84,46,0) 0%, rgba(120,84,46,0.14) 16%, rgba(90,60,30,0.30) 100%),
+    linear-gradient(180deg, #b98a5a 0%, #9a6a3d 100%);
+  box-shadow: 0 6px 0 #6f4a26, 0 10px 16px rgba(50,34,16,0.35), inset 0 2px 4px rgba(255,240,210,0.25);
 }
 .gd-tile {
   position: relative; min-width: 0; aspect-ratio: 1; border: none; border-radius: var(--radius-sm);
@@ -315,7 +371,8 @@
   .gd-tile.pop, .gd-tile.wiggle, .gd-toast, .gd-cell.wrong, .gd-num.wrong, .gd-pad.wrong,
   .gd-sway, .gd-world.grow, .gd-tile.placeable, .gd-guide-face, .gd-guide-say,
   .gd-tile.gd-bloomed .gd-petals, .gd-tile.gd-grown .gd-svg, .gd-tile.gd-unfurl .gd-svg,
-  .gd-overlay .gd-task, .gd-coach-card, .gd-coach-target { animation: none; }
+  .gd-overlay .gd-task, .gd-coach-card, .gd-coach-target,
+  .gd-wish-face, .gd-guest, #garden-wish.gd-wish-pulse { animation: none; }
   .gd-mote, .gd-fall, .gd-spark, .gd-arrival { display: none; }
   .gd-pop-num { animation: none; opacity: 0; }
 }
