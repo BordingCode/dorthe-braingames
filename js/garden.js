@@ -80,18 +80,10 @@
   /* ---------- render ---------- */
   function ensureLayers() {
     if (!worldEl) return {};
-    // distant scenery (parallax hills + trees) — drawn once, behind everything, gives the world depth
+    // distant scenery container (parallax hills + trees) — rebuilt per stage so the world
+    // visibly grows richer and comes alive as the garden advances
     if (!worldEl.querySelector('.gd-scenery')) {
       const sc = document.createElement('div'); sc.className = 'gd-scenery';
-      sc.innerHTML =
-        '<svg class="gd-scenery-svg" viewBox="0 0 480 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
-        '<path class="gd-hill gd-hill-far" d="M0 168 Q120 120 240 156 T480 150 V300 H0 Z"/>' +
-        '<g class="gd-trees-far">' +
-          treeSVG(60, 168, 0.7) + treeSVG(150, 158, 0.55) + treeSVG(330, 160, 0.6) + treeSVG(430, 166, 0.8) +
-        '</g>' +
-        '<path class="gd-hill gd-hill-near" d="M0 206 Q140 168 280 200 T480 196 V300 H0 Z"/>' +
-        '<g class="gd-trees-near">' + treeSVG(40, 210, 1) + treeSVG(250, 206, 0.9) + treeSVG(455, 212, 1.05) + '</g>' +
-        '</svg>';
       worldEl.insertBefore(sc, worldEl.firstChild);
     }
     if (!worldEl.querySelector('.gd-ambient')) { const a = document.createElement('div'); a.className = 'gd-ambient'; worldEl.appendChild(a); }
@@ -101,20 +93,48 @@
     return { weather, ambient: worldEl.querySelector('.gd-ambient') };
   }
   // a soft layered tree for the distant scenery
-  function treeSVG(x, y, s) {
+  function treeSVG(x, y, s, col) {
+    const c = col || '#6fae5e';
     return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
       '<rect x="-3" y="-2" width="6" height="16" rx="2" fill="#7a5733"/>' +
-      '<ellipse cx="0" cy="-14" rx="20" ry="18" fill="#6fae5e"/>' +
+      '<ellipse cx="0" cy="-14" rx="20" ry="18" fill="' + c + '"/>' +
       '<ellipse cx="-9" cy="-8" rx="13" ry="12" fill="#7dbb69"/>' +
       '<ellipse cx="9" cy="-9" rx="12" ry="12" fill="#84c270"/>' +
       '</g>';
+  }
+  // The scene gets richer each stage: bare hills → trees → meadow grasses + a stream →
+  // a dense wood. The horizon literally fills with life as the garden grows (Terra Nil swell).
+  function buildScenery(stageId) {
+    const STAGE_DENSITY = { bed: 2, garden: 4, meadow: 6, forest: 9, wild: 13 };
+    const n = STAGE_DENSITY[stageId] || 3;
+    let far = '', near = '';
+    for (let k = 0; k < n; k++) {
+      const fx = 20 + (k / Math.max(1, n - 1)) * 440 + (k % 2 ? 14 : -10);
+      far += treeSVG(fx, 150 + (k % 3) * 6, 0.5 + (k % 3) * 0.12);
+      if (k < Math.ceil(n / 2)) near += treeSVG(30 + (k / Math.max(1, Math.ceil(n / 2) - 1 || 1)) * 420, 206 + (k % 2) * 6, 0.9 + (k % 2) * 0.18);
+    }
+    // a stream appears from the meadow stage onward; the wood deepens at the end
+    const stream = (stageId === 'meadow' || stageId === 'forest' || stageId === 'wild')
+      ? '<path d="M-20 230 Q120 218 240 232 T500 228 L500 250 Q240 256 -20 252 Z" fill="#8fd0ee" opacity="0.7"/>' +
+        '<path d="M-20 234 Q120 224 240 236 T500 232" fill="none" stroke="#cdeeff" stroke-width="2" opacity="0.7"/>' : '';
+    const hillFar = stageId === 'forest' || stageId === 'wild' ? '#86bd75' : '#b6dca0';
+    return '<svg class="gd-scenery-svg" viewBox="0 0 480 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      '<path class="gd-hill gd-hill-far" style="fill:' + hillFar + '" d="M0 168 Q120 120 240 156 T480 150 V300 H0 Z"/>' +
+      '<g class="gd-trees-far">' + far + '</g>' +
+      '<path class="gd-hill gd-hill-near" d="M0 206 Q140 168 280 200 T480 196 V300 H0 Z"/>' + stream +
+      '<g class="gd-trees-near">' + near + '</g>' +
+      '</svg>';
   }
   function applyStageTheme() {
     if (!worldEl) return;
     const timeName = L.TIMES[S.timeOfDay | 0] || 'day';
     const seasonName = L.SEASONS[L.currentSeason(S)] || 'spring';
-    worldEl.className = 'gd-world stage-' + L.currentStage(S).id + ' time-' + timeName + ' season-' + seasonName;
+    const stageId = L.currentStage(S).id;
+    worldEl.className = 'gd-world stage-' + stageId + ' time-' + timeName + ' season-' + seasonName;
     const { weather } = ensureLayers();
+    // rebuild the distant scenery for this stage (richer horizon as the world grows)
+    const scenery = worldEl.querySelector('.gd-scenery');
+    if (scenery && scenery.dataset.stage !== stageId) { scenery.innerHTML = buildScenery(stageId); scenery.dataset.stage = stageId; }
     // drifting pollen motes (ambient)
     worldEl.querySelectorAll('.gd-mote').forEach((m) => m.remove());
     if (!reduce()) for (let k = 0; k < 5; k++) {
