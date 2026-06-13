@@ -25,6 +25,8 @@
   const CENTER = { '🌻': 0x7a5230, '🌼': 0xf6c83c, '🌸': 0xf6c83c };
   // emoji fallback for decor + structures kept simple (drawn as Text on a shadow)
   const EMOJI = { feeder: '🛁', beehouse: '🐝', stone: '🪨', mushroom: '🍄', hedge: '🌿', path: '🟫', lantern: '🏮', bench: '🪑', birdhouse: '🏠' };
+  // BLUEPRINT: a faint icon shown on an empty tile, hinting what that tile wants
+  const GHOST = { flower: '🌷', tree: '🌳', pond: '🪷', feeder: '🛁', beehouse: '🐝', hedge: '🌿', bench: '🪑', stone: '🪨' };
 
   // day/night wash (never dark — dusk is warm amber)
   const TINT = [
@@ -226,6 +228,37 @@
   function birdhouseProp() { const c = new PIXI.Container(); const g = new PIXI.Graphics(); g.beginFill(0x8a6238).drawRect(-1.6, -10, 3.2, 12).endFill(); g.beginFill(0xe6c98e).drawRoundedRect(-9, -26, 18, 16, 3).endFill(); g.beginFill(0xc0392b).moveTo(-11, -24).lineTo(0, -34).lineTo(11, -24).closePath().endFill(); g.beginFill(0x4a3320).drawCircle(0, -18, 3.4).endFill(); c.addChild(g); return c; }
   function emojiProp(type) { const c = new PIXI.Container(); const txt = new PIXI.Text(EMOJI[type] || '❔', { fontSize: 26, align: 'center' }); txt.anchor.set(0.5, 0.9); txt.y = -4; c.addChild(txt); return c; }
 
+  // BLUEPRINT: a faint, low-alpha ghost of the wanted thing, floating just above an empty tile
+  function ghostProp(target) {
+    const c = new PIXI.Container();
+    // a soft pale halo so the faint icon reads against the brown soil (gentle, not loud)
+    const halo = new PIXI.Graphics();
+    halo.beginFill(0xffffff, 0.22).drawCircle(0, -10, 14).endFill();
+    const txt = new PIXI.Text(GHOST[target] || '❔', { fontSize: 26, align: 'center' });
+    txt.anchor.set(0.5, 0.9); txt.y = -3; txt.alpha = 0.5;
+    c.addChild(halo, txt); c.__ghost = true; return c;
+  }
+  // BLUEPRINT: a "correct/locked" tile gets a lusher finish — a soft golden ground glow, a
+  // richer grass top and a couple of accent flecks — so a solved tile reads as illustrated &
+  // finished, clearly different from an in-progress one. Returned as a layer added under the prop.
+  function lushGround() {
+    const g = new PIXI.Graphics();
+    g.beginFill(0xfff1b8, 0.30).drawEllipse(0, TH * 0.18, TW * 0.40, TH * 0.40).endFill(); // warm glow
+    g.lineStyle(2, 0xfde68a, 0.85); diamond(g, TW - 5, TH - 5, 0xa9e08a, 0.0); g.lineStyle(0); // golden rim
+    // little leafy flecks for a lush, detailed look
+    g.beginFill(0x6cbf5e, 0.9).drawEllipse(-TW * 0.22, 2, 3, 1.8).drawEllipse(TW * 0.22, 4, 3, 1.8).endFill();
+    g.beginFill(0xfff6c2, 0.9).drawCircle(-TW * 0.1, -2, 1.3).drawCircle(TW * 0.12, 0, 1.2).endFill();
+    return g;
+  }
+  // a small ✓ badge that sits above a freshly-locked tile (drawn vector, calm)
+  function lockBadge() {
+    const c = new PIXI.Container();
+    const g = new PIXI.Graphics();
+    g.beginFill(0x5fae4e, 0.95).drawCircle(0, 0, 7).endFill();
+    g.lineStyle(2.2, 0xffffff, 1).moveTo(-3, 0).lineTo(-0.6, 2.6).lineTo(3.4, -2.8);
+    c.addChild(g); c.y = -TH * 0.7; return c;
+  }
+
   const VEC = { feeder: feederProp, beehouse: beehouseProp, stone: stoneProp, mushroom: mushroomProp, hedge: hedgeProp, path: pathProp, lantern: lanternProp, bench: benchProp, birdhouse: birdhouseProp };
   function propFor(t) {
     if (t.type === 'flower') return flowerProp(t.stage, t.flower);
@@ -297,6 +330,7 @@
     lawn.zIndex = -100; lawn.eventMode = 'none';
     sceneLayer.addChild(lawn);
 
+    const GL = root.GardenLogic;
     const placing = opts.pendingBuild || (opts.pendingMove != null);
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const i = r * cols + c;
@@ -305,16 +339,32 @@
       cell.x = (c - r) * (TW / 2); cell.y = (c + r) * (TH / 2);
       cell.zIndex = (c + r) * 10 + 1;
       const isSoil = tile.type === 'soil';
+      // BLUEPRINT: this tile's wanted thing, and whether it's currently satisfied (locked/lush)
+      const target = GL ? GL.blueprintTarget(S, i) : null;
+      const correct = GL ? GL.isTileCorrect(S, i) : false;
       // base block — grass for non-soil props, tilled earth for plantable soil
       cell.addChild(tileBlock(isSoil ? C.soilTop : C.grassTop, isSoil ? C.soilSide : C.grassSide, isSoil ? C.soilEdge : C.grassEdge));
+      // a correct/locked tile gets a lusher, finished ground treatment
+      if (correct) cell.addChild(lushGround());
       // placeable highlight when in build/move mode
       if (placing && isSoil) {
         const hl = new PIXI.Graphics(); hl.lineStyle(2.5, 0xffe08a, 0.95); diamond(hl, TW - 4, TH - 4, 0xffe08a, 0.18); cell.addChild(hl);
       }
+      // BLUEPRINT: a faint ghost of the wanted thing on an empty tile (gentle guidance)
+      if (isSoil && target) cell.addChild(ghostProp(target));
       // prop (with shadow), raised above the tile top
       if (!isSoil) {
-        cell.addChild(shadow(TW * 0.28, TH * 0.28));
-        const prop = propFor(tile); cell.addChild(prop);
+        cell.addChild(shadow(TW * (correct ? 0.34 : 0.28), TH * (correct ? 0.34 : 0.28)));
+        const prop = propFor(tile);
+        if (correct) {
+          // lusher finished look: a touch larger, brighter, with a soft white sheen + ✓ badge
+          prop.scale.set(1.14);
+          const sheen = new PIXI.Graphics(); sheen.beginFill(0xffffff, 0.16).drawCircle(-4, -14, 9).endFill(); prop.addChildAt(sheen, 0);
+          cell.addChild(prop);
+          cell.addChild(lockBadge());
+        } else {
+          cell.addChild(prop);
+        }
       }
       // interactive hit-area = the top diamond
       const hit = new PIXI.Graphics(); diamond(hit, TW, TH + BED, 0xffffff, 0.001);
@@ -360,6 +410,7 @@
       const walk = (node) => {
         if (node.__sway) node.rotation = Math.sin(t * 0.035 + ph) * 0.05;
         if (node.__glow) node.alpha = 0.4 + (Math.sin(t * 0.04 + ph) * 0.5 + 0.5) * 0.4;
+        if (node.__ghost) { node.alpha = 0.7 + (Math.sin(t * 0.03 + ph) * 0.5 + 0.5) * 0.3; node.y = Math.sin(t * 0.03 + ph) * 1.5; }
         if (node.children) for (const ch of node.children) walk(ch);
       };
       for (const child of cell.children) walk(child);

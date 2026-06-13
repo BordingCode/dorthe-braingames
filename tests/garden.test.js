@@ -18,8 +18,9 @@ test('economy: canAfford / spend / earn', () => {
   const s = G.newState();
   assert.ok(G.canAfford(s, { froe: 1 }));
   assert.ok(!G.canAfford(s, { froe: 999 }));
-  G.earn(s, { sol: 5 }); assert.strictEqual(s.resources.sol, 6);
-  G.spend(s, { sol: 4 }); assert.strictEqual(s.resources.sol, 2);
+  const sol0 = s.resources.sol;
+  G.earn(s, { sol: 5 }); assert.strictEqual(s.resources.sol, sol0 + 5);
+  G.spend(s, { sol: 4 }); assert.strictEqual(s.resources.sol, sol0 + 1);
 });
 
 test('plant costs a seed (soil only); water grows then blooms', () => {
@@ -56,13 +57,18 @@ test('wildlife is declarative: blooms attract pollinators; bees need a beehouse'
   G.build(s, 'beehouse', 8); assert.ok(s.wildlifeSeen['🐝']);  // a beehouse brings the bee
 });
 
-test('harvest frees a bloomed tile', () => {
+test('harvest frees a bloomed tile (current {flower,reward} API)', () => {
   const s = G.newState(); s.resources.vand += 5;
-  assert.ok(bloom(s, 0).bloomed);
-  assert.ok(G.FLOWERS.includes(G.harvest(s, 0)));
-  assert.strictEqual(s.grid[0].type, 'soil');
+  // tile 1 is NOT a flower target in the 3x3 blueprint (it's a feeder), so a flower there never
+  // locks → harvesting is allowed (correct/locked tiles are protected; this one isn't).
+  assert.strictEqual(G.blueprintTarget(s, 1), 'feeder');
+  assert.ok(bloom(s, 1).bloomed);
+  const h = G.harvest(s, 1);
+  assert.ok(h && G.FLOWERS.includes(h.flower));
+  assert.ok(h.reward && typeof h.reward.froe === 'number');
+  assert.strictEqual(s.grid[1].type, 'soil');
   assert.strictEqual(s.picked, 1);
-  assert.strictEqual(G.harvest(s, 0), null);
+  assert.strictEqual(G.harvest(s, 1), null);
 });
 
 test('quests do NOT auto-chain: each one needs its own action', () => {
@@ -135,29 +141,24 @@ test('difficultyParams scale up, never below base', () => {
   assert.ok(z.seqLen >= a.seqLen && z.seqLen <= 6 && z.oddTiles >= a.oddTiles && z.countMax > a.countMax);
 });
 
-test('save → load round-trips; corrupt / old-version load → fresh', () => {
-  const s = G.newState(); G.plant(s, 2); G.earn(s, { sol: 4 });
+test('save → load round-trips; corrupt / old-version load → fresh blueprint', () => {
+  const s = G.newState(); G.earn(s, { sol: 4 });
   assert.deepStrictEqual(G.load(G.save(s)), s);
   assert.deepStrictEqual(G.load('not json {{'), G.newState());
   assert.deepStrictEqual(G.load('{"v":2}'), G.newState());
-  assert.deepStrictEqual(G.load('{"v":3}'), G.newState());
-  assert.deepStrictEqual(G.load('{"v":4}'), G.newState());
-  assert.deepStrictEqual(G.load('{"v":5}'), G.newState()); // older saves are replaced cleanly
+  assert.deepStrictEqual(G.load('{"v":6}'), G.newState());
+  assert.deepStrictEqual(G.load('{"v":7}'), G.newState()); // the pre-blueprint save is replaced cleanly
 });
 
-test('v6 saves MIGRATE (keep the garden) and gain guests + wish; seen animals become guests', () => {
-  const s = G.newState(); s.resources = { sol: 9, vand: 99, froe: 9 };
-  G.build(s, 'pond', 4);                       // attracts a frog → wildlifeSeen has 🐸
-  // simulate an old v6 save: same shape, but without the new guests/wish fields
-  const old = JSON.parse(G.save(s)); old.v = 6; delete old.guests; delete old.wish;
-  const m = G.load(JSON.stringify(old));
-  assert.strictEqual(m.v, G.VERSION);          // stamped up
-  assert.strictEqual(m.grid[4].type, 'pond');  // the garden is preserved, not wiped
-  assert.ok(m.guests['🐸']);                    // the already-seen frog became a guest
-  assert.strictEqual(m.wish, null);            // no active wish yet
-  // a corrupt wish is dropped on load
-  const bad = JSON.parse(G.save(m)); bad.wish = { guest: 'not-an-animal', base: 0 };
-  assert.strictEqual(G.load(JSON.stringify(bad)).wish, null);
+test('BLUEPRINT migration: any pre-v8 save starts a fresh blueprint, never crashes', () => {
+  // a realistic v7 save (old free-build garden with quests/guests) → clean fresh start, no throw
+  const old = { v: 7, stage: 1, cols: 5, rows: 4, chapter: 2, grid: Array.from({ length: 20 }, () => ({ type: 'soil', stage: 0, flower: null })),
+    resources: { sol: 1, vand: 3, froe: 3 }, questIndex: 4, wildlifeSeen: { '🐸': true }, guests: { '🐸': { happy: 2 } }, wish: { guest: '🐸', base: 1 } };
+  old.grid[4] = { type: 'pond', stage: 0, flower: null };
+  let m; assert.doesNotThrow(() => { m = G.load(JSON.stringify(old)); });
+  assert.deepStrictEqual(m, G.newState());     // fresh blueprint (3x3 bed, all soil)
+  assert.strictEqual(m.stage, 0);
+  assert.ok(m.grid.every((t) => t.type === 'soil'));
 });
 
 test('wishes: assigned only for seen guests, always a real forward ask, one at a time', () => {
@@ -269,4 +270,146 @@ test('the world reaches the wild 5th region near the finale', () => {
   assert.strictEqual(G.stageForQuest(9), 4);           // last quest unlocks Vildmarken
   assert.ok(G.QUESTS[G.QUESTS.length - 1].finale);     // grand finale is the last quest
   assert.strictEqual(G.QUESTS.find((q) => q.id === 'thrive').finale, undefined); // thrive is now a milestone
+});
+
+/* ===================== BLUEPRINT mode ===================== */
+
+test('blueprint: target is deterministic and a valid category at every stage size', () => {
+  for (let st = 0; st < G.STAGES.length; st++) {
+    const s = G.newState(); G.growTo(s, st);
+    for (let i = 0; i < s.grid.length; i++) {
+      const a = G.blueprintTarget(s, i), b = G.blueprintTarget(s, i);
+      assert.strictEqual(a, b);                          // deterministic
+      assert.ok(G.BP_CATEGORIES.includes(a), 'category ' + a);
+    }
+  }
+});
+
+test('blueprint: a designed look — trees in the 4 corners, a pond at the centre, every stage', () => {
+  for (let st = 0; st < G.STAGES.length; st++) {
+    const s = G.newState(); G.growTo(s, st);
+    const { cols, rows } = s, last = (s.grid.length - 1);
+    assert.strictEqual(G.blueprintTarget(s, 0), 'tree');                       // top-left
+    assert.strictEqual(G.blueprintTarget(s, cols - 1), 'tree');               // top-right
+    assert.strictEqual(G.blueprintTarget(s, (rows - 1) * cols), 'tree');      // bottom-left
+    assert.strictEqual(G.blueprintTarget(s, last), 'tree');                   // bottom-right
+    if (st >= 1) {                                                            // bigger stages get a centre pond
+      const cIdx = (Math.round((rows - 1) / 2)) * cols + Math.round((cols - 1) / 2);
+      assert.strictEqual(G.blueprintTarget(s, cIdx), 'pond');                 // centre is a pond
+    }
+    assert.ok(s.grid.some((_, i) => G.blueprintTarget(s, i) === 'flower'));   // every stage has flowers
+  }
+});
+
+test('blueprint: a tile is correct only when it matches its target (flower must be bloomed)', () => {
+  const s = G.newState(); s.resources = { sol: 9, vand: 99, froe: 9 };
+  // find a flower-target tile and a structure-target tile
+  let fi = -1, si = -1, st = null;
+  for (let i = 0; i < s.grid.length; i++) {
+    const t = G.blueprintTarget(s, i);
+    if (t === 'flower' && fi < 0) fi = i;
+    if (t !== 'flower' && si < 0) { si = i; st = t; }
+  }
+  assert.ok(fi >= 0 && si >= 0);
+  // flower target: only correct once fully bloomed
+  G.plant(s, fi); assert.ok(!G.isTileCorrect(s, fi));
+  s.resources.vand += 2; G.water(s, fi); assert.ok(!G.isTileCorrect(s, fi)); // still growing
+  G.water(s, fi); assert.ok(G.isTileCorrect(s, fi));                          // bloomed → correct
+  // structure target: correct once the RIGHT thing is placed; a wrong thing does NOT lock
+  const wrong = st === 'tree' ? 'pond' : 'tree';
+  G.place(s, wrong, si); assert.ok(!G.isTileCorrect(s, si));                  // wrong placement never locks
+  G.remove(s, si); G.place(s, st, si); assert.ok(G.isTileCorrect(s, si));    // right thing → correct
+});
+
+test('blueprint: tryLock pays the bonus once per tile; progress/complete track the field', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 999, froe: 99 };
+  const total = s.grid.length;
+  assert.deepStrictEqual(G.blueprintProgress(s), { done: 0, total });
+  assert.ok(!G.blueprintComplete(s));
+  // solve tile 0 (a tree in the bed)
+  assert.strictEqual(G.blueprintTarget(s, 0), 'tree');
+  G.place(s, 'tree', 0);
+  const before = s.resources.froe;
+  const b = G.tryLock(s, 0);
+  assert.ok(b && b.froe > 0);                       // bonus paid
+  assert.ok(s.resources.froe > before);
+  assert.strictEqual(G.tryLock(s, 0), null);        // no double bonus for the same locked tile
+  assert.strictEqual(G.blueprintProgress(s).done, 1);
+});
+
+test('blueprint: locked correct tiles are NOT harvestable / removable / movable', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 999, froe: 99 };
+  // a flower-target tile, bloomed → correct
+  let fi = -1; for (let i = 0; i < s.grid.length; i++) if (G.blueprintTarget(s, i) === 'flower') { fi = i; break; }
+  G.plant(s, fi); G.water(s, fi); G.water(s, fi);
+  assert.ok(G.isTileCorrect(s, fi));
+  assert.strictEqual(G.harvest(s, fi), null);       // can't harvest a correct flower away
+  assert.ok(!G.remove(s, fi));                       // can't remove it
+  // a structure correct tile: can't be moved off its spot
+  G.place(s, 'tree', 0); assert.ok(G.isTileCorrect(s, 0));
+  let soil = -1; for (let i = 0; i < s.grid.length; i++) if (s.grid[i].type === 'soil') { soil = i; break; }
+  assert.ok(!G.move(s, 0, soil));                    // a correct tile stays put
+});
+
+test('blueprint: completing the field grows to the next, FRESH bigger stage', () => {
+  const s = G.newState(); s.resources = { sol: 999, vand: 9999, froe: 999 };
+  function solve(st) {
+    for (let i = 0; i < st.grid.length; i++) {
+      const tgt = G.blueprintTarget(st, i);
+      if (tgt === 'flower') { G.plant(st, i); G.water(st, i); G.water(st, i, () => 0.5); }
+      else G.place(st, tgt, i);
+      G.tryLock(st, i);
+    }
+  }
+  solve(s);
+  assert.ok(G.blueprintComplete(s));
+  const lu = G.blueprintLevelUp(s);
+  assert.ok(lu.grew && !lu.last);
+  assert.strictEqual(s.stage, 1);
+  assert.strictEqual(s.cols, G.STAGES[1].cols);
+  assert.strictEqual(s.grid.length, G.STAGES[1].cols * G.STAGES[1].rows);
+  assert.ok(s.grid.every((t) => t.type === 'soil'));   // a fresh, bigger empty field
+  assert.ok(!G.blueprintComplete(s));                  // the new stage isn't done yet
+});
+
+test('blueprint: completing the FINAL stage reports last (drømmehave), does not grow past', () => {
+  const s = G.newState(); s.resources = { sol: 9999, vand: 99999, froe: 9999 };
+  G.growTo(s, G.STAGES.length - 1);                     // jump to the last stage
+  for (let i = 0; i < s.grid.length; i++) {
+    const tgt = G.blueprintTarget(s, i);
+    if (tgt === 'flower') { G.plant(s, i); G.water(s, i); G.water(s, i, () => 0.5); }
+    else G.place(s, tgt, i);
+  }
+  assert.ok(G.blueprintComplete(s));
+  const lu = G.blueprintLevelUp(s);
+  assert.ok(lu.last && !lu.grew);
+  assert.strictEqual(s.stage, G.STAGES.length - 1);    // stays on the final stage
+});
+
+test('blueprint: stage 0 is fully affordable from starting resources alone (no wall, no-fail)', () => {
+  const s = G.newState();                              // starting resources only — no brain games
+  for (let i = 0; i < s.grid.length; i++) {
+    const tgt = G.blueprintTarget(s, i);
+    if (tgt === 'flower') {
+      assert.ok(G.plant(s, i), 'afford plant ' + i);
+      assert.ok(G.water(s, i).ok && G.water(s, i, () => 0.5).bloomed, 'afford water ' + i);
+    } else {
+      const cost = G.BUILD_COST[tgt] || G.DECOR_COST[tgt];
+      assert.ok(G.canAfford(s, cost), 'afford ' + tgt + ' at ' + i + ' res=' + JSON.stringify(s.resources));
+      assert.ok(G.place(s, tgt, i).ok);
+    }
+    G.tryLock(s, i);                                    // lock bonuses keep the player solvent
+  }
+  assert.ok(G.blueprintComplete(s));
+});
+
+test('blueprint: firstUnsolved points at the next gap, -1 when complete', () => {
+  const s = G.newState(); s.resources = { sol: 99, vand: 999, froe: 99 };
+  assert.strictEqual(G.firstUnsolved(s), 0);           // nothing solved yet → first tile
+  for (let i = 0; i < s.grid.length; i++) {
+    const tgt = G.blueprintTarget(s, i);
+    if (tgt === 'flower') { G.plant(s, i); G.water(s, i); G.water(s, i, () => 0.5); }
+    else G.place(s, tgt, i);
+  }
+  assert.strictEqual(G.firstUnsolved(s), -1);          // all correct
 });

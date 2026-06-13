@@ -228,17 +228,23 @@
     }
   }
   function renderHUD() {
-    const r = S.resources, p = L.progress(S);
+    const r = S.resources, bp = L.blueprintProgress(S);
     hudEl.innerHTML =
       '<span>☀️ <b>' + r.sol + '</b></span><span>💧 <b>' + r.vand + '</b></span><span>🌱 <b>' + r.froe + '</b></span>' +
-      '<span class="gd-prog">🦋 ' + p.wildlife + '/' + p.wildlifeTotal + ' · 📜 ' + p.quests + '/' + p.questsTotal + ' · 🌿 ' + p.stageName + '</span>';
+      '<span class="gd-prog">🌿 ' + L.currentStage(S).name + ' · ✓ ' + bp.done + '/' + bp.total + '</span>';
   }
-  function renderQuest() {
-    const q = L.currentQuest(S);
-    questEl.innerHTML = q
-      ? '📜 ' + q.icon + ' <b>' + q.title + '</b> — ' + q.goal(S).text
-      : '🌳 <b>Haven trives!</b> Nyd den — eller pluk og plant videre.';
+  // BLUEPRINT progress line ("X/Y felter klar") with a little fill bar — replaces the old quest line
+  function renderProgress() {
+    if (!questEl) return;
+    const bp = L.blueprintProgress(S);
+    const pct = bp.total ? Math.round((bp.done / bp.total) * 100) : 0;
+    const done = bp.done >= bp.total;
+    questEl.innerHTML = '<div class="gd-bp">' +
+      '<div class="gd-bp-top"><span>🗺️ <b>' + L.currentStage(S).name + '</b></span>' +
+      '<span class="gd-bp-count">' + (done ? '🎉 alle felter klar!' : bp.done + '/' + bp.total + ' felter klar') + '</span></div>' +
+      '<div class="gd-bp-bar"><div class="gd-bp-fill" style="width:' + Math.max(4, pct) + '%"></div></div></div>';
   }
+  function renderQuest() { renderProgress(); }
   // a living guest perched in the world, tied to the active wish (gentle bob; static if reduced-motion)
   function renderWorldGuest(guest) {
     if (!worldEl) return;
@@ -247,20 +253,21 @@
     if (!el) { el = document.createElement('div'); el.className = 'gd-guest'; worldEl.appendChild(el); }
     el.textContent = guest;
   }
-  // the single active wish line (or hidden) — always a calm, optional little ask from a guest
+  // Wishes are retired in BLUEPRINT mode — keep the function as a no-op so nothing breaks.
   function renderWish() {
-    const p = L.wishProgress(S);
-    renderWorldGuest(p ? p.guest : null);
-    if (!wishEl) return;
-    if (!p) { wishEl.classList.remove('show'); wishEl.innerHTML = ''; return; }
-    wishEl.classList.add('show');
-    wishEl.innerHTML = '<span class="gd-wish-face">' + p.guest + '</span>' +
-      '<span class="gd-wish-say">' + p.say + ' <b>(' + p.have + '/' + p.need + ')</b></span>';
+    renderWorldGuest(null);
+    if (wishEl) { wishEl.classList.remove('show'); wishEl.innerHTML = ''; }
   }
 
+  // Amigo's gentle guidance: what the field still needs, or warm praise when it's done.
   function currentStory() {
-    const q = L.currentQuest(S);
-    return q ? (L.STORY[q.id] || '') : 'Haven trives nu! Den er blevet et lille paradis for dyrene. 🌳';
+    const i = L.firstUnsolved(S);
+    if (i < 0) {
+      if (S.stage >= L.STAGES.length - 1) return 'Din drømmehave er fuldendt! 💚 Nyd den i ro og mag.';
+      return 'Alle felter er klar — haven vokser nu til noget endnu større! 🌱';
+    }
+    const target = L.blueprintTarget(S, i);
+    return 'Vi følger havetegningen sammen 🗺️ — næste felt ønsker sig ' + TARGET_NAME[target] + ' ' + (TARGET_EMOJI[target] || '') + '. Tryk på et felt for at gå i gang.';
   }
   function renderGuide(text) {
     if (!guideEl) return;
@@ -293,10 +300,65 @@
       later(() => { if (!stopped) renderGuide(); }, 3200);
     }
   }
-  function renderAll() { applyStageTheme(); renderHUD(); renderQuest(); renderWish(); renderGuide(); renderHygge(); renderGrid(); }
+  function renderAll() { applyStageTheme(); renderHUD(); renderProgress(); renderWish(); renderGuide(); hideHygge(); renderGrid(); }
+  // hygge/charm bar is retired in BLUEPRINT mode — clear its element so it takes no space
+  function hideHygge() { const el = document.getElementById('garden-hygge'); if (el) el.innerHTML = ''; }
 
   /* ---------- actions ---------- */
-  function afterAction(hint) { save(); renderHUD(); renderHygge(); renderGrid(); if (hint) setHint(hint); checkQuests(); checkHygge(); checkWishes(); }
+  // After any placement/bloom: lock any newly-correct tiles (pay the bonus, celebrate), update
+  // progress, and if the whole field is correct → celebrate + grow to the next blueprint.
+  function afterAction(hint) {
+    save(); renderHUD(); renderGrid();
+    if (hint) setHint(hint);
+    lockNewlyCorrect();
+    renderProgress();
+    checkBlueprintComplete();
+  }
+  // scan for tiles that just became correct, award the lock bonus once each, and juice them
+  function lockNewlyCorrect() {
+    let any = false;
+    for (let i = 0; i < S.grid.length; i++) {
+      const bonus = L.tryLock(S, i);
+      if (!bonus) continue;
+      any = true;
+      mEvent('quest');
+      playTone(587.33, 130, 'sine'); later(() => playTone(783.99, 170, 'sine'), 110);
+      const txt = Object.keys(bonus).map((k) => '+' + bonus[k] + RES_ICON[k]).join(' ');
+      const cell = gridEl.children && gridEl.children[i]; if (cell) { sparkle(cell, 6); pop(cell); }
+      later(() => { toast('✓ Felt klar! ' + txt); popAtHud(txt); }, 200);
+    }
+    if (any) { save(); renderHUD(); renderGrid(); }
+  }
+
+  // BLUEPRINT: when the whole field is correct → celebrate and grow to the next, bigger blueprint.
+  // On the final stage → a warm "drømmehave" finish (free play continues; nothing punishes).
+  let celebrating = false;
+  function checkBlueprintComplete() {
+    if (celebrating || !L.blueprintComplete(S)) return;
+    celebrating = true;
+    save();
+    launchConfetti(2400);
+    mEvent('grow');
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => later(() => playTone(f, 240, 'sine'), k * 150));
+    const lu = L.blueprintLevelUp(S);
+    if (lu.grew) {
+      renderGuide('Haven er færdig — sikke smukt! 🌸 Nu vokser den til ' + lu.stage.name + '.');
+      later(() => {
+        if (stopped) return;
+        save(); renderAll(); renderProgress();
+        toast('🌱→🌳 Haven vokser til ' + lu.stage.name + '!');
+        setHint('Ny, større have: ' + lu.stage.name + '. Fyld den efter tegningen. 🌿');
+        celebrating = false;
+      }, 1900);
+    } else {
+      // final stage complete → drømmehave finish + free play
+      renderGuide('Du har skabt din drømmehave! 💚 Tak fordi du passede den så smukt.');
+      setHint('🎉 Din drømmehave er fuldendt! Nyd den — alt er, som tegningen ønskede.');
+      launchConfetti(3600);
+      save(); renderProgress();
+      // stays complete; no further growth — celebrating stays true so we don't re-fire
+    }
+  }
 
   // grant a fulfilled wish (a happy moment), then hand the garden its next gentle ask
   function checkWishes() {
@@ -324,61 +386,99 @@
     const ic = { sol: '☀️', vand: '💧', froe: '🌱' };
     return Object.keys(r).map((k) => ic[k].repeat(r[k])).join(' ');
   }
+  // The Danish name of a blueprint target category (for gentle guidance)
+  const TARGET_NAME = {
+    flower: 'en blomst', tree: 'et træ', pond: 'en dam', feeder: 'et fuglebad',
+    beehouse: 'et bistade', hedge: 'en hæk', bench: 'en bænk', stone: 'en sten',
+  };
+  const TARGET_EMOJI = { flower: '🌷', tree: '🌳', pond: '🪷', feeder: '🛁', beehouse: '🐝', hedge: '🌿', bench: '🪑', stone: '🪨' };
+
+  // BLUEPRINT core: tapping a tile does the RIGHT thing for that tile's target. Correct/locked
+  // tiles are protected (a warm "perfekt"); empty/wrong tiles open the right placement action.
   function onTile(i) {
     if (stopped) return;
     startMusicOnce();
     const t = S.grid[i];
-    if (pendingMove !== null) {
-      if (t.type === 'soil') {
-        if (L.move(S, pendingMove, i)) { playTone(392, 140, 'sine'); pendingMove = null; pop(gridEl.children[i]); afterAction('Flyttet! 🌿'); }
-        else { pendingMove = null; renderGrid(); }
-      } else { pendingMove = null; setHint('Vælg et tomt bed at flytte det hen til.'); renderGrid(); }
-      return;
-    }
+    const target = L.blueprintTarget(S, i);
+
+    // free-play placement (the Byg & pynt menu) — only on tiles that aren't locked-correct
     if (pendingBuild) {
+      if (L.isTileCorrect(S, i)) { setHint('Det felt er allerede perfekt — vælg et tomt felt. 💚'); return; }
       if (t.type === 'soil') {
         const r = L.place(S, pendingBuild, i);
-        if (r.ok) {
-          playTone(330, 140, 'sine'); const b = pendingBuild; pendingBuild = null;
-          afterAction('Du placerede ' + NAME[b].toLowerCase() + '! 🌿');
-          const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); sparkle(cell, 5); later(() => cell.classList.remove('gd-grown'), 500); }
-          mEvent('build'); updateScene();
-          if (r.newBuild) later(() => toast('✨ Ny ting i haven: ' + (NAME[b] || '') + '!'), 450);
-          celebrateWildlife(r.wildlife);
-        } else { pendingBuild = null; setHint('Ikke nok ressourcer — host dine modne blomster for flere.'); renderGrid(); }
-      } else { pendingBuild = null; setHint('Vælg et tomt bed at bygge på.'); renderGrid(); }
+        if (r.ok) { playTone(330, 140, 'sine'); const b = pendingBuild; pendingBuild = null; afterAction('Du satte ' + (NAME[b] || '').toLowerCase() + '. 🌿'); mEvent('build'); updateScene(); celebrateWildlife(r.wildlife); }
+        else { pendingBuild = null; setHint('Lidt ressourcer mangler — spil en Hjernebænk-leg. 🧠'); renderGrid(); }
+      } else { pendingBuild = null; setHint('Vælg et tomt felt at sætte det på.'); renderGrid(); }
       return;
     }
-    if (t.type === 'soil') {
-      if (!L.canAfford(S, L.PLANT_COST)) { setHint('Du mangler frø 🌱 — host en moden blomst (🧺) for flere.'); return; }
-      // once you've discovered a couple of flowers, you get to choose what to plant
-      if (Object.keys(S.flowersSeen || {}).length >= 2) openSeedPicker(i);
-      else plantSeed(i, null);
-    } else if (t.type === 'flower') {
-      if (t.stage < 3) {
+
+    // already correct & locked → never destructive, just a little praise
+    if (L.isTileCorrect(S, i)) {
+      playTone(659.25, 90, 'sine');
+      const cell = gridEl.children && gridEl.children[i]; if (cell) pop(cell);
+      setHint('✓ Perfekt — ' + TARGET_NAME[target] + ' præcis som tegningen ønsker. 💚');
+      return;
+    }
+
+    if (target === 'flower') {
+      // plant + water flow toward a bloom (the existing mechanic)
+      if (t.type === 'soil') {
+        if (!L.canAfford(S, L.PLANT_COST)) { setHint('Lidt frø mangler 🌱 — spil en Hjernebænk-leg for flere. 🧠'); return; }
+        if (Object.keys(S.flowersSeen || {}).length >= 2) openSeedPicker(i);
+        else plantSeed(i, null);
+        return;
+      }
+      if (t.type === 'flower' && t.stage < 3) {
         const r = L.water(S, i, Math.random);
-        if (!r.ok) { setHint('Du mangler vand 💧 — host en moden blomst (🧺) for mere.'); return; }
+        if (!r.ok) { setHint('Lidt vand mangler 💧 — spil en Hjernebænk-leg for mere. 🧠'); return; }
         playTone([329.63, 392.00, 523.25][Math.min(t.stage - 1, 2)], 150, 'sine');
         if (r.bloomed) {
           playTone(659.25, 200, 'sine'); later(() => playTone(783.99, 240, 'sine'), 130);
-          afterAction('Den sprang ud! ' + r.flower + ' +☀️');
-          const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-bloomed'); sparkle(cell, 8); later(() => cell.classList.remove('gd-bloomed'), 850); }
+          afterAction('Den sprang ud! ' + r.flower + ' 🌸');
           mEvent('bloom');
-          if (r.newFlower) discoverFlower(r.flower, cell);
-          else if (Math.random() < 0.6) { renderGuide(pickCheer()); later(() => { if (!stopped) renderGuide(); }, 2600); }
+          if (r.newFlower) discoverFlower(r.flower, null);
           celebrateWildlife(r.wildlife);
         } else {
-          afterAction('Godt — den vokser! 💧 Vand igen.');
-          const cell = gridEl.children[i]; if (cell) { cell.classList.add('gd-grown'); later(() => cell.classList.remove('gd-grown'), 500); }
+          afterAction('Godt — den vokser! 💧 Vand igen, så springer den ud.');
         }
-      } else {
-        const h = L.harvest(S, i); playTone(523.25, 130, 'sine'); later(() => playTone(659.25, 150, 'sine'), 90);
-        afterAction('Du plukkede ' + h.flower + ' 🧺 — og fik ' + rewardText(h.reward));
-        const cell = gridEl.children[i]; if (cell) sparkle(cell, 6);
+        return;
       }
-    } else {
-      wiggle(gridEl.children[i]); openTileMenu(i);
+      // a flower target but the tile holds the wrong thing (shouldn't normally happen) — offer to clear it
+      wiggle(gridEl.children && gridEl.children[i]); openWrongTileMenu(i, target);
+      return;
     }
+
+    // structure/decor target → auto-place exactly the wanted thing (no menu hunting)
+    if (t.type === 'soil') {
+      if (!L.canAfford(S, COST_OF(target))) {
+        setHint('Lidt ressourcer mangler til ' + TARGET_NAME[target] + ' — spil en Hjernebænk-leg. 🧠'); return;
+      }
+      const r = L.place(S, target, i);
+      if (r.ok) {
+        playTone(330, 140, 'sine');
+        afterAction('Du satte ' + TARGET_NAME[target] + '! ' + (TARGET_EMOJI[target] || '🌿'));
+        mEvent('build'); updateScene();
+        if (r.newBuild) later(() => toast('✨ Ny ting i haven: ' + (NAME[target] || '') + '!'), 450);
+        celebrateWildlife(r.wildlife);
+      }
+      return;
+    }
+    // tile holds the wrong thing for a structure target → let her swap it out
+    wiggle(gridEl.children && gridEl.children[i]); openWrongTileMenu(i, target);
+  }
+
+  // gentle menu when a tile holds the wrong thing: clear it so the right thing can go in
+  function openWrongTileMenu(i, target) {
+    const t = S.grid[i];
+    overlayEl.innerHTML = '<div class="gd-task"><h3>' + (TARGET_EMOJI[target] || '🌿') + ' Dette felt ønsker ' + TARGET_NAME[target] + '</h3>' +
+      '<p>Her står ' + (NAME[t.type] || 'noget andet') + '. Vil du rydde feltet, så du kan sætte det rigtige?</p>' +
+      '<div class="gd-tilemenu"><button class="btn btn-primary" data-act="clear">🧺 Ryd feltet</button></div>' +
+      '<button class="btn btn-secondary gd-cancel">Behold</button></div>';
+    overlayEl.classList.add('active');
+    overlayEl.querySelector('[data-act="clear"]').addEventListener('click', () => {
+      L.remove(S, i); playTone(220, 120, 'sine'); closeOverlay(); afterAction('Ryddet — nu er der plads til ' + TARGET_NAME[target] + '. 🌿');
+    });
+    overlayEl.querySelector('.gd-cancel').addEventListener('click', closeOverlay);
   }
 
   function openTileMenu(i) {
@@ -528,8 +628,9 @@
     playTone(523.25, 150, 'sine'); later(() => playTone(659.25, 190, 'sine'), 130);
     const txt = Object.keys(bundle).map((k) => '+' + bundle[k] + RES_ICON[k]).join('  ');
     toast(txt); popAtHud(txt);
-    setHint('Godt klaret! Brug ressourcerne i haven.');
-    checkQuests();
+    const i = L.firstUnsolved(S);
+    if (i >= 0) { const tg = L.blueprintTarget(S, i); setHint('Godt klaret! 🧠 Nu kan du sætte ' + TARGET_NAME[tg] + ' på næste felt.'); }
+    else setHint('Godt klaret! 🧠');
   }
 
   function collRow(items, seenMap) {
@@ -585,15 +686,17 @@
     closeOverlay();
     Stats.increment('garden', 'played');
     updateMusicBtn();
-    if (!S.wish) L.assignWish(S, Math.random); // a returning guest may already be waiting with a little wish
+    celebrating = false;
     // (re)mount the isometric PixiJS scene for this screen open
     if (window.GardenIso && stageEl) { GardenIso.destroy(); GardenIso.mount(stageEl, { onTap: onTile }); }
     renderAll();
     // redraw once layout has settled (the canvas needs its final size)
     later(() => { if (!stopped && window.GardenIso) GardenIso.render(S, { pendingBuild, pendingMove }); }, 80);
     updateScene();
-    const q = L.currentQuest(S);
-    setHint(q ? 'Velkommen i haven! Plant, vand og pluk dine blomster — så vokser den. 🌱' : 'Haven trives — nyd den, eller dyrk videre. 🌳');
+    const bp = L.blueprintProgress(S);
+    setHint(bp.done >= bp.total
+      ? '🎉 Haven er fuldendt! Nyd den — eller pynt videre med 🔨.'
+      : 'Velkommen! Følg havetegningen 🗺️ — de svage skygger viser, hvad hvert felt ønsker. Tryk for at fylde dem. 🌱');
     maybeStartTutorial();
   }
 
@@ -607,12 +710,12 @@
   function maybeStartTutorial() {
     let seen = false; try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch {}
     if (seen) return;
-    if (S.questIndex > 0 || L.bloomCount(S) > 0) { try { localStorage.setItem(INTRO_KEY, '1'); } catch {} return; }
+    if (L.blueprintProgress(S).done > 0) { try { localStorage.setItem(INTRO_KEY, '1'); } catch {} return; }
     const steps = [
-      { say: 'Hej, jeg er Amigo! 🐕 Velkommen i din have. Skal vi gøre den smuk sammen?', btn: 'Ja tak!', target: null },
-      { say: 'Tryk på et brunt bed for at <b>plante</b> 🌱 — og igen for at <b>vande</b> 💧, til blomsten springer ud. 🌸', btn: 'Forstået', target: null },
-      { say: 'Når en blomst er sprunget ud, kan du <b>plukke</b> den 🧺 — så får du sol, vand og frø til mere. ☀️💧🌱', btn: 'Forstået', target: null },
-      { say: 'I <b>📖 Havelog</b> ser du alle de dyr, du lokker til haven. God fornøjelse! 💚', btn: 'Lad os gå i gang', target: 'garden-log-btn' },
+      { say: 'Hej, jeg er Amigo! 🐕 Velkommen i din have. Vi skal fylde den ud efter en lille havetegning. 🗺️', btn: 'Ja tak!', target: null },
+      { say: 'Hvert felt har en <b>svag skygge</b> af det, det ønsker sig — en blomst, et træ, en dam… Tryk på feltet, så fylder vi det rigtige i. 🌱', btn: 'Forstået', target: null },
+      { say: 'Skal feltet have en <b>blomst</b>? Så plant 🌱 og vand 💧, til den springer ud. Et færdigt felt bliver <b>flot og frodigt</b> med et ✓. 🌸', btn: 'Forstået', target: null },
+      { say: 'Mangler du sol, vand eller frø? Spil en <b>🧠 Hjernebænk</b>-leg — det er der, du henter ressourcer. Når hele haven er klar, vokser den! 💚', btn: 'Lad os gå i gang', target: 'garden-task-btn' },
     ];
     let i = 0;
     const coach = document.createElement('div'); coach.className = 'gd-coach'; coach.id = 'gd-coach';

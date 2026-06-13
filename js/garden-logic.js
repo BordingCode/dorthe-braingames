@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = 7;
+  const VERSION = 8;
   // the world grows through these stages (the "small bed → huge wild park" arc)
   const STAGES = [
     { id: 'bed', name: 'Lille bed', cols: 3, rows: 3 },
@@ -61,6 +61,9 @@
   const DECOR_EMOJI = { stone: '🪨', mushroom: '🍄', hedge: '🌿', path: '🟫', lantern: '🏮', bench: '🪑', birdhouse: '🏠' };
   const PLANT_COST = { froe: 1 };
   const WATER_COST = { vand: 1 };
+  // BLUEPRINT economy: a generous bonus every time a tile locks correct — the main self-funding
+  // faucet alongside the brain games, so Dorthe can always afford to finish the field (no wall).
+  const LOCK_BONUS = { sol: 1, vand: 2, froe: 2 };
 
   // light story: Amigo the dog guides you, one warm line per quest
   const STORY = {
@@ -102,7 +105,7 @@
     return {
       v: VERSION, stage: 0, cols: s0.cols, rows: s0.rows, chapter: 1,
       grid: makeGrid(s0.cols * s0.rows),
-      resources: { sol: 1, vand: 3, froe: 3 },
+      resources: { sol: 4, vand: 8, froe: 8 },
       questIndex: 0, wildlifeSeen: {}, flowersSeen: {}, builtSeen: {}, picked: 0, timeOfDay: 0, hygge: 0,
       guests: {}, wish: null,
     };
@@ -148,6 +151,7 @@
   function harvest(s, i) {
     const t = s.grid[i];
     if (!t || t.type !== 'flower' || t.stage !== 3) return null;
+    if (isTileCorrect(s, i)) return null; // a correct/locked blueprint tile is never harvested away
     const f = t.flower; t.type = 'soil'; t.stage = 0; t.flower = null; s.picked = (s.picked || 0) + 1;
     const reward = { froe: 2, vand: 2, sol: 1 }; earn(s, reward);
     return { flower: f, reward: reward };
@@ -168,12 +172,14 @@
     if (from === to) return false;
     const a = s.grid[from], b = s.grid[to];
     if (!a || !b || a.type === 'soil' || b.type !== 'soil') return false;
+    if (isTileCorrect(s, from)) return false; // don't let a correct tile be moved away (would un-complete it)
     s.grid[to] = a; s.grid[from] = { type: 'soil', stage: 0, flower: null }; return true;
   }
   // clear a tile back to soil (no refund — wildlife already seen stays seen)
   function remove(s, i) {
     const t = s.grid[i];
     if (!t || t.type === 'soil') return false;
+    if (isTileCorrect(s, i)) return false; // a correct/locked blueprint tile stays put
     s.grid[i] = { type: 'soil', stage: 0, flower: null }; return true;
   }
 
@@ -302,6 +308,107 @@
     return { grew: false };
   }
 
+  /* ---------- BLUEPRINT mode (the gentle fill-the-field puzzle) ----------
+   * Each tile of the current stage has a designated TARGET category. The player fills the
+   * whole field with the right thing; a tile that matches its target locks as "correct" and
+   * renders lusher. The stage completes only when every tile is correct → the world grows to
+   * the next, bigger blueprint. No-fail: wrong placements simply don't lock; locked tiles are
+   * never harvestable/removable (so the field can't un-complete). See gamedev-kb:
+   * systems-and-economy (taut faucet→sink), difficulty-and-flow (a wall is a bug — keep it
+   * affordable), motivation-and-ethics (completable goal, no treadmill).
+   *
+   * Target categories: 'flower' | 'tree' | 'pond' | 'feeder' | 'beehouse' | 'hedge' | 'bench' | 'stone'.
+   * A tile is CORRECT when:
+   *   target 'flower'  → tile is a bloomed flower (type==='flower' && stage===3), any species;
+   *   target <other>   → tile.type === target.
+   */
+  const BP_CATEGORIES = ['flower', 'tree', 'pond', 'feeder', 'beehouse', 'hedge', 'bench', 'stone'];
+  const BP_STRUCTURES = ['tree', 'pond', 'feeder', 'beehouse', 'hedge', 'bench', 'stone']; // everything that isn't a flower
+
+  // Deterministic, pleasant per-stage layout — a pure function of (col,row,cols,rows). It must
+  // look like a *designed* garden at every stage size (3x3 … 8x6):
+  //   • trees in the four corners (ly + structure)            • a pond block near the centre
+  //   • a hedge frame along the outer ring (with bench/stone/feeder accents on the edges)
+  //   • the interior is mostly flowers, with the odd beehouse/feeder among them
+  // No species are required — 'flower' just means "a bloom".
+  function blueprintTargetFor(c, r, cols, rows) {
+    const lastC = cols - 1, lastR = rows - 1;
+    const corner = (c === 0 || c === lastC) && (r === 0 || r === lastR);
+    const edge = (c === 0 || c === lastC || r === 0 || r === lastR);
+    const small = cols < 4 || rows < 4; // only the tiny 3x3 bed: a cozy flower bed, no pond clutter
+    // centre pond: a small block in the middle (1 tile, up to ~2x2 on big stages). On the tiny
+    // bed there's no room for a pond — the middle stays a flower so the bed reads as a flower bed.
+    const cc = (cols - 1) / 2, cr = (rows - 1) / 2;
+    const pondR = cols >= 6 ? 1.05 : 0.55;
+    const isPond = !small && Math.abs(c - cc) <= pondR && Math.abs(r - cr) <= pondR;
+    if (corner) return 'tree';                                  // trees in the four corners, always
+    if (isPond) return 'pond';
+    if (edge) {
+      if (small) {
+        // tiny bed: a feeder centred on each of the four edges, the rest is hedge — calm + simple
+        const midTop = (r === 0 || r === lastR) && c === Math.round(cc);
+        const midSide = (c === 0 || c === lastC) && r === Math.round(cr);
+        return (midTop || midSide) ? 'feeder' : 'hedge';
+      }
+      // bigger stages: a hedge frame with calm accents at predictable spots so it reads as designed
+      const mid = (c === Math.floor(cc) && (r === 0 || r === lastR)) || (r === Math.floor(cr) && (c === 0 || c === lastC));
+      if (mid && (r === 0 || r === lastR)) return 'bench';     // a bench centred on the top & bottom edges
+      if (mid) return 'feeder';                                 // a feeder centred on the left & right edges
+      if ((r === 0 || r === lastR) && (c === 1 || c === lastC - 1)) return 'stone'; // a stone by each corner
+      return 'hedge';
+    }
+    // interior: mostly flowers, with a beehouse on a sparse, deterministic lattice
+    if (!small && (c + r) % 5 === 0 && (c * 2 + r) % 3 === 0) return 'beehouse';
+    return 'flower';
+  }
+  function blueprintTarget(s, i) {
+    const cols = s.cols, c = i % cols, r = (i / cols) | 0;
+    return blueprintTargetFor(c, r, cols, s.rows);
+  }
+  // is this tile currently matching its blueprint target?
+  function isTileCorrect(s, i) {
+    const t = s.grid[i]; if (!t) return false;
+    const target = blueprintTarget(s, i);
+    if (target === 'flower') return t.type === 'flower' && t.stage === 3;
+    return t.type === target;
+  }
+  function blueprintProgress(s) {
+    let done = 0; const total = s.grid.length;
+    for (let i = 0; i < total; i++) if (isTileCorrect(s, i)) done++;
+    return { done, total };
+  }
+  function blueprintComplete(s) { const p = blueprintProgress(s); return p.total > 0 && p.done === p.total; }
+  // first not-yet-correct tile (for gentle "what's left" guidance), or -1 when complete
+  function firstUnsolved(s) { for (let i = 0; i < s.grid.length; i++) if (!isTileCorrect(s, i)) return i; return -1; }
+
+  // After any placement action, call this for the affected tile: if it's now correct and wasn't
+  // already credited, award the lock bonus ONCE and mark it locked. Returns the bonus or null.
+  // (The `locked` flag is just bookkeeping so the bonus can't be farmed by re-placing.)
+  function tryLock(s, i) {
+    const t = s.grid[i]; if (!t) return null;
+    if (!isTileCorrect(s, i)) { if (t.locked) t.locked = false; return null; }
+    if (t.locked) return null;
+    t.locked = true;
+    const bonus = Object.assign({}, LOCK_BONUS);
+    earn(s, bonus);
+    return bonus;
+  }
+
+  // When a stage is complete, grow to the next bigger blueprint (and bump the gentle difficulty
+  // of the brain games). Returns {grew, last} — `last` true when the FINAL stage was completed.
+  function blueprintLevelUp(s) {
+    if (!blueprintComplete(s)) return { grew: false, last: false };
+    if (s.stage >= STAGES.length - 1) return { grew: false, last: true }; // final stage done → drømmehave
+    const from = s.stage, to = s.stage + 1, nw = STAGES[to];
+    // Grow to a FRESH, bigger field: the completed garden is the reward; the next, larger
+    // blueprint is the next puzzle. (A clean empty bed avoids leftover mismatched tiles and
+    // keeps the "one clear task" feel — see accessibility-older-adults.)
+    s.grid = makeGrid(nw.cols * nw.rows);
+    s.cols = nw.cols; s.rows = nw.rows; s.stage = to;
+    s.chapter = 1 + to; // brain games get gently harder as the field grows
+    return { grew: true, last: false, from, to, stage: nw };
+  }
+
   /* ---------- difficulty (gentle) ---------- */
   function difficultyParams(chapter) {
     const c = Math.max(1, chapter | 0);
@@ -341,8 +448,9 @@
   function load(json) {
     try {
       const s = JSON.parse(json);
-      // accept the current version AND the immediately-previous one (v6 saves migrate, keeping the garden)
-      if (!s || !Array.isArray(s.grid) || (s.v !== VERSION && s.v !== 6)) return newState();
+      // BLUEPRINT redesign: the game changed shape, so any pre-v8 save starts a fresh blueprint
+      // cleanly (never crash). Only the current version is accepted/round-tripped.
+      if (!s || !Array.isArray(s.grid) || s.v !== VERSION) return newState();
       if (typeof s.cols !== 'number' || typeof s.rows !== 'number' || s.grid.length !== s.cols * s.rows) return newState();
       for (const t of s.grid) { if (!t || typeof t.type !== 'string') return newState(); }
       s.resources = s.resources || { sol: 0, vand: 0, froe: 0 };
@@ -369,7 +477,9 @@
   const api = {
     VERSION, STAGES, TIMES, SEASONS, SEASON_FOR_STAGE, FLOWERS, RARE, FLOWER_NAMES, FLOWER_FACTS,
     WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI, DECORATIONS,
-    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, QUESTS, STORY, FACTS, CHEERS, WISHES,
+    DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, LOCK_BONUS, QUESTS, STORY, FACTS, CHEERS, WISHES,
+    BP_CATEGORIES, BP_STRUCTURES, blueprintTargetFor, blueprintTarget, isTileCorrect,
+    blueprintProgress, blueprintComplete, firstUnsolved, tryLock, blueprintLevelUp,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
     syncGuests, happyGuestCount, wishProgress, assignWish, grantWishIfDone,
