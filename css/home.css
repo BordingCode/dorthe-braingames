@@ -95,23 +95,7 @@
 .game-card .game-desc { font-size: 13px; color: var(--text-muted); line-height: 1.35; }
 .game-card .game-stat { font-size: 12px; color: var(--primary); font-weight: 700; margin-top: auto; }
 
-/* per-game accent colour */
-.game-card:nth-child(1)  { --ca: var(--accent-lightsout); }
-.game-card:nth-child(2)  { --ca: var(--accent-memory); }
-.game-card:nth-child(3)  { --ca: var(--accent-minesweeper); }
-.game-card:nth-child(4)  { --ca: var(--accent-wordsearch); }
-.game-card:nth-child(5)  { --ca: var(--accent-nback); }
-.game-card:nth-child(6)  { --ca: var(--accent-solitaire); }
-.game-card:nth-child(7)  { --ca: var(--accent-sudoku); }
-.game-card:nth-child(8)  { --ca: var(--accent-yatzy); }
-.game-card:nth-child(9)  { --ca: var(--accent-taptempo); }
-.game-card:nth-child(10) { --ca: var(--accent-notequiz); }
-.game-card:nth-child(11) { --ca: var(--accent-moreless); }
-.game-card:nth-child(12) { --ca: var(--accent-guessnumber); }
-.game-card:nth-child(13) { --ca: #5AA9A3; }
-.game-card:nth-child(14) { --ca: #C4748B; }
-.game-card:nth-child(15) { --ca: #6FA85C; }
-.game-card:nth-child(16) { --ca: #8a86d6; }
+/* per-game accent colour is set inline via --ca by js/shared.js */
 
 .game-card:nth-child(n) { animation-delay: 0.05s; }
 .game-card:nth-child(2) { animation-delay: 0.09s; } .game-card:nth-child(3) { animation-delay: 0.13s; }

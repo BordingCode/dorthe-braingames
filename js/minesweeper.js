@@ -33,6 +33,21 @@
   const timerEl = document.getElementById('minesweeper-timer');
   const diffBtn = document.getElementById('minesweeper-diff-btn');
   const flagBtn = document.getElementById('minesweeper-flag-btn');
+  const howtoEl = document.getElementById('minesweeper-howto');
+  const HOWTO_DEFAULT = howtoEl ? howtoEl.textContent : '';
+  let howtoTimer = null;
+
+  function showHowtoMessage(msg) {
+    if (!howtoEl) return;
+    howtoEl.textContent = msg;
+    howtoEl.classList.add('gentle');
+    if (howtoTimer) clearTimeout(howtoTimer);
+    howtoTimer = setTimeout(() => {
+      howtoTimer = null;
+      howtoEl.textContent = HOWTO_DEFAULT;
+      howtoEl.classList.remove('gentle');
+    }, 3200);
+  }
 
   function initMinesweeper() {
     const diff = getDifficulty('minesweeper');
@@ -54,6 +69,8 @@
 
     cancelLongPress();
     clearTimeout(resultTimer);
+    if (howtoTimer) { clearTimeout(howtoTimer); howtoTimer = null; }
+    if (howtoEl) { howtoEl.textContent = HOWTO_DEFAULT; howtoEl.classList.remove('gentle'); }
     flagBtn.classList.remove('active');
     flagBtn.textContent = '🚩 Sæt flag';
     boardEl.classList.remove('flag-mode');
@@ -218,34 +235,29 @@
     }
 
     if (cell.mine) {
-      cell.revealed = true;
-      gameOver = true;
-      cancelLongPress();
-      timer.stop();
-      vibrate([50, 30, 100]);
-
-      board.forEach((row) => row.forEach((cl) => { if (cl.mine) cl.revealed = true; }));
+      // Kind flow: no explosion, no instant loss. Gently reveal the mine,
+      // mark it with a flag for her, and let her keep playing.
+      vibrate(20);
+      if (!cell.flagged) {
+        cell.flagged = true;
+        flagsPlaced++;
+        minesEl.textContent = Math.max(0, mineCount - flagsPlaced);
+      }
       renderBoard();
-
       const idx = r * cols + c;
-      if (boardEl.children[idx]) boardEl.children[idx].className = 'ms-cell mine-hit';
-
-      Stats.record('minesweeper', {
-        won: false,
-        time: timer.getElapsed(),
-        difficulty: getDifficulty('minesweeper'),
-      });
-
-      resultTimer = setTimeout(() => {
-        showResult(false, 'Du ramte en mine!<br>Tid: ' + timer.getFormatted(), 'minesweeper');
-      }, 600);
+      if (boardEl.children[idx]) boardEl.children[idx].classList.add('gentle-mine');
+      showHowtoMessage('Der lå en mine her — vi har sat et flag for dig. Fortsæt bare. 🌿');
+      checkSolved();
       return;
     }
 
     reveal(r, c);
     vibrate(10);
     renderBoard();
+    checkSolved();
+  }
 
+  function checkSolved() {
     const totalSafe = rows * cols - mineCount;
     if (revealedCount >= totalSafe) {
       gameOver = true;
@@ -285,6 +297,7 @@
     gameOver = true;
     cancelLongPress();
     clearTimeout(resultTimer);
+    if (howtoTimer) { clearTimeout(howtoTimer); howtoTimer = null; }
     if (timer) timer.reset();
   };
 })();

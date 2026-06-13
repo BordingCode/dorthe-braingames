@@ -32,10 +32,10 @@
 
 .nq-options {
   display: none;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
   width: 100%;
-  max-width: 340px;
+  max-width: 360px;
 }
 
 .nq-options.active {
@@ -43,9 +43,8 @@
 }
 
 .nq-option {
-  min-height: 64px;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 28px;
+  min-height: 72px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text);
   background: var(--surface);
@@ -89,18 +88,7 @@
   display: none;
 }
 
-/* When the answer set is large (chromatic), tighten cells */
-.nq-options:has(.nq-option:nth-child(10)) {
-  grid-template-columns: repeat(4, 1fr);
-  max-width: 360px;
-}
-
-.nq-options:has(.nq-option:nth-child(10)) .nq-option {
-  min-height: 56px;
-  font-size: 22px;
-}
-
 @media (min-width: 768px) {
-  .nq-options { max-width: 400px; }
-  .nq-option { min-height: 72px; font-size: 32px; }
+  .nq-options { max-width: 440px; }
+  .nq-option { min-height: 80px; font-size: 26px; }
 }

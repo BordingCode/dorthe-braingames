@@ -96,6 +96,13 @@
   100% { transform: scale(1); background: #b71c1c; }
 }
 
+/* Gentle mine: a soft, kind reveal — no scary explosion */
+.ms-cell.gentle-mine {
+  background: linear-gradient(145deg, #f3d98a, var(--warning));
+  color: #5a4a1e;
+  animation: msFlag 0.25s ease-out;
+}
+
 /* Number colors */
 .ms-cell[data-num="1"] { color: #1976D2; }
 .ms-cell[data-num="2"] { color: #388E3C; }

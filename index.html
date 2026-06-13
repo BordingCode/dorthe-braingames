@@ -11,18 +11,18 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-  <link rel="stylesheet" href="css/shared.css?v=20260529p">
-  <link rel="stylesheet" href="css/home.css?v=20260529p">
+  <link rel="stylesheet" href="css/shared.css?v=20260613a">
+  <link rel="stylesheet" href="css/home.css?v=20260613a">
   <link rel="stylesheet" href="css/lightsout.css?v=20260528b">
   <link rel="stylesheet" href="css/memory.css?v=20260528b">
-  <link rel="stylesheet" href="css/minesweeper.css?v=20260528b">
+  <link rel="stylesheet" href="css/minesweeper.css?v=20260613a">
   <link rel="stylesheet" href="css/wordsearch.css?v=20260528b">
   <link rel="stylesheet" href="css/nback.css?v=20260324a">
   <link rel="stylesheet" href="css/solitaire.css?v=20260528b">
   <link rel="stylesheet" href="css/sudoku.css?v=20260528b">
   <link rel="stylesheet" href="css/yatzy.css?v=20260326a">
   <link rel="stylesheet" href="css/taptempo.css?v=20260528b">
-  <link rel="stylesheet" href="css/notequiz.css?v=20260528b">
+  <link rel="stylesheet" href="css/notequiz.css?v=20260613a">
   <link rel="stylesheet" href="css/moreless.css?v=20260528b">
   <link rel="stylesheet" href="css/guessnumber.css?v=20260528c">
   <link rel="stylesheet" href="css/sequence.css?v=20260528b">
@@ -65,6 +65,7 @@
       <span>Tid: <b id="lightsout-timer">0:00</b></span>
     </div>
     <div class="game-area">
+      <p class="game-howto">Tryk på et felt for at slukke det og dets naboer. Sluk alle lys for at vinde.</p>
       <div id="lightsout-board"></div>
     </div>
   </div>
@@ -82,6 +83,7 @@
       <span>Tid: <b id="memory-timer">0:00</b></span>
     </div>
     <div class="game-area">
+      <p class="game-howto">Vend to brikker ad gangen, og find de par der passer sammen.</p>
       <div id="memory-board"></div>
     </div>
   </div>
@@ -101,6 +103,7 @@
       </span>
     </div>
     <div class="game-area">
+      <p class="game-howto" id="minesweeper-howto">Tryk for at åbne et felt. Tallene viser, hvor mange miner der ligger ved siden af.</p>
       <div id="minesweeper-board"></div>
     </div>
   </div>
@@ -156,6 +159,7 @@
       <button id="sol-cardback-btn" class="sol-cardback-btn" title="Vælg kortbagside">🃏</button>
     </div>
     <div class="game-area">
+      <p class="game-howto">Saml alle kort efter farve fra es til konge. Træk kort i faldende rækkefølge med skiftende farver.</p>
       <div id="solitaire-board"></div>
     </div>
   </div>
@@ -267,7 +271,8 @@
       <span>Rigtige: <b id="notequiz-score">0</b></span>
     </div>
     <div class="game-area">
-      <button id="notequiz-replay" class="nq-replay">🔊 Hør tonen</button>
+      <p class="game-howto">Du hører to toner. Er den anden højere eller lavere end den første?</p>
+      <button id="notequiz-replay" class="nq-replay">🔊 Hør tonerne</button>
       <div id="notequiz-options" class="nq-options"></div>
       <button id="notequiz-start" class="btn btn-primary nq-start">Start</button>
     </div>
@@ -313,7 +318,7 @@
       <span>1 – 999</span>
     </div>
     <div class="game-area">
-      <div class="gn-feedback" id="guessnumber-feedback">Jeg tænker på et tal mellem 1 og 1000…</div>
+      <div class="gn-feedback" id="guessnumber-feedback">Jeg tænker på et tal mellem 1 og 999…</div>
       <div class="gn-hints" id="guessnumber-hints"></div>
       <div class="gn-display empty" id="guessnumber-display">–</div>
       <div class="gn-pad" id="guessnumber-pad"></div>
@@ -509,13 +514,13 @@
   <script src="js/shared.js?v=20260529p"></script>
   <script src="js/lightsout.js?v=20260528b"></script>
   <script src="js/memory.js?v=20260528b"></script>
-  <script src="js/minesweeper.js?v=20260528b"></script>
+  <script src="js/minesweeper.js?v=20260613a"></script>
   <script src="js/wordsearch.js?v=20260528b"></script>
   <script src="js/nback.js?v=20260528b"></script>
   <script src="js/solitaire.js?v=20260528b"></script>
   <script src="js/sudoku.js?v=20260528b"></script>
   <script src="js/taptempo.js?v=20260528b"></script>
-  <script src="js/notequiz.js?v=20260528b"></script>
+  <script src="js/notequiz.js?v=20260613a"></script>
   <script src="js/moreless.js?v=20260528b"></script>
   <script src="js/guessnumber.js?v=20260528c"></script>
   <script src="js/sequence.js?v=20260528b"></script>
@@ -523,7 +528,7 @@
   <script src="js/tictactoe.js?v=20260528e"></script>
   <script src="js/slidepuzzle-logic.js?v=20260528f"></script>
   <script src="js/slidepuzzle.js?v=20260528f"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
+  <script src="js/vendor/pixi.min.js?v=7.4.2"></script>
   <script src="js/garden-logic.js?v=20260528s"></script>
   <script src="js/garden-art.js?v=20260528o"></script>
   <script src="js/garden-tasks.js?v=20260528n"></script>

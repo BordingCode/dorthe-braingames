@@ -13,7 +13,7 @@
 
   /* Text — softer tones */
   --text: #2D3B2E;
-  --text-muted: #8A9A8C;
+  --text-muted: #566B58;
   --text-on-primary: #FFFFFF;
 
   /* Feedback */
@@ -212,6 +212,23 @@ h3 {
   justify-content: center;
   padding: 16px;
   overflow: hidden;
+}
+
+/* One-line "how to play" hint, reused across games */
+.game-howto {
+  flex-shrink: 0;
+  max-width: 460px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  padding: 4px 14px 2px;
+  margin-bottom: 4px;
+}
+
+.game-howto.gentle {
+  color: var(--primary-dark);
+  font-weight: 600;
 }
 
 /* ===== Buttons ===== */
