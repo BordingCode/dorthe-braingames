@@ -377,14 +377,30 @@
     }
   }
 
-  // Fire the chosen finale. F2 reuses the big celebration; F3 will expand this into the full
-  // "release the world" sequence. Opt-in only, and it sets the saved flag so it plays once.
+  // F3 — the finale sequence: "release the world". Tending is done; life floods across the whole
+  // scene; the camera pulls all the way back to reveal the journey; Amigo hands the garden over.
+  // A scripted one-time set-piece reusing the burst + camera + audio. Opt-in (F2) and once-only.
+  // Under reduced-motion the visual flood/camera are skipped — the warm sound + Amigo line remain.
   function fireFinale() {
     if (stopped || S.finaleSeen) return;
     S.finaleSeen = true; save();
-    celebrateRegion({ big: true, guide: 'Du har skabt din drømmehave! 💚 Tak fordi du passede den så smukt.' });
-    setHint('🎉 Din drømmehave blomstrer — haven er din nu. Nyd den i ro og mag. 💚');
-    renderFinale();   // invitation → cleared (now seen)
+    startMusicOnce();
+    renderFinale();                 // clear the invitation (now seen)
+    const Iso = window.GardenIso, motion = !reduce();
+    mEvent('grow');                 // the music swells
+    setHint('Haven ånder ud… 🌿');  // a soft breath before the bloom
+    // a gentle pull-back to reveal the whole world, then waves of life flooding across the scene
+    if (motion && Iso && Iso.cameraTo) Iso.cameraTo(0.7);
+    if (motion && Iso && Iso.celebrate) {
+      for (let w = 0; w < 5; w++) later(() => { if (!stopped && window.GardenIso) GardenIso.celebrate({ big: true, wide: true, camera: false }); }, 250 + w * 430);
+    }
+    // a warm crowning arpeggio
+    [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98].forEach((f, k) => later(() => { if (!stopped) playTone(f, 300, 'sine'); }, 350 + k * 175));
+    if (motion) launchConfetti(4200);
+    // Amigo's farewell + the hand-off, then ease the camera back so free-play stays comfortable
+    later(() => { if (!stopped) renderGuide('Se, hvor her er smukt nu… 🦋 Du gjorde det. Haven er din nu. 💚'); }, 1600);
+    later(() => { if (!stopped) setHint('🎉 Din drømmehave blomstrer — haven er din nu. Nyd den i ro og mag. 💚'); }, 2800);
+    if (motion && Iso && Iso.cameraTo) later(() => { if (!stopped && window.GardenIso) GardenIso.cameraTo(1); }, 5400);
     renderProgress();
   }
 
