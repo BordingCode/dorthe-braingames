@@ -49,6 +49,7 @@
   const hudEl = document.getElementById('garden-hud');
   const questEl = document.getElementById('garden-quest');
   const wishEl = document.getElementById('garden-wish');
+  const finaleEl = document.getElementById('garden-finale');
   const hintEl = document.getElementById('garden-hint');
   const overlayEl = document.getElementById('garden-overlay');
   const musicBtn = document.getElementById('garden-music-btn');
@@ -300,7 +301,7 @@
       later(() => { if (!stopped) renderGuide(); }, 3200);
     }
   }
-  function renderAll() { applyStageTheme(); renderHUD(); renderProgress(); renderWish(); renderGuide(); hideHygge(); renderGrid(); }
+  function renderAll() { applyStageTheme(); renderHUD(); renderProgress(); renderWish(); renderFinale(); renderGuide(); hideHygge(); renderGrid(); }
   // hygge/charm bar is retired in BLUEPRINT mode — clear its element so it takes no space
   function hideHygge() { const el = document.getElementById('garden-hygge'); if (el) el.innerHTML = ''; }
 
@@ -313,6 +314,7 @@
     lockNewlyCorrect();
     renderProgress();
     checkBlueprintComplete();
+    renderFinale();
   }
   // scan for tiles that just became correct, award the lock bonus once each, and juice them
   function lockNewlyCorrect() {
@@ -350,8 +352,44 @@
     if (opts.guide) renderGuide(opts.guide);
   }
 
+  // F2 — the finale gate UI. On the FINAL region show a warm "garden waking up" meter (endowed
+  // fill, never empty); once the region is full it swaps to a softly-glowing OPT-IN invitation.
+  // No auto-fire, no timer — the huge finale only plays when Dorthe chooses it.
+  function renderFinale() {
+    if (!finaleEl) return;
+    const f = L.finaleState(S);
+    if (!f.onFinalRegion || f.seen) { finaleEl.innerHTML = ''; return; }
+    if (f.ready) {
+      finaleEl.innerHTML =
+        '<div class="gd-finale gd-finale-ready">' +
+          '<div class="gd-finale-meter"><div class="gd-finale-fill" style="width:100%"></div></div>' +
+          '<button type="button" class="btn btn-primary gd-finale-invite" id="garden-finale-btn">🌸 Lad haven blomstre helt op</button>' +
+          '<div class="gd-finale-sub">Haven er fuld af liv — tryk når du er klar. 💚</div>' +
+        '</div>';
+      const btn = document.getElementById('garden-finale-btn');
+      if (btn) btn.onclick = fireFinale; // assignment is idempotent — never stacks listeners
+    } else {
+      finaleEl.innerHTML =
+        '<div class="gd-finale">' +
+          '<div class="gd-finale-top"><span>🌅 Haven vågner</span><span class="gd-finale-pct">livet vender tilbage…</span></div>' +
+          '<div class="gd-finale-meter"><div class="gd-finale-fill" style="width:' + Math.max(6, f.fill) + '%"></div></div>' +
+        '</div>';
+    }
+  }
+
+  // Fire the chosen finale. F2 reuses the big celebration; F3 will expand this into the full
+  // "release the world" sequence. Opt-in only, and it sets the saved flag so it plays once.
+  function fireFinale() {
+    if (stopped || S.finaleSeen) return;
+    S.finaleSeen = true; save();
+    celebrateRegion({ big: true, guide: 'Du har skabt din drømmehave! 💚 Tak fordi du passede den så smukt.' });
+    setHint('🎉 Din drømmehave blomstrer — haven er din nu. Nyd den i ro og mag. 💚');
+    renderFinale();   // invitation → cleared (now seen)
+    renderProgress();
+  }
+
   // BLUEPRINT: when the whole field is correct → celebrate and grow to the next, bigger blueprint.
-  // On the final stage → a warm "drømmehave" finish (free play continues; nothing punishes).
+  // On the final stage → arm the opt-in finale invitation (F2); free play continues; nothing punishes.
   let celebrating = false;
   function checkBlueprintComplete() {
     if (celebrating || !L.blueprintComplete(S)) return;
@@ -369,11 +407,11 @@
         celebrating = false;
       }, 1900);
     } else {
-      // final stage complete → the HUGE finale at full volume (same beat, big:true) + free play
-      celebrateRegion({ big: true, guide: 'Du har skabt din drømmehave! 💚 Tak fordi du passede den så smukt.' });
-      setHint('🎉 Din drømmehave er fuldendt! Nyd den — alt er, som tegningen ønskede.');
-      save(); renderProgress();
-      // stays complete; no further growth — celebrating stays true so we don't re-fire
+      // final region complete → DON'T auto-fire. Surface the opt-in finale invitation (F2);
+      // the huge finale plays only when Dorthe taps "Lad haven blomstre helt op".
+      celebrating = false;
+      save(); renderProgress(); renderFinale();
+      if (!S.finaleSeen) setHint('Haven er fuld af liv! 🌸 Den er klar til at blomstre helt op — når du er klar.');
     }
   }
 

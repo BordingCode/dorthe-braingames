@@ -107,7 +107,7 @@
       grid: makeGrid(s0.cols * s0.rows),
       resources: { sol: 4, vand: 8, froe: 8 },
       questIndex: 0, wildlifeSeen: {}, flowersSeen: {}, builtSeen: {}, picked: 0, timeOfDay: 0, hygge: 0,
-      guests: {}, wish: null,
+      guests: {}, wish: null, finaleSeen: false,
     };
   }
 
@@ -409,6 +409,19 @@
     return { grew: true, last: false, from, to, stage: nw };
   }
 
+  // F2 — the finale gate. On the FINAL region, the garden "wakes up" as life returns; when the
+  // last blueprint is complete it's READY to bloom fully. No timer, no fail — only "not yet".
+  // The fill is "endowed" (never starts visually empty when you reach the final region) so the
+  // meter reads as warm proximity, not a grade. `ready` arms the opt-in finale invitation;
+  // `seen` is the saved flag set once the player chooses to bloom (drives free-play, F5).
+  function finaleState(s) {
+    const onFinalRegion = s.stage >= STAGES.length - 1;
+    const bp = blueprintProgress(s);
+    const raw = bp.total ? bp.done / bp.total : 0;
+    const fill = onFinalRegion ? Math.round((0.18 + 0.82 * raw) * 100) : 0;
+    return { onFinalRegion, raw, fill, ready: onFinalRegion && blueprintComplete(s), seen: !!s.finaleSeen };
+  }
+
   /* ---------- difficulty (gentle) ---------- */
   function difficultyParams(chapter) {
     const c = Math.max(1, chapter | 0);
@@ -479,7 +492,7 @@
     WILDLIFE, BUILDABLE, BUILD_COST, BUILD_EMOJI, DECORATIONS,
     DECOR, DECOR_COST, DECOR_EMOJI, PLANT_COST, WATER_COST, LOCK_BONUS, QUESTS, STORY, FACTS, CHEERS, WISHES,
     BP_CATEGORIES, BP_STRUCTURES, blueprintTargetFor, blueprintTarget, isTileCorrect,
-    blueprintProgress, blueprintComplete, firstUnsolved, tryLock, blueprintLevelUp,
+    blueprintProgress, blueprintComplete, firstUnsolved, tryLock, blueprintLevelUp, finaleState,
     newState, canAfford, spend, earn, plant, water, harvest, build, place, move, remove, refreshWildlife,
     bloomCount, hasType, countType, currentQuest, tryAdvance, stageForQuest, currentStage, growTo, maybeGrow,
     syncGuests, happyGuestCount, wishProgress, assignWish, grantWishIfDone,
