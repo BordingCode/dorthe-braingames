@@ -44,7 +44,7 @@
 
   let app = null, hostEl = null, tapCb = null;
   let bgLayer = null, sceneLayer = null, fxLayer = null, tintG = null;
-  let motes = [], t = 0, lastStage = -1;
+  let motes = [], bursts = [], t = 0, lastStage = -1, celebZoom = 1;
   // view transform: fit-to-canvas scale + user zoom/pan (so tiles can be enlarged to avoid misclicks)
   let fitScale = 1, baseX = 0, baseY = 0, userZoom = 1, panX = 0, panY = 0;
   const ZMAX = 2.8;
@@ -52,7 +52,7 @@
   // apply the current fit-scale * user-zoom and clamped pan to the scene layer
   function applyView() {
     if (!sceneLayer || !app) return;
-    sceneLayer.scale.set(fitScale * userZoom);
+    sceneLayer.scale.set(fitScale * userZoom * celebZoom);
     const W = app.screen.width, H = app.screen.height;
     const maxX = (userZoom - 1) * W * 0.6, maxY = (userZoom - 1) * H * 0.6;
     panX = Math.max(-maxX, Math.min(maxX, panX));
@@ -117,7 +117,7 @@
     if (!app) return;
     try { app.ticker.remove(animate); } catch {}
     try { app.destroy(true, { children: true, texture: true, baseTexture: true }); } catch {}
-    app = null; bgLayer = sceneLayer = fxLayer = tintG = null; motes = []; t = 0; lastStage = -1;
+    app = null; bgLayer = sceneLayer = fxLayer = tintG = null; motes = []; bursts = []; t = 0; lastStage = -1; celebZoom = 1;
     if (hostEl) hostEl.innerHTML = '';
   }
 
@@ -394,6 +394,41 @@
     }
   }
 
+  // F1 — a warm one-shot celebration: a gentle burst of petals + butterflies rising
+  // from the bed, plus a soft camera "breath out" that eases back to reveal the scene.
+  // Reused at every region unlock; {big:true} scales it up to become the finale beat.
+  // Motion only (no fail/harsh flash) — the caller skips it under reduced-motion.
+  function celebrate(opts) {
+    if (!app || !fxLayer) return;
+    opts = opts || {};
+    const big = !!opts.big;
+    const W = app.screen.width, H = app.screen.height;
+    const n = big ? 28 : 15;
+    for (let k = 0; k < n; k++) {
+      const butterfly = k % 4 === 0;
+      const g = new PIXI.Graphics();
+      if (butterfly) {
+        const c = [0xf6a5c0, 0xffd66b, 0x9ad0ff, 0xc9a6ff][k % 4];
+        g.beginFill(c, 0.95).drawEllipse(-3, 0, 3.4, 4.8).drawEllipse(3, 0, 3.4, 4.8).endFill();
+        g.beginFill(0x5b4636, 0.9).drawRoundedRect(-0.7, -3, 1.4, 6, 0.7).endFill();
+      } else {
+        const c = [0xf6a5c0, 0xff8fb0, 0xffd66b, 0xffffff][k % 4];
+        g.beginFill(c, 0.95).drawEllipse(0, 0, 3.2, 2).endFill();
+      }
+      g.x = W * (0.35 + Math.random() * 0.3);
+      g.y = H * (0.62 + Math.random() * 0.18);
+      fxLayer.addChild(g);
+      const ang = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+      const sp = (big ? 2.4 : 1.9) + Math.random() * 2;
+      bursts.push({
+        g, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+        life: 0, max: (big ? 150 : 110) + Math.random() * 50,
+        flutter: butterfly, ph: Math.random() * 6.28, spin: (Math.random() - 0.5) * 0.1,
+      });
+    }
+    celebZoom = big ? 0.84 : 0.92; // soft pull-back; eases back to 1 below (the reveal breath)
+  }
+
   function animate(dt) {
     if (!app) return;
     t += dt;
@@ -403,6 +438,27 @@
       m.g.alpha = 0.5 + Math.sin(t * 0.05 + m.ph) * 0.35;
       if (m.g.x < -10) { m.g.x = W + 10; m.g.y = Math.random() * H * 0.8; }
       if (m.g.y < -10) m.g.y = H * 0.8;
+    }
+    // one-shot celebration burst particles (rise, flutter, fade, then get removed)
+    if (bursts.length) {
+      for (let bi = bursts.length - 1; bi >= 0; bi--) {
+        const b = bursts[bi];
+        b.life += dt;
+        b.vy += 0.012 * dt; // gentle gravity so they arc and settle
+        const fl = b.flutter ? Math.sin((b.life + b.ph * 20) * 0.18) * 1.1 : 0;
+        b.g.x += (b.vx + fl) * dt;
+        b.g.y += b.vy * dt;
+        b.g.rotation += b.spin * dt;
+        const lifeT = b.life / b.max;
+        b.g.alpha = lifeT < 0.15 ? lifeT / 0.15 : Math.max(0, 1 - (lifeT - 0.15) / 0.85);
+        if (b.life >= b.max) { try { fxLayer.removeChild(b.g); b.g.destroy(); } catch {} bursts.splice(bi, 1); }
+      }
+    }
+    // ease the celebration camera-breath back to neutral
+    if (celebZoom !== 1) {
+      celebZoom += (1 - celebZoom) * Math.min(1, 0.045 * dt);
+      if (Math.abs(1 - celebZoom) < 0.004) celebZoom = 1;
+      applyView();
     }
     // gentle sway on flowers/trees + soft lantern glow (flags may sit on nested children)
     if (sceneLayer) for (const cell of sceneLayer.children) {
@@ -417,5 +473,5 @@
     }
   }
 
-  root.GardenIso = { mount, render, destroy, setSky };
+  root.GardenIso = { mount, render, destroy, setSky, celebrate };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

@@ -330,6 +330,26 @@
     if (any) { save(); renderHUD(); renderGrid(); }
   }
 
+  // F1 — ONE reusable "region complete" celebration: a warm, FELT mini-arrival —
+  // a consonant arpeggio + the music's grow flourish + a gentle in-scene burst of
+  // petals/butterflies with a soft camera breath + confetti + an Amigo line.
+  // Every region unlock fires the small version; the HUGE finale will reuse it at
+  // full volume via { big:true } (the same beat, scaled up). See docs/garden-finale-plan.md.
+  // Motion (scene burst + camera breath) is skipped under reduced-motion; the warm
+  // sound + Amigo line still play, so the moment never feels harsh or empty.
+  function celebrateRegion(opts) {
+    opts = opts || {};
+    const big = !!opts.big;
+    const notes = big
+      ? [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98]
+      : [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((f, k) => later(() => { if (!stopped) playTone(f, big ? 280 : 230, 'sine'); }, k * (big ? 150 : 130)));
+    mEvent('grow');
+    launchConfetti(big ? 3600 : 2200);
+    if (!reduce() && window.GardenIso && GardenIso.celebrate) GardenIso.celebrate({ big: big });
+    if (opts.guide) renderGuide(opts.guide);
+  }
+
   // BLUEPRINT: when the whole field is correct → celebrate and grow to the next, bigger blueprint.
   // On the final stage → a warm "drømmehave" finish (free play continues; nothing punishes).
   let celebrating = false;
@@ -337,12 +357,10 @@
     if (celebrating || !L.blueprintComplete(S)) return;
     celebrating = true;
     save();
-    launchConfetti(2400);
-    mEvent('grow');
-    [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => later(() => playTone(f, 240, 'sine'), k * 150));
     const lu = L.blueprintLevelUp(S);
     if (lu.grew) {
-      renderGuide('Haven er færdig — sikke smukt! 🌸 Nu vokser den til ' + lu.stage.name + '.');
+      // a region mini-finale — the dress rehearsal for the big finale (F1)
+      celebrateRegion({ guide: 'Haven er færdig — sikke smukt! 🌸 Nu vokser den til ' + lu.stage.name + '.' });
       later(() => {
         if (stopped) return;
         save(); renderAll(); renderProgress();
@@ -351,10 +369,9 @@
         celebrating = false;
       }, 1900);
     } else {
-      // final stage complete → drømmehave finish + free play
-      renderGuide('Du har skabt din drømmehave! 💚 Tak fordi du passede den så smukt.');
+      // final stage complete → the HUGE finale at full volume (same beat, big:true) + free play
+      celebrateRegion({ big: true, guide: 'Du har skabt din drømmehave! 💚 Tak fordi du passede den så smukt.' });
       setHint('🎉 Din drømmehave er fuldendt! Nyd den — alt er, som tegningen ønskede.');
-      launchConfetti(3600);
       save(); renderProgress();
       // stays complete; no further growth — celebrating stays true so we don't re-fire
     }
